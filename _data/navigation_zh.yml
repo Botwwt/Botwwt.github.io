@@ -1,0 +1,16 @@
+# main links links
+main:
+  - title: "研究方向"
+    url: "/zh/#research"
+
+  - title: "论文成果"
+    url: "/zh/publications/"
+
+  - title: "研究经历"
+    url: "/zh/#experience"
+
+  - title: "教育背景"
+    url: "/zh/#education"
+
+  - title: "荣誉奖项"
+    url: "/zh/#honors"

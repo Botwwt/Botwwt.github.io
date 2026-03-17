@@ -1,0 +1,217 @@
+---
+permalink: /zh/
+title: ""
+excerpt: ""
+lang: zh
+lang_switch_label: "English"
+lang_switch_url: "/"
+author_profile: true
+author_name: "王文涛"
+author_bio: "大连理工大学基础数学拔尖计划本科生"
+sidebar_intro: "本科阶段主要从事大语言模型、强化学习与类脑学习方向的研究。"
+---
+
+<span class='anchor' id='about'></span>
+
+<div class="homepage-hero">
+  <p class="section-kicker">Academic Homepage</p>
+  <h1>王文涛</h1>
+  <p>我目前就读于大连理工大学基础数学拔尖计划，研究兴趣位于大语言模型、强化学习、神经组合优化与类脑学习的交叉方向。</p>
+  <p>目前我在中国科学院自动化研究所参与无线通信决策大模型与长上下文建模研究，同时在北京大学开展循环神经网络时序信用分配与临界动力学相关研究。</p>
+  <div class="link-pills">
+    <a class="link-pill" href="mailto:shiyanxi1@mail.dlut.edu.cn">邮箱</a>
+    <a class="link-pill" href="https://scholar.google.com/citations?user=tF1l1S0AAAAJ&hl=zh-CN">谷歌学术</a>
+    <a class="link-pill" href="https://github.com/Botwwt">GitHub</a>
+    <a class="link-pill" href="/zh/publications/">完整论文列表</a>
+  </div>
+</div>
+
+<div class="highlight-grid">
+  <div class="highlight-card">
+    <h3>教育背景</h3>
+    <p>大连理工大学基础数学拔尖计划本科生</p>
+    <p>GPA 4.22/5.00，专业排名 12/102，预计 2027 年 6 月毕业</p>
+  </div>
+  <div class="highlight-card">
+    <h3>当前研究岗位</h3>
+    <p>中国科学院自动化研究所科研实习生</p>
+    <p>北京大学科研实习生</p>
+  </div>
+  <div class="highlight-card">
+    <h3>研究工具链</h3>
+    <p>PyTorch、Hugging Face Transformers、TRL、Unsloth、LoRA/QLoRA、GRPO</p>
+  </div>
+  <div class="highlight-card">
+    <h3>关注方向</h3>
+    <p>决策大模型、长上下文恢复、神经组合优化、具有生物合理性的在线学习</p>
+  </div>
+</div>
+
+<span class='anchor' id='research'></span>
+
+## 研究方向
+
+<div class="chip-row">
+  <span class="chip">大语言模型</span>
+  <span class="chip">强化学习</span>
+  <span class="chip">神经组合优化</span>
+  <span class="chip">无线通信</span>
+  <span class="chip">长上下文建模</span>
+  <span class="chip">类脑学习</span>
+</div>
+
+近阶段我的研究主要集中在三个方向：面向无线系统的决策型大语言模型、利用结构先验的组合优化学习方法，以及基于临界动力学的循环神经网络在线局部学习规则。我尤其关注如何在性能不明显退化的前提下，提高模型效率、可解释性或生物合理性。
+
+<span class='anchor' id='news'></span>
+
+## 最新动态
+
+<ul class="news-list">
+  <li><strong>2026 年 3 月：</strong> 在北京大学持续推进时序信用分配与临界动力学相关研究。</li>
+  <li><strong>2026 年 2 月：</strong> <em>Cooperative Edge Caching with Large Language Model in Wireless Networks</em> 发布于 <a href="https://arxiv.org/abs/2602.13307">arXiv</a>。</li>
+  <li><strong>2025 年 10 月：</strong> 加入北京大学，开展循环系统在线学习与全局信用分配研究。</li>
+  <li><strong>2025 年 9 月：</strong> 完成 <em>LinearARD</em> 论文投稿，聚焦 RoPE 恢复中的线性内存注意力蒸馏。</li>
+  <li><strong>2024 年 12 月：</strong> 加入中国科学院自动化研究所开展科研实习。</li>
+</ul>
+
+<span class='anchor' id='publications'></span>
+
+## 代表性论文
+
+<div class='paper-box'>
+  <div class='paper-box-image'>
+    <div>
+      <div class="badge">Applied Intelligence | 在审</div>
+      <img src="{{ '/images/publications/caadrl-pdp.png' | relative_url }}" alt="Cluster-aware attention model for pickup and delivery problems" width="100%">
+    </div>
+  </div>
+  <div class='paper-box-text' markdown="1">
+
+### [Cluster-Aware Attention-Based Deep Reinforcement Learning for Pickup and Delivery Problems]({{ '/files/papers/caadrl-pdp.pdf' | relative_url }})
+
+**Wentao Wang**, Lifeng Han, Guangyu Zou  
+第一作者 | 大连理工大学
+
+提出 CAADRL 框架，将全局自注意力、簇内注意力与动态双解码器结合，用于更高效地利用取送货问题中的簇结构信息，在解质量与推理效率之间取得平衡。
+
+<div class="pub-links">
+  <a href="{{ '/files/papers/caadrl-pdp.pdf' | relative_url }}">论文</a>
+  <a href="https://scholar.google.com/citations?view_op=view_citation&hl=zh-CN&user=tF1l1S0AAAAJ&citation_for_view=tF1l1S0AAAAJ:qjMakFHDy7sC">学术主页</a>
+  <a href="https://github.com/Botwwt/CluPDTSP">代码</a>
+</div>
+  </div>
+</div>
+
+<div class='paper-box'>
+  <div class='paper-box-image'>
+    <div>
+      <div class="badge">IEEE COMST | 已发表</div>
+      <img src="{{ '/images/publications/wireless-llm-survey.png' | relative_url }}" alt="Survey of decision-making large language models for wireless communication" width="100%">
+    </div>
+  </div>
+  <div class='paper-box-text' markdown="1">
+
+### [Decision-Making Large Language Model for Wireless Communication: A Comprehensive Survey on Key Techniques](https://ieeexplore.ieee.org/document/11180008/)
+
+Ning Yang, Mingrui Fan, **Wentao Wang**, Haijun Zhang  
+第三作者（学生二作） | 中国科学院自动化研究所
+
+该综述系统梳理了无线通信中面向决策的大语言模型研究脉络，重点覆盖数据构造、模型适配、推理、推断、学习式控制以及多智能体协同等关键技术。
+
+<div class="pub-links">
+  <a href="https://ieeexplore.ieee.org/document/11180008/">IEEE Xplore</a>
+</div>
+  </div>
+</div>
+
+<div class='paper-box'>
+  <div class='paper-box-image'>
+    <div>
+      <div class="badge">IEEE TMC | 在审</div>
+      <img src="{{ '/images/publications/coop-llm-cache.jpg' | relative_url }}" alt="Cooperative edge caching with large language models" width="100%">
+    </div>
+  </div>
+  <div class='paper-box-text' markdown="1">
+
+### [Cooperative Edge Caching with Large Language Model in Wireless Networks](https://arxiv.org/abs/2602.13307)
+
+Ning Yang, **Wentao Wang**, Lingtao Ouyang, Haijun Zhang  
+第二作者（学生一作） | 中国科学院自动化研究所
+
+将多基站协同边缘缓存问题建模为 LLM 原生的序列决策任务，构建 SFT+GRPO 训练流程，并设计兼顾未来协同收益与动作可行性的奖励函数。
+
+<div class="pub-links">
+  <a href="https://arxiv.org/abs/2602.13307">arXiv</a>
+  <a href="https://github.com/gracefulning/CoopLLM-Cache">代码</a>
+</div>
+  </div>
+</div>
+
+<div class="section-actions">
+  <a class="link-pill" href="/zh/publications/">查看完整论文列表</a>
+</div>
+
+<span class='anchor' id='experience'></span>
+
+## 研究经历
+
+<div class="timeline-card">
+  <h3>中国科学院自动化研究所</h3>
+  <p class="timeline-meta">科研实习生 | 2024 年 12 月至今 | 北京</p>
+  <p>主要研究无线通信中的决策型大语言模型、协同边缘缓存以及长上下文恢复。近期工作包括基于监督微调、GRPO、LoRA/QLoRA、TRL 和 Unsloth 的训练评测流程搭建。</p>
+</div>
+
+<div class="timeline-card">
+  <h3>北京大学</h3>
+  <p class="timeline-meta">科研实习生 | 2025 年 10 月至今 | 北京</p>
+  <p>围绕循环神经网络中的时序信用分配问题开展研究，关注如何设计内存开销更低、更加符合生物机制的在线学习规则，并探索临界动力学对长程序列学习稳定性的作用。</p>
+</div>
+
+<div class="timeline-card">
+  <h3>大连理工大学</h3>
+  <p class="timeline-meta">本科科研 | 2024 年 10 月至 2025 年 3 月 | 大连</p>
+  <p>独立主导取送货问题上的神经组合优化研究，完成模型设计、强化学习训练、基准构建、实验分析与论文撰写。</p>
+</div>
+
+<span class='anchor' id='education'></span>
+
+## 教育背景
+
+<div class="timeline-card">
+  <h3>大连理工大学</h3>
+  <p class="timeline-meta">基础数学拔尖计划本科生 | 2023 年 9 月至 2027 年 6 月（预计） | 大连</p>
+  <p>GPA: 4.22/5.00 | 专业排名: 12/102</p>
+  <p><strong>主要课程：</strong>数学分析（99）、高等代数（99）、概率论（99）、数据结构与算法（99）、最优化方法（99）、程序设计与算法（100）、解析几何（100）</p>
+  <p><strong>英语成绩：</strong>CET-6 460，CET-4 522</p>
+</div>
+
+## 技术技能
+
+<div class="chip-row">
+  <span class="chip">Python</span>
+  <span class="chip">MATLAB</span>
+  <span class="chip">Java</span>
+  <span class="chip">PyTorch</span>
+  <span class="chip">Transformers</span>
+  <span class="chip">TRL</span>
+  <span class="chip">Unsloth</span>
+  <span class="chip">Git</span>
+  <span class="chip">Linux</span>
+  <span class="chip">LaTeX</span>
+</div>
+
+<span class='anchor' id='honors'></span>
+
+## 荣誉奖项
+
+- **2024 年 12 月：** 大连理工大学学业优秀奖学金（前 15%）
+- **2025 年 11 月：** 大连理工大学学业优秀奖学金（前 15%）
+- **2024 年 9 月：** 全国大学生数学建模竞赛省一等奖
+- **2024 年 11 月：** 亚太地区大学生数学建模竞赛国家一等奖
+- **2024 年 2 月：** 美国大学生数学建模竞赛 Honorable Mention
+- **2025 年 11 月：** 全国英语翻译大赛国家二等奖
+
+## 活动经历
+
+- **2023 年：** 大连理工大学新生篮球赛主力队员、亚军
+- **2024 年 2 月：** 新加坡国立大学暑期学术交流项目参与者
