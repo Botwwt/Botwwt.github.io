@@ -1,0 +1,213 @@
+home_limit: 5
+
+quartile_note:
+  en: "CAS quartiles follow the 2025 CAS upgraded list (major category); JCR quartiles follow the 2025 JCR labels, with multiple categories shown jointly when needed."
+  zh: "期刊分区按 2025 年 3 月中科院升级版大类分区与 2025 年 JCR 分区标注；如存在多个 JCR 学科类别，则并列展示。"
+
+items:
+  - id: caadrl-pdp
+    section: journal
+    badge:
+      en: "Applied Intelligence | Under Review"
+      zh: "Applied Intelligence | 在审"
+    sci:
+      en: "CAS Q3"
+      zh: "中科院 3 区"
+    jcr:
+      en: "JCR Q2"
+      zh: "JCR Q2"
+    image: "/images/publications/caadrl-pdp.png"
+    alt: "Cluster-aware attention model for pickup and delivery problems"
+    title: "Cluster-Aware Attention-Based Deep Reinforcement Learning for Pickup and Delivery Problems"
+    title_url: "/files/papers/caadrl-pdp.pdf"
+    authors:
+      en: "<strong>Wentao Wang</strong>, Lifeng Han, Guangyu Zou"
+      zh: "<strong>Wentao Wang</strong>, Lifeng Han, Guangyu Zou"
+    meta:
+      home:
+        en: "First author | Dalian University of Technology"
+        zh: "第一作者 | 大连理工大学"
+      full:
+        en: "First author | Dalian University of Technology | Oct. 2024 - Mar. 2025"
+        zh: "第一作者 | 大连理工大学 | 2024 年 10 月 - 2025 年 3 月"
+    summary:
+      en: "CAADRL combines global self-attention, intra-cluster attention, and a dynamic dual-decoder to exploit clustered structure in pickup and delivery problems while balancing solution quality and inference efficiency."
+      zh: "提出 CAADRL 框架，将全局自注意力、簇内注意力与动态双解码器结合，用于更高效地利用取送货问题中的簇结构信息，在解质量与推理效率之间取得平衡。"
+    bullets:
+      en:
+        - "Proposes CAADRL, a cluster-aware deep reinforcement learning framework for pickup and delivery problems with clustered structure."
+        - "Integrates global self-attention, intra-cluster attention, and a dynamic dual-decoder with a learnable gate."
+        - "Achieves state-of-the-art performance on clustered benchmarks while reducing inference latency relative to neural collaborative-search baselines."
+      zh:
+        - "提出 CAADRL 框架，用于建模带簇结构的取送货路径优化问题。"
+        - "将全局自注意力、簇内注意力与带门控的动态双解码器结合，实现宏观簇间决策与微观簇内决策协同。"
+        - "在簇状基准上取得领先结果，同时显著降低相对神经协同搜索方法的推理开销。"
+    links:
+      - url: "/files/papers/caadrl-pdp.pdf"
+        label:
+          en: "Paper"
+          zh: "论文"
+      - url: "https://scholar.google.com/citations?view_op=view_citation&hl=zh-CN&user=tF1l1S0AAAAJ&citation_for_view=tF1l1S0AAAAJ:qjMakFHDy7sC"
+        label:
+          en: "Scholar"
+          zh: "学术主页"
+      - url: "https://github.com/Botwwt/CluPDTSP"
+        label:
+          en: "Code"
+          zh: "代码"
+
+  - id: wireless-llm-survey
+    section: journal
+    badge:
+      en: "IEEE COMST | Published"
+      zh: "IEEE COMST | 已发表"
+    sci:
+      en: "CAS Q1"
+      zh: "中科院 1 区"
+    jcr:
+      en: "JCR Q1"
+      zh: "JCR Q1"
+    image: "/images/publications/wireless-llm-survey.png"
+    alt: "Survey of decision-making large language models for wireless communication"
+    title: "Decision-Making Large Language Model for Wireless Communication: A Comprehensive Survey on Key Techniques"
+    title_url: "https://ieeexplore.ieee.org/document/11180008/"
+    authors:
+      en: "Ning Yang, Mingrui Fan, <strong>Wentao Wang</strong>, Haijun Zhang"
+      zh: "Ning Yang, Mingrui Fan, <strong>Wentao Wang</strong>, Haijun Zhang"
+    meta:
+      home:
+        en: "Third author (student second) | Institute of Automation, Chinese Academy of Sciences"
+        zh: "第三作者（学生二作） | 中国科学院自动化研究所"
+      full:
+        en: "Third author (student second) | Institute of Automation, Chinese Academy of Sciences | Dec. 2024 - Aug. 2025"
+        zh: "第三作者（学生二作） | 中国科学院自动化研究所 | 2024 年 12 月 - 2025 年 8 月"
+    summary:
+      en: "This survey organizes the emerging literature on LLM-enabled decision-making for wireless communication, with emphasis on data generation and augmentation, architecture adaptation, reasoning, inference, learning-based control, and multi-agent coordination."
+      zh: "该综述系统梳理了无线通信中面向决策的大语言模型研究脉络，重点覆盖数据构造、模型适配、推理、推断、学习式控制以及多智能体协同等关键技术。"
+    bullets:
+      en:
+        - "Surveys LLM-enabled decision-making for wireless communication across data, modeling, reasoning, inference, learning-based control, and multi-agent settings."
+        - "I independently contributed the sections on data generation and augmentation, architecture adaptation, and open challenges."
+        - "The paper was published in <em>IEEE Communications Surveys & Tutorials</em>."
+      zh:
+        - "系统梳理无线通信场景下 LLM 决策研究，覆盖数据、模型、推理、控制与多智能体协同等关键维度。"
+        - "我主要负责数据生成与增强、架构适配以及开放问题等部分的撰写。"
+        - "论文已发表于 <em>IEEE Communications Surveys & Tutorials</em>。"
+    links:
+      - url: "https://ieeexplore.ieee.org/document/11180008/"
+        label:
+          en: "IEEE Xplore"
+          zh: "IEEE Xplore"
+
+  - id: coop-llm-cache
+    section: journal
+    badge:
+      en: "IEEE TMC | Under Review"
+      zh: "IEEE TMC | 在审"
+    sci:
+      en: "CAS Q1"
+      zh: "中科院 1 区"
+    jcr:
+      en: "JCR Q1"
+      zh: "JCR Q1"
+    image: "/images/publications/coop-llm-cache.jpg"
+    alt: "Cooperative edge caching with large language models"
+    title: "Cooperative Edge Caching with Large Language Model in Wireless Networks"
+    title_url: "https://arxiv.org/abs/2602.13307"
+    authors:
+      en: "Ning Yang, <strong>Wentao Wang</strong>, Lingtao Ouyang, Haijun Zhang"
+      zh: "Ning Yang, <strong>Wentao Wang</strong>, Lingtao Ouyang, Haijun Zhang"
+    meta:
+      home:
+        en: "Second author (student first) | Institute of Automation, Chinese Academy of Sciences"
+        zh: "第二作者（学生一作） | 中国科学院自动化研究所"
+      full:
+        en: "Second author (student first) | Institute of Automation, Chinese Academy of Sciences | May 2025 - Nov. 2025"
+        zh: "第二作者（学生一作） | 中国科学院自动化研究所 | 2025 年 5 月 - 2025 年 11 月"
+    summary:
+      en: "We formulate cooperative multi-base-station edge caching as an LLM-native sequential decision problem, build an SFT+GRPO training pipeline, and design an opportunity-aware reward that captures future cooperative gains under strict feasibility constraints."
+      zh: "将多基站协同边缘缓存问题建模为 LLM 原生的序列决策任务，构建 SFT+GRPO 训练流程，并设计兼顾未来协同收益与动作可行性的奖励函数。"
+    bullets:
+      en:
+        - "Builds a multi-BS, multi-user cooperative edge-caching environment and formulates it as an LLM-native sequential decision problem."
+        - "Implements a two-stage SFT+GRPO training pipeline with TRL, Unsloth, and QLoRA under a strictly validated text-to-action interface."
+        - "Designs an opportunity-aware reward to quantify future cooperative hit-rate gains while penalizing infeasible actions."
+      zh:
+        - "构建多基站、多用户协同边缘缓存环境，并将任务表述为 LLM 原生的序列决策问题。"
+        - "基于严格约束的文本到动作接口，实现 SFT+GRPO 两阶段训练流程，并结合 TRL、Unsloth 与 QLoRA。"
+        - "设计机会感知奖励函数，用于刻画未来协同命中收益并惩罚不可行动作。"
+    links:
+      - url: "https://arxiv.org/abs/2602.13307"
+        label:
+          en: "arXiv"
+          zh: "arXiv"
+      - url: "https://github.com/gracefulning/CoopLLM-Cache"
+        label:
+          en: "Code"
+          zh: "代码"
+
+  - id: linearard
+    section: ongoing
+    badge:
+      en: "ICML 2026 | Under Review"
+      zh: "ICML 2026 | 在审"
+    image: "/images/publications/linearard.png"
+    alt: "LinearARD for long-context RoPE restoration"
+    title: "LinearARD: Linear-Memory Attention Distillation for RoPE Restoration"
+    meta:
+      home:
+        en: "Second author (student second) | Institute of Automation, Chinese Academy of Sciences"
+        zh: "第二作者（学生二作） | 中国科学院自动化研究所"
+      full:
+        en: "Second author (student second) | Institute of Automation, Chinese Academy of Sciences | Sep. 2025 - Dec. 2025"
+        zh: "第二作者（学生二作） | 中国科学院自动化研究所 | 2025 年 9 月 - 2025 年 12 月"
+    summary:
+      en: "LinearARD aligns row-wise self-relations between native-RoPE teachers and RoPE-scaled students, restoring long-context performance with an exact linear-memory distillation objective."
+      zh: "LinearARD 通过精确的线性内存蒸馏目标对齐原生 RoPE 教师与缩放 RoPE 学生的行级自关系分布，用于恢复长上下文性能。"
+    bullets:
+      en:
+        - "Proposes a restoration-distillation framework that aligns row-wise dense self-relations between a native-RoPE teacher and a RoPE-scaled student."
+        - "Derives an exact linear-memory KL kernel, avoiding explicit construction of full relation matrices on long sequences."
+        - "On LLaMA2-7B scaled from 4K to 32K, the method recovers 98.3% of short-context performance using only 4.25M training tokens."
+      zh:
+        - "提出一种面向长上下文 LLM 的恢复蒸馏框架，对齐原生 RoPE 教师模型与缩放 RoPE 学生模型之间的行级自关系分布。"
+        - "推导精确的线性内存 KL 核，避免显式构造完整关系矩阵。"
+        - "在 LLaMA2-7B 从 4K 扩展到 32K 的设定下，仅用 4.25M 训练 token 即恢复 98.3% 的短上下文性能。"
+    links:
+      - url: "mailto:shiyanxi1@mail.dlut.edu.cn?subject=LinearARD%20Preprint%20Request"
+        label:
+          en: "Preprint upon request"
+          zh: "按需索取预印本"
+
+  - id: global-credit-criticality
+    section: ongoing
+    badge:
+      en: "ICML 2026 | Under Review"
+      zh: "ICML 2026 | 在审"
+    image: "/images/publications/global-credit-criticality.png"
+    alt: "Global credit assignment via dynamical criticality"
+    title: "Global Credit Assignment via Dynamical Criticality"
+    meta:
+      home:
+        en: "First author | Peking University"
+        zh: "第一作者 | 北京大学"
+      full:
+        en: "First author | Peking University | Oct. 2025 - Present"
+        zh: "第一作者 | 北京大学 | 2025 年 10 月至今"
+    summary:
+      en: "This work studies temporal credit assignment in recurrent and spiking systems through a criticality-driven online local learning rule with constant activation memory."
+      zh: "该工作聚焦循环与脉冲系统中的时序信用分配问题，提出具有常数激活内存开销的临界动力学在线局部学习规则。"
+    bullets:
+      en:
+        - "Studies temporal credit assignment in recurrent and spiking neural systems through a criticality-driven online local learning rule."
+        - "Uses long-range spatiotemporal correlations near the edge of chaos to derive a closed-form online teaching signal with constant activation memory."
+        - "Combines theoretical analysis and benchmark experiments to study approximation error, stability, and scalability."
+      zh:
+        - "聚焦循环神经网络与脉冲神经系统中的时序信用分配问题，提出基于临界动力学的在线局部学习规则。"
+        - "利用临界边缘的长程时空关联，推导具有常数激活内存开销的闭式在线教学信号。"
+        - "结合理论分析与基准实验研究近似误差、稳定性与可扩展性。"
+    links:
+      - url: "mailto:shiyanxi1@mail.dlut.edu.cn?subject=Global%20Credit%20Assignment%20Preprint%20Request"
+        label:
+          en: "Preprint upon request"
+          zh: "按需索取预印本"

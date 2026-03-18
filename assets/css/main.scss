@@ -296,6 +296,12 @@ h1:before, .anchor:before {
     margin-bottom: 1.2rem;
 }
 
+.section-note {
+    margin: 0.25rem 0 1.1rem;
+    color: #5f7284;
+    font-size: 0.94rem;
+}
+
 .section-actions {
     margin: 0.25rem 0 2rem;
 }
@@ -328,6 +334,35 @@ h1:before, .anchor:before {
         p:last-child {
             margin-bottom: 0;
         }
+    }
+}
+
+.publication-authors {
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+}
+
+.publication-meta {
+    margin-bottom: 0.8rem;
+    color: #5f7284;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.publication-collapse {
+    margin: 0.35rem 0 1.5rem;
+    padding: 0.95rem 1rem 0.2rem;
+    border: 1px solid var(--homepage-line);
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fbfdff 0%, #f4f9fc 100%);
+    box-shadow: 0 12px 24px rgba(17, 38, 60, 0.05);
+
+    summary {
+        cursor: pointer;
+        color: var(--homepage-accent);
+        font-weight: 700;
+        margin-bottom: 1rem;
+        outline: none;
     }
 }
 

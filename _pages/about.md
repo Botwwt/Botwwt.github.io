@@ -78,76 +78,30 @@ My recent work covers three connected directions: decision-making large language
 
 <span class='anchor' id='publications'></span>
 
-## Selected Publications
+{% assign publications = site.data.publications.items %}
+{% assign publication_limit = site.data.publications.home_limit | default: 5 %}
 
-<div class='paper-box'>
-  <div class='paper-box-image'>
-    <div>
-      <div class="badge">Applied Intelligence | Under Review</div>
-      <img src="{{ '/images/publications/caadrl-pdp.png' | relative_url }}" alt="Cluster-aware attention model for pickup and delivery problems" width="100%">
-    </div>
-  </div>
-  <div class='paper-box-text' markdown="1">
+## Publications
 
-### [Cluster-Aware Attention-Based Deep Reinforcement Learning for Pickup and Delivery Problems]({{ '/files/papers/caadrl-pdp.pdf' | relative_url }})
+<p class="section-note">{{ site.data.publications.quartile_note.en }}</p>
 
-**Wentao Wang**, Lifeng Han, Guangyu Zou  
-First author | Dalian University of Technology
+{% if publications.size <= publication_limit %}
+  {% for publication in publications %}
+    {% include publication-card.html publication=publication lang='en' variant='home' %}
+  {% endfor %}
+{% endif %}
 
-CAADRL combines global self-attention, intra-cluster attention, and a dynamic dual-decoder to exploit clustered structure in pickup and delivery problems while balancing solution quality and inference efficiency.
-
-<div class="pub-links">
-  <a href="{{ '/files/papers/caadrl-pdp.pdf' | relative_url }}">Paper</a>
-  <a href="https://scholar.google.com/citations?view_op=view_citation&hl=zh-CN&user=tF1l1S0AAAAJ&citation_for_view=tF1l1S0AAAAJ:qjMakFHDy7sC">Scholar</a>
-  <a href="https://github.com/Botwwt/CluPDTSP">Code</a>
-</div>
-  </div>
-</div>
-
-<div class='paper-box'>
-  <div class='paper-box-image'>
-    <div>
-      <div class="badge">IEEE COMST | Published</div>
-      <img src="{{ '/images/publications/wireless-llm-survey.png' | relative_url }}" alt="Survey of decision-making large language models for wireless communication" width="100%">
-    </div>
-  </div>
-  <div class='paper-box-text' markdown="1">
-
-### [Decision-Making Large Language Model for Wireless Communication: A Comprehensive Survey on Key Techniques](https://ieeexplore.ieee.org/document/11180008/)
-
-Ning Yang, Mingrui Fan, **Wentao Wang**, Haijun Zhang  
-Third author (student second) | Institute of Automation, Chinese Academy of Sciences
-
-This survey organizes the emerging literature on LLM-enabled decision-making for wireless communication, with emphasis on data generation and augmentation, architecture adaptation, reasoning, inference, learning-based control, and multi-agent coordination.
-
-<div class="pub-links">
-  <a href="https://ieeexplore.ieee.org/document/11180008/">IEEE Xplore</a>
-</div>
-  </div>
-</div>
-
-<div class='paper-box'>
-  <div class='paper-box-image'>
-    <div>
-      <div class="badge">IEEE TMC | Under Review</div>
-      <img src="{{ '/images/publications/coop-llm-cache.jpg' | relative_url }}" alt="Cooperative edge caching with large language models" width="100%">
-    </div>
-  </div>
-  <div class='paper-box-text' markdown="1">
-
-### [Cooperative Edge Caching with Large Language Model in Wireless Networks](https://arxiv.org/abs/2602.13307)
-
-Ning Yang, **Wentao Wang**, Lingtao Ouyang, Haijun Zhang  
-Second author (student first) | Institute of Automation, Chinese Academy of Sciences
-
-We formulate cooperative multi-base-station edge caching as an LLM-native sequential decision problem, build an SFT+GRPO training pipeline, and design an opportunity-aware reward that captures future cooperative gains under strict feasibility constraints.
-
-<div class="pub-links">
-  <a href="https://arxiv.org/abs/2602.13307">arXiv</a>
-  <a href="https://github.com/gracefulning/CoopLLM-Cache">Code</a>
-</div>
-  </div>
-</div>
+{% if publications.size > publication_limit %}
+  {% for publication in publications limit:publication_limit %}
+    {% include publication-card.html publication=publication lang='en' variant='home' %}
+  {% endfor %}
+  <details class="publication-collapse">
+    <summary>Show remaining publications and manuscripts</summary>
+    {% for publication in publications offset:publication_limit %}
+      {% include publication-card.html publication=publication lang='en' variant='home' %}
+    {% endfor %}
+  </details>
+{% endif %}
 
 <div class="section-actions">
   <a class="link-pill" href="/publications/">View Full Publication List</a>
@@ -200,6 +154,14 @@ We formulate cooperative multi-base-station edge caching as an LLM-native sequen
   <span class="chip">Git</span>
   <span class="chip">Linux</span>
   <span class="chip">LaTeX</span>
+</div>
+
+## Academic Service
+
+<div class="timeline-card">
+  <h3>Reviewer</h3>
+  <p class="timeline-meta">Journal on Wireless Communications and Networking | CAS major-category Q4 | JCR Q2/Q3</p>
+  <p>Peer reviewer for manuscripts on wireless communications and networking.</p>
 </div>
 
 <span class='anchor' id='honors'></span>

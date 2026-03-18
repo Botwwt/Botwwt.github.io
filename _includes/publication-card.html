@@ -1,0 +1,91 @@
+{% assign publication = include.publication %}
+{% assign lang = include.lang | default: page.lang | default: "en" %}
+{% assign variant = include.variant | default: "full" %}
+{% assign cas_quartile = "" %}
+{% assign jcr_quartile = "" %}
+{% assign authors = "" %}
+
+{% if lang == "zh" %}
+  {% assign badge = publication.badge.zh %}
+  {% assign cas_quartile = publication.sci.zh %}
+  {% assign jcr_quartile = publication.jcr.zh %}
+  {% if publication.authors %}
+    {% assign authors = publication.authors.zh %}
+  {% endif %}
+  {% if variant == "home" %}
+    {% assign meta = publication.meta.home.zh %}
+    {% assign description = publication.summary.zh %}
+  {% else %}
+    {% assign meta = publication.meta.full.zh %}
+    {% assign bullets = publication.bullets.zh %}
+  {% endif %}
+{% else %}
+  {% assign badge = publication.badge.en %}
+  {% assign cas_quartile = publication.sci.en %}
+  {% assign jcr_quartile = publication.jcr.en %}
+  {% if publication.authors %}
+    {% assign authors = publication.authors.en %}
+  {% endif %}
+  {% if variant == "home" %}
+    {% assign meta = publication.meta.home.en %}
+    {% assign description = publication.summary.en %}
+  {% else %}
+    {% assign meta = publication.meta.full.en %}
+    {% assign bullets = publication.bullets.en %}
+  {% endif %}
+{% endif %}
+
+{% assign title_href = publication.title_url %}
+{% if publication.title_url %}
+  {% unless publication.title_url contains "://" or publication.title_url contains "mailto:" %}
+    {% assign title_href = publication.title_url | relative_url %}
+  {% endunless %}
+{% endif %}
+
+<div class='paper-box'>
+  <div class='paper-box-image'>
+    <div>
+      <div class="badge">{{ badge }}{% if cas_quartile != blank %} | {{ cas_quartile }}{% endif %}{% if jcr_quartile != blank %} | {{ jcr_quartile }}{% endif %}</div>
+      <img src="{{ publication.image | relative_url }}" alt="{{ publication.alt }}" width="100%">
+    </div>
+  </div>
+  <div class='paper-box-text'>
+    {% if publication.title_url %}
+      <h3><a href="{{ title_href }}">{{ publication.title }}</a></h3>
+    {% else %}
+      <h3>{{ publication.title }}</h3>
+    {% endif %}
+
+    {% if authors != blank %}
+      <p class="publication-authors">{{ authors }}</p>
+    {% endif %}
+
+    <p class="publication-meta">{{ meta }}</p>
+
+    {% if variant == "home" %}
+      <p>{{ description }}</p>
+    {% else %}
+      <ul>
+        {% for bullet in bullets %}
+          <li>{{ bullet }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if publication.links %}
+      <div class="pub-links">
+        {% for link in publication.links %}
+          {% assign link_href = link.url %}
+          {% unless link.url contains "://" or link.url contains "mailto:" %}
+            {% assign link_href = link.url | relative_url %}
+          {% endunless %}
+          {% if lang == "zh" %}
+            <a href="{{ link_href }}">{{ link.label.zh }}</a>
+          {% else %}
+            <a href="{{ link_href }}">{{ link.label.en }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
