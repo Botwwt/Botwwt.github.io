@@ -3,12 +3,20 @@
 {% assign variant = include.variant | default: "full" %}
 {% assign cas_quartile = "" %}
 {% assign jcr_quartile = "" %}
+{% assign ccf_rank = "" %}
+{% assign impact_factor = "" %}
 {% assign authors = "" %}
 
 {% if lang == "zh" %}
   {% assign badge = publication.badge.zh %}
   {% assign cas_quartile = publication.sci.zh %}
   {% assign jcr_quartile = publication.jcr.zh %}
+  {% if publication.ccf %}
+    {% assign ccf_rank = publication.ccf.zh %}
+  {% endif %}
+  {% if publication.impact_factor %}
+    {% assign impact_factor = publication.impact_factor.zh %}
+  {% endif %}
   {% if publication.authors %}
     {% assign authors = publication.authors.zh %}
   {% endif %}
@@ -23,6 +31,12 @@
   {% assign badge = publication.badge.en %}
   {% assign cas_quartile = publication.sci.en %}
   {% assign jcr_quartile = publication.jcr.en %}
+  {% if publication.ccf %}
+    {% assign ccf_rank = publication.ccf.en %}
+  {% endif %}
+  {% if publication.impact_factor %}
+    {% assign impact_factor = publication.impact_factor.en %}
+  {% endif %}
   {% if publication.authors %}
     {% assign authors = publication.authors.en %}
   {% endif %}
@@ -45,7 +59,7 @@
 <div class='paper-box'>
   <div class='paper-box-image'>
     <div>
-      <div class="badge">{{ badge }}{% if cas_quartile != blank %} | {{ cas_quartile }}{% endif %}{% if jcr_quartile != blank %} | {{ jcr_quartile }}{% endif %}</div>
+      <div class="badge">{{ badge }}{% if ccf_rank != blank %} | {{ ccf_rank }}{% endif %}{% if cas_quartile != blank %} | {{ cas_quartile }}{% endif %}{% if jcr_quartile != blank %} | {{ jcr_quartile }}{% endif %}{% if impact_factor != blank %} | {{ impact_factor }}{% endif %}</div>
       <img src="{{ publication.image | relative_url }}" alt="{{ publication.alt }}" width="100%">
     </div>
   </div>

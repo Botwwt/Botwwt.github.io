@@ -7,7 +7,7 @@ lang_switch_label: "中文"
 lang_switch_url: "/zh/"
 author_profile: true
 author_bio: "B.S. student in Foundational Mathematical Sciences at Dalian University of Technology"
-sidebar_intro: "Undergraduate researcher working on large language models, reinforcement learning, and brain-inspired learning."
+sidebar_intro: "Take joy in discovery, stay true to what matters. Remain curious in exploration and reflective in work."
 redirect_from:
   - /about/
   - /about.html
@@ -18,8 +18,8 @@ redirect_from:
 <div class="homepage-hero">
   <p class="section-kicker">Academic Homepage</p>
   <h1>Wentao Wang</h1>
-  <p>I am a B.S. student in Foundational Mathematical Sciences at Dalian University of Technology. My research sits at the intersection of large language models, reinforcement learning, neural combinatorial optimization, and brain-inspired learning.</p>
-  <p>I currently work with the Institute of Automation, Chinese Academy of Sciences, on LLM-based decision-making for wireless communication and long-context modeling, and with Peking University on temporal credit assignment and near-critical dynamics in recurrent and spiking systems.</p>
+  <p>I am a B.S. student in Foundational Mathematical Sciences at Dalian University of Technology. My research focuses on efficient and decision-oriented machine learning, spanning long-context large language models, reinforcement learning, neural combinatorial optimization, and biologically inspired credit assignment.</p>
+  <p>I currently work with the Institute of Automation, Chinese Academy of Sciences, and Peking University. My recent outputs include a survey published in <em>IEEE Communications Surveys & Tutorials</em>, two ICML 2026 submissions under review, and ongoing manuscripts under review at <em>IEEE Transactions on Mobile Computing</em> and <em>Applied Intelligence</em>.</p>
   <div class="link-pills">
     <a class="link-pill" href="mailto:shiyanxi1@mail.dlut.edu.cn">Email</a>
     <a class="link-pill" href="https://scholar.google.com/citations?user=tF1l1S0AAAAJ&hl=zh-CN">Google Scholar</a>
@@ -30,22 +30,23 @@ redirect_from:
 
 <div class="highlight-grid">
   <div class="highlight-card">
-    <h3>Education</h3>
+    <h3>Profile</h3>
     <p>B.S. in Foundational Mathematical Sciences, Dalian University of Technology</p>
     <p>GPA 4.22/5.00, Rank 12/102, expected Jun. 2027</p>
   </div>
   <div class="highlight-card">
-    <h3>Current Roles</h3>
+    <h3>Current Positions</h3>
     <p>Research Intern at the Institute of Automation, Chinese Academy of Sciences</p>
     <p>Research Intern at Peking University</p>
   </div>
   <div class="highlight-card">
-    <h3>Research Toolkit</h3>
-    <p>PyTorch, Hugging Face Transformers, TRL, Unsloth, LoRA/QLoRA, and GRPO</p>
+    <h3>Selected Outputs</h3>
+    <p>IEEE COMST publication on decision-making LLMs for wireless systems</p>
+    <p>ICML 2026 x2, IEEE TMC, and Applied Intelligence manuscripts under review</p>
   </div>
   <div class="highlight-card">
-    <h3>Focus Areas</h3>
-    <p>Decision-making LLMs, long-context restoration, neural combinatorial optimization, and biologically inspired online learning</p>
+    <h3>Research Stack</h3>
+    <p>PyTorch, Transformers, TRL, Unsloth, LoRA/QLoRA, GRPO, and large-scale experiment tooling</p>
   </div>
 </div>
 
@@ -57,22 +58,23 @@ redirect_from:
   <span class="chip">Large Language Models</span>
   <span class="chip">Reinforcement Learning</span>
   <span class="chip">Neural Combinatorial Optimization</span>
-  <span class="chip">Wireless Communication</span>
+  <span class="chip">Wireless Systems</span>
   <span class="chip">Long-context Modeling</span>
+  <span class="chip">Credit Assignment</span>
   <span class="chip">Brain-Inspired Learning</span>
 </div>
 
-My recent work covers three connected directions: decision-making large language models for wireless systems, structure-aware learning for combinatorial routing problems, and online local learning rules for recurrent neural networks under near-critical dynamics. I am particularly interested in building models that retain strong performance while improving efficiency, interpretability, or biological plausibility.
+My recent work follows three connected directions: decision-making large language models for wireless systems and edge networks, structure-aware learning for routing and combinatorial optimization, and online/local learning rules for recurrent or spiking systems under near-critical dynamics. I am particularly interested in methods that improve memory efficiency, training stability, and theoretical grounding without giving up empirical performance.
 
 <span class='anchor' id='news'></span>
 
 ## News
 
 <ul class="news-list">
-  <li><strong>Mar. 2026:</strong> Ongoing work on temporal credit assignment and near-critical learning dynamics continues at Peking University.</li>
-  <li><strong>Feb. 2026:</strong> <em>Cooperative Edge Caching with Large Language Model in Wireless Networks</em> is available on <a href="https://arxiv.org/abs/2602.13307">arXiv</a>.</li>
+  <li><strong>Mar. 2026:</strong> Two ICML 2026 manuscripts, <em>LinearARD</em> and <em>Global Credit Assignment via Dynamical Criticality</em>, are under review.</li>
+  <li><strong>Feb. 2026:</strong> <em>Cooperative Edge Caching with Large Language Model in Wireless Networks</em> is available on <a href="https://arxiv.org/abs/2602.13307">arXiv</a> and under review at <em>IEEE Transactions on Mobile Computing</em>.</li>
+  <li><strong>Jan. 2026:</strong> Completed the <em>LinearARD</em> manuscript on linear-memory attention distillation for RoPE restoration.</li>
   <li><strong>Oct. 2025:</strong> Joined Peking University as a research intern to study online learning and global credit assignment in recurrent systems.</li>
-  <li><strong>Sep. 2025:</strong> Completed the <em>LinearARD</em> submission on linear-memory attention distillation for RoPE restoration.</li>
   <li><strong>Dec. 2024:</strong> Joined the Institute of Automation, Chinese Academy of Sciences, as a research intern.</li>
 </ul>
 
@@ -114,13 +116,13 @@ My recent work covers three connected directions: decision-making large language
 <div class="timeline-card">
   <h3>Institute of Automation, Chinese Academy of Sciences</h3>
   <p class="timeline-meta">Research Intern | Dec. 2024 - Present | Beijing, China</p>
-  <p>I work on decision-making LLMs for wireless communication, cooperative multi-base-station edge caching, and efficient long-context restoration for large language models. My recent work includes training and evaluation pipelines with supervised fine-tuning, GRPO, LoRA/QLoRA, TRL, and Unsloth.</p>
+  <p>I work on decision-making LLMs for wireless communication, cooperative multi-base-station edge caching, and efficient long-context restoration for large language models. My recent work covers both algorithm design and full training/evaluation pipelines based on supervised fine-tuning, GRPO, LoRA/QLoRA, TRL, and Unsloth.</p>
 </div>
 
 <div class="timeline-card">
   <h3>Peking University</h3>
   <p class="timeline-meta">Research Intern | Oct. 2025 - Present | Beijing, China</p>
-  <p>I investigate temporal credit assignment in recurrent neural networks, with a focus on online and biologically inspired learning rules that approximate global gradient propagation at much lower memory cost. A central theme is how near-critical dynamics can support stable long-range sequence learning.</p>
+  <p>I investigate temporal credit assignment in recurrent and spiking systems, with a focus on online and biologically inspired learning rules that approximate global gradient propagation at much lower memory cost. A central theme is how near-critical dynamics can support stable long-range sequence learning.</p>
 </div>
 
 <div class="timeline-card">
