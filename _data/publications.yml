@@ -1,8 +1,8 @@
 home_limit: 5
 
 quartile_note:
-  en: "CAS quartiles follow the 2025 CAS upgraded list (major category); JCR quartiles follow the 2025 JCR labels. Selected conference venues also show CCF ranks, and impact factors follow official venue metrics available as of March 2026. Conference submissions without journal metrics are marked as IF N/A."
-  zh: "期刊分区按 2025 年 3 月中科院升级版大类分区与 2025 年 JCR 分区标注；部分会议同步展示 CCF 等级，影响因子采用截至 2026 年 3 月可核验的官方期刊指标；不适用期刊影响因子的会议稿件记为 IF N/A。"
+  en: "CAS quartiles follow the 2025 CAS upgraded list (major category); JCR quartiles follow the 2025 JCR labels. Selected conference venues also show CCF ranks, and impact factors follow official venue metrics available as of March 2026."
+  zh: "期刊分区按 2025 年 3 月中科院升级版大类分区与 2025 年 JCR 分区标注；部分会议同步展示 CCF 等级，影响因子采用截至 2026 年 3 月可核验的官方期刊指标。"
 
 items:
   - id: caadrl-pdp
@@ -163,9 +163,6 @@ items:
     ccf:
       en: "CCF-A"
       zh: "CCF-A"
-    impact_factor:
-      en: "IF N/A"
-      zh: "IF N/A"
     image: "/images/publications/linearard.png"
     alt: "LinearARD for long-context RoPE restoration"
     title: "LinearARD: Linear-Memory Attention Distillation for RoPE Restoration"
@@ -202,9 +199,6 @@ items:
     ccf:
       en: "CCF-A"
       zh: "CCF-A"
-    impact_factor:
-      en: "IF N/A"
-      zh: "IF N/A"
     image: "/images/publications/global-credit-criticality.png"
     alt: "Global credit assignment via dynamical criticality"
     title: "Global Credit Assignment via Dynamical Criticality"
