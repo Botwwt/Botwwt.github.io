@@ -8,14 +8,14 @@
 {% assign authors = "" %}
 
 {% if lang == "zh" %}
-  {% assign badge = publication.badge.zh %}
-  {% assign cas_quartile = publication.sci.zh %}
-  {% assign jcr_quartile = publication.jcr.zh %}
+  {% assign badge = publication.badge.zh | default: "" | strip %}
+  {% assign cas_quartile = publication.sci.zh | default: "" | strip %}
+  {% assign jcr_quartile = publication.jcr.zh | default: "" | strip %}
   {% if publication.ccf %}
-    {% assign ccf_rank = publication.ccf.zh %}
+    {% assign ccf_rank = publication.ccf.zh | default: "" | strip %}
   {% endif %}
   {% if publication.impact_factor %}
-    {% assign impact_factor = publication.impact_factor.zh %}
+    {% assign impact_factor = publication.impact_factor.zh | default: "" | strip %}
   {% endif %}
   {% if publication.authors %}
     {% assign authors = publication.authors.zh %}
@@ -28,14 +28,14 @@
     {% assign bullets = publication.bullets.zh %}
   {% endif %}
 {% else %}
-  {% assign badge = publication.badge.en %}
-  {% assign cas_quartile = publication.sci.en %}
-  {% assign jcr_quartile = publication.jcr.en %}
+  {% assign badge = publication.badge.en | default: "" | strip %}
+  {% assign cas_quartile = publication.sci.en | default: "" | strip %}
+  {% assign jcr_quartile = publication.jcr.en | default: "" | strip %}
   {% if publication.ccf %}
-    {% assign ccf_rank = publication.ccf.en %}
+    {% assign ccf_rank = publication.ccf.en | default: "" | strip %}
   {% endif %}
   {% if publication.impact_factor %}
-    {% assign impact_factor = publication.impact_factor.en %}
+    {% assign impact_factor = publication.impact_factor.en | default: "" | strip %}
   {% endif %}
   {% if publication.authors %}
     {% assign authors = publication.authors.en %}
@@ -49,6 +49,20 @@
   {% endif %}
 {% endif %}
 
+{% assign badge_text = badge %}
+{% if ccf_rank != "" %}
+  {% assign badge_text = badge_text | append: " | " | append: ccf_rank %}
+{% endif %}
+{% if cas_quartile != "" %}
+  {% assign badge_text = badge_text | append: " | " | append: cas_quartile %}
+{% endif %}
+{% if jcr_quartile != "" %}
+  {% assign badge_text = badge_text | append: " | " | append: jcr_quartile %}
+{% endif %}
+{% if impact_factor != "" %}
+  {% assign badge_text = badge_text | append: " | " | append: impact_factor %}
+{% endif %}
+
 {% assign title_href = publication.title_url %}
 {% if publication.title_url %}
   {% unless publication.title_url contains "://" or publication.title_url contains "mailto:" %}
@@ -59,7 +73,7 @@
 <div class='paper-box'>
   <div class='paper-box-image'>
     <div>
-      <div class="badge">{{ badge }}{% if ccf_rank != blank %} | {{ ccf_rank }}{% endif %}{% if cas_quartile != blank %} | {{ cas_quartile }}{% endif %}{% if jcr_quartile != blank %} | {{ jcr_quartile }}{% endif %}{% if impact_factor != blank %} | {{ impact_factor }}{% endif %}</div>
+      <div class="badge">{{ badge_text }}</div>
       <img src="{{ publication.image | relative_url }}" alt="{{ publication.alt }}" width="100%">
     </div>
   </div>
