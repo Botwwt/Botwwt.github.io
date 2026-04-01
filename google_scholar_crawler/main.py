@@ -1,5 +1,4 @@
 from scholarly import scholarly
-import jsonpickle
 import json
 from datetime import datetime
 import os

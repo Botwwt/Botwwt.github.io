@@ -1,29 +1,74 @@
 name: Get Citation Data
 
-on: 
- page_build: 
- schedule:
-  - cron:  '0 8 * * *'
+on:
+  page_build:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: google-scholar-crawler
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Reqs
-      run: |
-        sudo apt-get install python3-setuptools
-    - name: Run
-      run: |
-        cd ./google_scholar_crawler
-        pip3 install -r requirements.txt
-        python3 main.py
-        cd ./results
-        git init
-        git config --local user.name "${GITHUB_ACTOR}"
-        export remote_repo="https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
-        git add *.json
-        git commit -m "Updated Citation Data"
-        git push "${remote_repo}" HEAD:google-scholar-stats --force
-      env: 
-        GOOGLE_SCHOLAR_ID: ${{ secrets.GOOGLE_SCHOLAR_ID }}
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: google_scholar_crawler/requirements.txt
+
+      - name: Validate configuration
+        env:
+          GOOGLE_SCHOLAR_ID: ${{ secrets.GOOGLE_SCHOLAR_ID }}
+        run: |
+          if [ -z "$GOOGLE_SCHOLAR_ID" ]; then
+            echo "Missing GOOGLE_SCHOLAR_ID secret." >&2
+            exit 1
+          fi
+
+      - name: Install crawler dependencies
+        working-directory: google_scholar_crawler
+        run: pip install -r requirements.txt
+
+      - name: Fetch Google Scholar data
+        working-directory: google_scholar_crawler
+        env:
+          GOOGLE_SCHOLAR_ID: ${{ secrets.GOOGLE_SCHOLAR_ID }}
+        run: python main.py
+
+      - name: Publish citation data branch
+        working-directory: google_scholar_crawler/results
+        env:
+          REMOTE_REPO: https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+        run: |
+          git init
+          git checkout --orphan google-scholar-stats
+          git remote add origin "$REMOTE_REPO"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add *.json
+          current_tree="$(git write-tree)"
+
+          if git fetch --depth=1 origin google-scholar-stats; then
+            remote_tree="$(git rev-parse FETCH_HEAD^{tree})"
+            if [ "$current_tree" = "$remote_tree" ]; then
+              echo "Citation data did not change."
+              exit 0
+            fi
+          fi
+
+          git commit -m "Update citation data"
+          git push origin HEAD:google-scholar-stats --force
