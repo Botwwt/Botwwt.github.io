@@ -17,7 +17,7 @@ sidebar_intro: "乐于趣，敏于义。在探索中永葆好奇，在工作中�
   <p class="section-kicker">Academic Homepage</p>
   <h1>王文韬</h1>
   <p>我目前就读于大连理工大学数理基础科学专业，研究兴趣聚焦于高效且面向决策的机器学习，包括长上下文大语言模型、强化学习、神经组合优化以及具有生物启发的信用分配学习。</p>
-  <p>当前我在中国科学院自动化研究所和北京大学开展科研实习。近期成果包括 1 篇发表于 <em>IEEE Communications Surveys & Tutorials</em> 的综述、1 篇 ICML 2026（CCF-A）已录用论文、1 篇 NeurIPS 2026（CCF-A）在审投稿，以及 <em>IEEE Transactions on Mobile Computing</em> 和 <em>Applied Intelligence</em> 相关工作。</p>
+  <p>当前我在中国科学院自动化研究所和北京大学开展科研实习。近期成果包括 1 篇发表于 <em>IEEE Communications Surveys & Tutorials</em> 的综述、ICML 2026（CCF-A）与 <em>IEEE Transactions on Mobile Computing</em> 已录用论文、1 篇 NeurIPS 2026（CCF-A）在审投稿，以及 <em>Applied Intelligence</em> 相关工作。</p>
   <div class="link-pills">
     <a class="link-pill" href="mailto:shiyanxi1@mail.dlut.edu.cn">邮箱</a>
     <a class="link-pill" href="https://scholar.google.com/citations?user=tF1l1S0AAAAJ&hl=zh-CN">谷歌学术</a>
@@ -40,7 +40,7 @@ sidebar_intro: "乐于趣，敏于义。在探索中永葆好奇，在工作中�
   <div class="highlight-card">
     <h3>代表性成果</h3>
     <p>IEEE COMST 综述论文，聚焦无线系统中的决策型大语言模型</p>
-    <p>ICML 2026（CCF-A）已录用、NeurIPS 2026（CCF-A）在审，以及 IEEE TMC、Applied Intelligence 相关工作</p>
+    <p>ICML 2026（CCF-A）已录用、IEEE TMC 已录用、NeurIPS 2026（CCF-A）在审，以及 Applied Intelligence 相关工作</p>
   </div>
   <div class="highlight-card">
     <h3>研究工具链</h3>
@@ -69,8 +69,8 @@ sidebar_intro: "乐于趣，敏于义。在探索中永葆好奇，在工作中�
 ## 最新动态
 
 <ul class="news-list">
-  <li><strong>2026 年 5 月：</strong> <em>Global Credit Assignment via Dynamical Criticality</em> 已被 ICML 2026（CCF-A）录用，<em>LinearARD</em> 正在 NeurIPS 2026（CCF-A）审稿中。</li>
-  <li><strong>2026 年 2 月：</strong> <em>Cooperative Edge Caching with Large Language Model in Wireless Networks</em> 发布于 <a href="https://arxiv.org/abs/2602.13307">arXiv</a>，并投至 <em>IEEE Transactions on Mobile Computing</em>。</li>
+  <li><strong>2026 年 5 月：</strong> <em>Global Credit Assignment via Dynamical Criticality</em> 已被 ICML 2026（CCF-A）录用，<em>Cooperative Edge Caching with Large Language Model in Wireless Networks</em> 已被 <em>IEEE Transactions on Mobile Computing</em> 录用，<em>LinearARD</em> 正在 NeurIPS 2026（CCF-A）审稿中。</li>
+  <li><strong>2026 年 2 月：</strong> <em>Cooperative Edge Caching with Large Language Model in Wireless Networks</em> 发布于 <a href="https://arxiv.org/abs/2602.13307">arXiv</a>。</li>
   <li><strong>2026 年 1 月：</strong> 完成 <em>LinearARD</em> 论文撰写，聚焦 RoPE 恢复中的线性内存注意力蒸馏。</li>
   <li><strong>2025 年 10 月：</strong> 加入北京大学，开展循环系统在线学习与全局信用分配研究。</li>
   <li><strong>2024 年 12 月：</strong> 加入中国科学院自动化研究所开展科研实习。</li>
@@ -127,6 +127,12 @@ sidebar_intro: "乐于趣，敏于义。在探索中永葆好奇，在工作中�
   <h3>大连理工大学</h3>
   <p class="timeline-meta">本科科研 | 2024 年 10 月至 2025 年 3 月 | 大连</p>
   <p>独立主导取送货问题上的神经组合优化研究，完成模型设计、强化学习训练、基准构建、实验分析与论文撰写。</p>
+</div>
+
+<div class="timeline-card">
+  <h3>东方理工大学</h3>
+  <p class="timeline-meta">科研实习生 | 2025 年 8 月至 2025 年 11 月 | 宁波</p>
+  <p>阅读世界模型与视觉语言大模型相关文献，梳理代表性方法与技术路线。</p>
 </div>
 
 <span class='anchor' id='education'></span>

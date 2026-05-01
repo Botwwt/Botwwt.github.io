@@ -108,8 +108,8 @@ items:
   - id: coop-llm-cache
     section: journal
     badge:
-      en: "IEEE TMC | Under Review"
-      zh: "IEEE TMC | 在审"
+      en: "IEEE TMC | Accepted"
+      zh: "IEEE TMC | 已录用"
     sci:
       en: "CAS Q1"
       zh: "中科院 1 区"
