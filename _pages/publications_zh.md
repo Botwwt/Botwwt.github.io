@@ -25,7 +25,7 @@ sidebar_intro: "本科阶段主要从事大语言模型、强化学习与类脑�
 
 {% assign publications = site.data.publications.items %}
 
-## 期刊论文与公开预印本
+## 论文与公开预印本
 
 {% for publication in publications %}
   {% if publication.section == 'journal' %}

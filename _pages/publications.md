@@ -24,7 +24,7 @@ sidebar_intro: "Undergraduate researcher working on large language models, reinf
 
 {% assign publications = site.data.publications.items %}
 
-## Journal Publications and Preprints
+## Publications and Preprints
 
 {% for publication in publications %}
   {% if publication.section == 'journal' %}

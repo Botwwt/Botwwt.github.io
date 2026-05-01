@@ -19,7 +19,7 @@ redirect_from:
   <p class="section-kicker">Academic Homepage</p>
   <h1>Wentao Wang</h1>
   <p>I am a B.S. student in Foundational Mathematical Sciences at Dalian University of Technology. My research focuses on efficient and decision-oriented machine learning, spanning long-context large language models, reinforcement learning, neural combinatorial optimization, and biologically inspired credit assignment.</p>
-  <p>I currently work with the Institute of Automation, Chinese Academy of Sciences, and Peking University. My recent outputs include a survey published in <em>IEEE Communications Surveys & Tutorials</em>, two ICML 2026 submissions under review, and ongoing manuscripts under review at <em>IEEE Transactions on Mobile Computing</em> and <em>Applied Intelligence</em>.</p>
+  <p>I currently work with the Institute of Automation, Chinese Academy of Sciences, and Peking University. My recent outputs include a survey published in <em>IEEE Communications Surveys & Tutorials</em>, an accepted ICML 2026 paper (CCF-A), a NeurIPS 2026 submission under review (CCF-A), and additional work at <em>IEEE Transactions on Mobile Computing</em> and <em>Applied Intelligence</em>.</p>
   <div class="link-pills">
     <a class="link-pill" href="mailto:shiyanxi1@mail.dlut.edu.cn">Email</a>
     <a class="link-pill" href="https://scholar.google.com/citations?user=tF1l1S0AAAAJ&hl=zh-CN">Google Scholar</a>
@@ -42,7 +42,7 @@ redirect_from:
   <div class="highlight-card">
     <h3>Selected Outputs</h3>
     <p>IEEE COMST publication on decision-making LLMs for wireless systems</p>
-    <p>ICML 2026 x2, IEEE TMC, and Applied Intelligence manuscripts under review</p>
+    <p>Accepted ICML 2026 (CCF-A), NeurIPS 2026 submission, IEEE TMC, and Applied Intelligence work</p>
   </div>
   <div class="highlight-card">
     <h3>Research Stack</h3>
@@ -71,7 +71,7 @@ My recent work follows three connected directions: decision-making large languag
 ## News
 
 <ul class="news-list">
-  <li><strong>Mar. 2026:</strong> Two ICML 2026 manuscripts, <em>LinearARD</em> and <em>Global Credit Assignment via Dynamical Criticality</em>, are under review.</li>
+  <li><strong>May 2026:</strong> <em>Global Credit Assignment via Dynamical Criticality</em> was accepted to ICML 2026 (CCF-A), and <em>LinearARD</em> is under review at NeurIPS 2026 (CCF-A).</li>
   <li><strong>Feb. 2026:</strong> <em>Cooperative Edge Caching with Large Language Model in Wireless Networks</em> is available on <a href="https://arxiv.org/abs/2602.13307">arXiv</a> and under review at <em>IEEE Transactions on Mobile Computing</em>.</li>
   <li><strong>Jan. 2026:</strong> Completed the <em>LinearARD</em> manuscript on linear-memory attention distillation for RoPE restoration.</li>
   <li><strong>Oct. 2025:</strong> Joined Peking University as a research intern to study online learning and global credit assignment in recurrent systems.</li>

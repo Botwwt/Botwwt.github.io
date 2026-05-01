@@ -158,8 +158,8 @@ items:
   - id: linearard
     section: ongoing
     badge:
-      en: "ICML 2026 | Under Review"
-      zh: "ICML 2026 | 在审"
+      en: "NeurIPS 2026 | Under Review"
+      zh: "NeurIPS 2026 | 在审"
     ccf:
       en: "CCF-A"
       zh: "CCF-A"
@@ -192,10 +192,10 @@ items:
           zh: "按需索取预印本"
 
   - id: global-credit-criticality
-    section: ongoing
+    section: journal
     badge:
-      en: "ICML 2026 | Under Review"
-      zh: "ICML 2026 | 在审"
+      en: "ICML 2026 | Accepted"
+      zh: "ICML 2026 | 已录用"
     ccf:
       en: "CCF-A"
       zh: "CCF-A"
