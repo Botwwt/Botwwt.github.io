@@ -6,7 +6,7 @@ lang: zh
 lang_switch_label: "English"
 lang_switch_url: "/publications/"
 author_profile: true
-author_name: "王文涛"
+author_name: "王文韬"
 author_bio: "大连理工大学数理基础科学本科生"
 sidebar_intro: "本科阶段主要从事大语言模型、强化学习与类脑学习方向的研究。"
 ---

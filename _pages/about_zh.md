@@ -6,7 +6,7 @@ lang: zh
 lang_switch_label: "English"
 lang_switch_url: "/"
 author_profile: true
-author_name: "王文涛"
+author_name: "王文韬"
 author_bio: "大连理工大学数理基础科学本科生"
 sidebar_intro: "乐于趣，敏于义。在探索中永葆好奇，在工作中常思反省。"
 ---
@@ -15,7 +15,7 @@ sidebar_intro: "乐于趣，敏于义。在探索中永葆好奇，在工作中�
 
 <div class="homepage-hero">
   <p class="section-kicker">Academic Homepage</p>
-  <h1>王文涛</h1>
+  <h1>王文韬</h1>
   <p>我目前就读于大连理工大学数理基础科学专业，研究兴趣聚焦于高效且面向决策的机器学习，包括长上下文大语言模型、强化学习、神经组合优化以及具有生物启发的信用分配学习。</p>
   <p>当前我在中国科学院自动化研究所和北京大学开展科研实习。近期成果包括 1 篇发表于 <em>IEEE Communications Surveys & Tutorials</em> 的综述、1 篇 ICML 2026（CCF-A）已录用论文、1 篇 NeurIPS 2026（CCF-A）在审投稿，以及 <em>IEEE Transactions on Mobile Computing</em> 和 <em>Applied Intelligence</em> 相关工作。</p>
   <div class="link-pills">
