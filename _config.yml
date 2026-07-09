@@ -7,7 +7,7 @@
 
 # Site Settings
 title                    : "Wentao Wang"
-description              : "Undergraduate researcher working on large language models, reinforcement learning, and brain-inspired learning."
+description              : "Take joy in discovery, stay true to what matters. Remain curious in exploration and reflective in work."
 repository               : "Botwwt/Botwwt.github.io"
 url                      : "https://botwwt.github.io"
 baseurl                  : ""
@@ -31,6 +31,7 @@ author:
   pubmed           : 
   googlescholar    : "https://scholar.google.com/citations?user=tF1l1S0AAAAJ&hl=zh-CN"
   email            : "shiyanxi1@mail.dlut.edu.cn"
+  cv               : "files/Wentao_Wang_CV.pdf"
   researchgate     :  # e.g., "https://www.researchgate.net/profile/yourprofile"
   uri              :
   bitbucket        :
@@ -45,7 +46,7 @@ author:
   instagram        :
   impactstory      : # e.g., "https://profiles.impactstory.org/u/xxxx-xxxx-xxxx-xxxx"
   lastfm           :
-  linkedin         : # e.g., "linkedin username"
+  linkedin         : "%E6%96%87%E9%9F%AC-%E7%8E%8B-235ab637b"
   dblp             : # e.g., "https://dblp.org/pid/xx/xxxx.html"
   orcid            : # e.g., "https://orcid.org/xxxx"
   pinterest        :

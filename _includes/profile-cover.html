@@ -1,0 +1,54 @@
+{% if page.author and site.data.authors[page.author] %}
+  {% assign author = site.data.authors[page.author] %}
+{% else %}
+  {% assign author = site.author %}
+{% endif %}
+{% assign profile_name = page.author_name | default: author.name %}
+{% assign profile_avatar = page.author_avatar | default: author.avatar %}
+{% assign profile_bio = page.author_bio | default: author.bio %}
+{% assign profile_intro = page.sidebar_intro | default: site.description %}
+{% assign label_email = "Email" %}
+{% assign label_scholar = "Scholar" %}
+{% assign label_github = "GitHub" %}
+{% assign label_linkedin = "LinkedIn" %}
+{% assign label_cv = "CV" %}
+{% assign eyebrow = "Academic Homepage" %}
+{% if page.lang == "zh" %}
+  {% assign label_email = "邮箱" %}
+  {% assign label_scholar = "谷歌学术" %}
+  {% assign label_github = "GitHub" %}
+  {% assign label_linkedin = "领英" %}
+  {% assign label_cv = "简历" %}
+  {% assign eyebrow = "个人学术主页" %}
+{% endif %}
+
+<section class="profile-cover" aria-label="{{ profile_name }} profile">
+  <div class="profile-cover__inner">
+    <div class="profile-cover__avatar-wrap">
+      <img class="profile-cover__avatar" src="{{ profile_avatar | relative_url }}" alt="{{ profile_name }}">
+    </div>
+    <div class="profile-cover__text">
+      <p class="profile-cover__eyebrow">{{ eyebrow }}</p>
+      <h1>{{ profile_name }}</h1>
+      {% if profile_bio %}<p class="profile-cover__title">{{ profile_bio }}</p>{% endif %}
+      {% if profile_intro %}<p class="profile-cover__intro">{{ profile_intro }}</p>{% endif %}
+      <div class="profile-cover__links" aria-label="Profile links">
+        {% if author.email %}
+          <a href="mailto:{{ author.email }}"><i class="fas fa-envelope" aria-hidden="true"></i><span>{{ label_email }}</span></a>
+        {% endif %}
+        {% if author.googlescholar %}
+          <a href="{{ author.googlescholar }}"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>{{ label_scholar }}</span></a>
+        {% endif %}
+        {% if author.github %}
+          <a href="https://github.com/{{ author.github }}"><i class="fab fa-github" aria-hidden="true"></i><span>{{ label_github }}</span></a>
+        {% endif %}
+        {% if author.linkedin %}
+          <a href="https://www.linkedin.com/in/{{ author.linkedin }}"><i class="fab fa-linkedin" aria-hidden="true"></i><span>{{ label_linkedin }}</span></a>
+        {% endif %}
+        {% if author.cv %}
+          <a href="{{ author.cv | relative_url }}"><i class="fas fa-file-alt" aria-hidden="true"></i><span>{{ label_cv }}</span></a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>

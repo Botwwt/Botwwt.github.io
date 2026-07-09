@@ -5,20 +5,22 @@ excerpt: ""
 lang: zh
 lang_switch_label: "English"
 lang_switch_url: "/publications/"
-author_profile: true
+author_profile: false
+profile_cover: true
 author_name: "王文韬"
 author_bio: "大连理工大学数理基础科学本科生"
-sidebar_intro: "本科阶段主要从事大语言模型、强化学习与类脑学习方向的研究。"
+sidebar_intro: "乐于趣，敏于义。在探索中永葆好奇，在工作中常思反省。"
 ---
 
 # 论文与在研稿件
 
-<p class="page-lead">本页汇总我当前公开发表、公开预印本以及仍在审稿阶段的研究工作。对于尚未公开的稿件，页面保留按需索取方式。</p>
+<p class="page-lead">本页汇总我当前公开发表、已录用、公开预印本以及仍在审稿阶段的研究工作。COLA / ICML 2026 论文已按要求放在第一位。</p>
 
 <div class="link-pills">
-  <a class="link-pill" href="/zh/">返回主页</a>
+  <a class="link-pill" href="/zh/">主页</a>
   <a class="link-pill" href="https://scholar.google.com/citations?user=tF1l1S0AAAAJ&hl=zh-CN">谷歌学术</a>
   <a class="link-pill" href="https://github.com/Botwwt">GitHub</a>
+  <a class="link-pill" href="https://www.linkedin.com/in/%E6%96%87%E9%9F%AC-%E7%8E%8B-235ab637b/">领英</a>
 </div>
 
 <p class="section-note">{{ site.data.publications.quartile_note.zh }}</p>

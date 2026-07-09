@@ -13,9 +13,14 @@ layout: compress
 
     {% include browser-upgrade.html %}
     {% include masthead.html %}
+    {% if page.profile_cover %}
+      {% include profile-cover.html %}
+    {% endif %}
 
-    <div id="main" role="main">
-      {% include sidebar.html %}
+    <div id="main" class="{% if page.profile_cover %}main--profile{% endif %}" role="main">
+      {% unless page.profile_cover %}
+        {% include sidebar.html %}
+      {% endunless %}
     
       <article class="page" itemscope itemtype="http://schema.org/CreativeWork">
         {% if page.title %}<meta itemprop="headline" content="{{ page.title | markdownify | strip_html | strip_newlines | escape_once }}">{% endif %}
