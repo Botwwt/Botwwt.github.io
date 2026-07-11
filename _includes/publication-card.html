@@ -22,6 +22,7 @@
     {% assign description = publication.summary.zh %}
     {% assign bullets = publication.bullets.zh %}
   {% endif %}
+  {% assign figure_label = "查看高清论文图" %}
 {% else %}
   {% assign badge = publication.badge.en | default: "" | strip %}
   {% assign cas_quartile = publication.sci.en | default: "" | strip %}
@@ -37,6 +38,7 @@
     {% assign description = publication.summary.en %}
     {% assign bullets = publication.bullets.en %}
   {% endif %}
+  {% assign figure_label = "Open full-resolution figure" %}
 {% endif %}
 
 {% assign title_href = publication.title_url %}
@@ -47,11 +49,16 @@
   {% unless title_external %}{% assign title_href = publication.title_url | relative_url %}{% endunless %}
 {% endif %}
 
+{% assign figure_href = publication.image | relative_url %}
+{% assign thumbnail_src = publication.thumbnail | default: publication.image | relative_url %}
+
 <article class="publication-card" data-selected="{% if publication.selected == false %}false{% else %}true{% endif %}">
-  <div class="publication-card__media">
-    <img src="{{ publication.image | relative_url }}" alt="{{ publication.alt }}" loading="lazy">
-  </div>
-  <div class="publication-card__body">
+  <a class="publication-card__media" href="{{ figure_href }}" target="_blank" rel="noopener noreferrer" aria-label="{{ figure_label }}: {{ publication.title }}">
+    <img src="{{ thumbnail_src }}" alt="{{ publication.alt }}" loading="lazy" width="1200" height="675">
+    <span class="publication-card__zoom" title="{{ figure_label }}" aria-hidden="true"><i class="fas fa-search-plus"></i></span>
+  </a>
+
+  <header class="publication-card__header">
     <div class="publication-card__venue">
       {% if badge != "" %}<span>{{ badge }}</span>{% endif %}
       {% if ccf_rank != "" %}<span>{{ ccf_rank }}</span>{% endif %}
@@ -69,6 +76,9 @@
     </h3>
 
     {% if authors != blank %}<p class="publication-card__authors">{{ authors }}</p>{% endif %}
+  </header>
+
+  <div class="publication-card__details">
     <p class="publication-card__summary">{{ description }}</p>
 
     {% if variant != "home" and bullets %}
