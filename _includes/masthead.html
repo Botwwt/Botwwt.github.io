@@ -7,22 +7,24 @@
   {% assign home_url = "/zh/" %}
 {% endif %}
 
-<div class="masthead">
-  <div class="masthead__inner-wrap">
-    <div class="masthead__menu">
-      <nav id="site-nav" class="greedy-nav">
-        <button><div class="navicon"></div></button>
-        <ul class="visible-links">
-          <li class="masthead__menu-item masthead__menu-item--lg masthead__menu-home-item"><a href="{{ home_url }}">{{ home_label }}</a></li>
-          {% for link in nav_links %}
-            <li class="masthead__menu-item"><a href="{{ link.url }}">{{ link.title }}</a></li>
-          {% endfor %}
-          {% if page.lang_switch_url %}
-            <li class="masthead__menu-item masthead__menu-item--lang"><a class="lang-switch" href="{{ page.lang_switch_url }}">{{ page.lang_switch_label }}</a></li>
-          {% endif %}
-        </ul>
-        <ul class="hidden-links hidden"></ul>
-      </nav>
-    </div>
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="site-brand" href="{{ home_url | relative_url }}">{{ home_label }}</a>
+    <button class="nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="{% if page.lang == 'zh' %}打开导航{% else %}Open navigation{% endif %}">
+      <i class="fas fa-bars" aria-hidden="true"></i>
+    </button>
+    <nav id="site-nav" class="site-nav" aria-label="{% if page.lang == 'zh' %}主导航{% else %}Primary navigation{% endif %}">
+      {% for link in nav_links %}
+        {% assign nav_external = false %}
+        {% if link.url contains "://" %}{% assign nav_external = true %}{% endif %}
+        <a class="page-link" href="{{ link.url }}"{% if nav_external %} target="_blank" rel="noopener noreferrer"{% endif %}>{{ link.title }}</a>
+      {% endfor %}
+      {% if page.lang_switch_url %}
+        <a class="page-link lang-switch" href="{{ page.lang_switch_url | relative_url }}">
+          <i class="fas fa-language" aria-hidden="true"></i>
+          <span>{{ page.lang_switch_label }}</span>
+        </a>
+      {% endif %}
+    </nav>
   </div>
-</div>
+</header>

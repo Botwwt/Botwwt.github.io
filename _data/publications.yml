@@ -143,6 +143,7 @@ items:
           zh: "代码"
 
   - id: linearard
+    selected: false
     section: ongoing
     badge:
       en: "NeurIPS 2026 | Under Review"
@@ -179,6 +180,7 @@ items:
           zh: "按需索取预印本"
 
   - id: caadrl-pdp
+    selected: false
     section: journal
     badge:
       en: "Applied Intelligence | Major Revision"

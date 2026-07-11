@@ -11,109 +11,88 @@
   {% assign badge = publication.badge.zh | default: "" | strip %}
   {% assign cas_quartile = publication.sci.zh | default: "" | strip %}
   {% assign jcr_quartile = publication.jcr.zh | default: "" | strip %}
-  {% if publication.ccf %}
-    {% assign ccf_rank = publication.ccf.zh | default: "" | strip %}
-  {% endif %}
-  {% if publication.impact_factor %}
-    {% assign impact_factor = publication.impact_factor.zh | default: "" | strip %}
-  {% endif %}
-  {% if publication.authors %}
-    {% assign authors = publication.authors.zh %}
-  {% endif %}
+  {% if publication.ccf %}{% assign ccf_rank = publication.ccf.zh | default: "" | strip %}{% endif %}
+  {% if publication.impact_factor %}{% assign impact_factor = publication.impact_factor.zh | default: "" | strip %}{% endif %}
+  {% if publication.authors %}{% assign authors = publication.authors.zh %}{% endif %}
   {% if variant == "home" %}
     {% assign meta = publication.meta.home.zh %}
     {% assign description = publication.summary.zh %}
   {% else %}
     {% assign meta = publication.meta.full.zh %}
+    {% assign description = publication.summary.zh %}
     {% assign bullets = publication.bullets.zh %}
   {% endif %}
 {% else %}
   {% assign badge = publication.badge.en | default: "" | strip %}
   {% assign cas_quartile = publication.sci.en | default: "" | strip %}
   {% assign jcr_quartile = publication.jcr.en | default: "" | strip %}
-  {% if publication.ccf %}
-    {% assign ccf_rank = publication.ccf.en | default: "" | strip %}
-  {% endif %}
-  {% if publication.impact_factor %}
-    {% assign impact_factor = publication.impact_factor.en | default: "" | strip %}
-  {% endif %}
-  {% if publication.authors %}
-    {% assign authors = publication.authors.en %}
-  {% endif %}
+  {% if publication.ccf %}{% assign ccf_rank = publication.ccf.en | default: "" | strip %}{% endif %}
+  {% if publication.impact_factor %}{% assign impact_factor = publication.impact_factor.en | default: "" | strip %}{% endif %}
+  {% if publication.authors %}{% assign authors = publication.authors.en %}{% endif %}
   {% if variant == "home" %}
     {% assign meta = publication.meta.home.en %}
     {% assign description = publication.summary.en %}
   {% else %}
     {% assign meta = publication.meta.full.en %}
+    {% assign description = publication.summary.en %}
     {% assign bullets = publication.bullets.en %}
   {% endif %}
 {% endif %}
 
-{% assign badge_text = badge %}
-{% if ccf_rank != "" %}
-  {% assign badge_text = badge_text | append: " | " | append: ccf_rank %}
-{% endif %}
-{% if cas_quartile != "" %}
-  {% assign badge_text = badge_text | append: " | " | append: cas_quartile %}
-{% endif %}
-{% if jcr_quartile != "" %}
-  {% assign badge_text = badge_text | append: " | " | append: jcr_quartile %}
-{% endif %}
-{% if impact_factor != "" %}
-  {% assign badge_text = badge_text | append: " | " | append: impact_factor %}
-{% endif %}
-
 {% assign title_href = publication.title_url %}
+{% assign title_external = false %}
 {% if publication.title_url %}
-  {% unless publication.title_url contains "://" or publication.title_url contains "mailto:" %}
-    {% assign title_href = publication.title_url | relative_url %}
-  {% endunless %}
+  {% if publication.title_url contains "://" %}{% assign title_external = true %}{% endif %}
+  {% if publication.title_url contains "mailto:" %}{% assign title_external = true %}{% endif %}
+  {% unless title_external %}{% assign title_href = publication.title_url | relative_url %}{% endunless %}
 {% endif %}
 
-<div class='paper-box'>
-  <div class='paper-box-image'>
-    <div>
-      <div class="badge">{{ badge_text }}</div>
-      <img src="{{ publication.image | relative_url }}" alt="{{ publication.alt }}" width="100%">
-    </div>
+<article class="publication-card" data-selected="{% if publication.selected == false %}false{% else %}true{% endif %}">
+  <div class="publication-card__media">
+    <img src="{{ publication.image | relative_url }}" alt="{{ publication.alt }}" loading="lazy">
   </div>
-  <div class='paper-box-text'>
-    {% if publication.title_url %}
-      <h3><a href="{{ title_href }}">{{ publication.title }}</a></h3>
-    {% else %}
-      <h3>{{ publication.title }}</h3>
-    {% endif %}
+  <div class="publication-card__body">
+    <div class="publication-card__venue">
+      {% if badge != "" %}<span>{{ badge }}</span>{% endif %}
+      {% if ccf_rank != "" %}<span>{{ ccf_rank }}</span>{% endif %}
+      {% if cas_quartile != "" %}<span>{{ cas_quartile }}</span>{% endif %}
+      {% if jcr_quartile != "" %}<span>{{ jcr_quartile }}</span>{% endif %}
+      {% if impact_factor != "" %}<span>{{ impact_factor }}</span>{% endif %}
+    </div>
 
-    {% if authors != blank %}
-      <p class="publication-authors">{{ authors }}</p>
-    {% endif %}
+    <h3 class="publication-card__title">
+      {% if publication.title_url %}
+        <a href="{{ title_href }}"{% if title_external %} target="_blank" rel="noopener noreferrer"{% endif %}>{{ publication.title }}</a>
+      {% else %}
+        {{ publication.title }}
+      {% endif %}
+    </h3>
 
-    <p class="publication-meta">{{ meta }}</p>
+    {% if authors != blank %}<p class="publication-card__authors">{{ authors }}</p>{% endif %}
+    <p class="publication-card__summary">{{ description }}</p>
 
-    {% if variant == "home" %}
-      <p>{{ description }}</p>
-    {% else %}
-      <ul>
-        {% for bullet in bullets %}
-          <li>{{ bullet }}</li>
-        {% endfor %}
+    {% if variant != "home" and bullets %}
+      <ul class="publication-card__bullets">
+        {% for bullet in bullets %}<li>{{ bullet }}</li>{% endfor %}
       </ul>
     {% endif %}
 
+    <p class="publication-card__meta">{{ meta }}</p>
+
     {% if publication.links %}
-      <div class="pub-links">
+      <div class="publication-card__links">
         {% for link in publication.links %}
           {% assign link_href = link.url %}
-          {% unless link.url contains "://" or link.url contains "mailto:" %}
-            {% assign link_href = link.url | relative_url %}
-          {% endunless %}
-          {% if lang == "zh" %}
-            <a href="{{ link_href }}">{{ link.label.zh }}</a>
-          {% else %}
-            <a href="{{ link_href }}">{{ link.label.en }}</a>
-          {% endif %}
+          {% assign link_external = false %}
+          {% if link.url contains "://" %}{% assign link_external = true %}{% endif %}
+          {% if link.url contains "mailto:" %}{% assign link_external = true %}{% endif %}
+          {% unless link_external %}{% assign link_href = link.url | relative_url %}{% endunless %}
+          <a href="{{ link_href }}"{% if link_external %} target="_blank" rel="noopener noreferrer"{% endif %}>
+            {% if link.url contains "github.com" %}<i class="fab fa-github" aria-hidden="true"></i>{% else %}<i class="fas fa-external-link-alt" aria-hidden="true"></i>{% endif %}
+            <span>{% if lang == "zh" %}{{ link.label.zh }}{% else %}{{ link.label.en }}{% endif %}</span>
+          </a>
         {% endfor %}
       </div>
     {% endif %}
   </div>
-</div>
+</article>

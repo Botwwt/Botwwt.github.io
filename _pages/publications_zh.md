@@ -9,36 +9,30 @@ author_profile: false
 profile_cover: true
 author_name: "王文韬"
 author_bio: "大连理工大学数理基础科学本科生"
-sidebar_intro: "乐于趣，敏于义。在探索中永葆好奇，在工作中常思反省。"
+profile_intro: "汇总高效学习与智能决策方向的已发表论文、录用论文、公开预印本和在研稿件。"
 ---
 
-# 论文与在研稿件
-
-<p class="page-lead">本页汇总我当前公开发表、已录用、公开预印本以及仍在审稿阶段的研究工作。COLA / ICML 2026 论文已按要求放在第一位。</p>
-
-<div class="link-pills">
-  <a class="link-pill" href="/zh/">主页</a>
-  <a class="link-pill" href="https://scholar.google.com/citations?user=tF1l1S0AAAAJ&hl=zh-CN">谷歌学术</a>
-  <a class="link-pill" href="https://github.com/Botwwt">GitHub</a>
-  <a class="link-pill" href="https://www.linkedin.com/in/%E6%96%87%E9%9F%AC-%E7%8E%8B-235ab637b/">领英</a>
+<div class="standalone-publications">
+  <main class="content-shell">
+    <section class="site-section publications-section">
+      <div class="section-heading section-heading--actions">
+        <div>
+          <span class="section-index">科研成果</span>
+          <h2>论文成果</h2>
+        </div>
+        <div class="publication-filter" role="group" aria-label="筛选论文">
+          <button type="button" data-filter="selected" aria-pressed="false">代表性论文</button>
+          <button type="button" class="is-active" data-filter="all" aria-pressed="true">全部论文</button>
+        </div>
+      </div>
+      <p class="publications-intro">COLA 已被 ICML 2026 录用并置于首位。本页汇总已发表、已录用、公开预印本以及当前在审稿件。</p>
+      <p class="section-note">{{ site.data.publications.quartile_note.zh }}</p>
+      <div class="publication-list">
+        {% for publication in site.data.publications.items %}
+          {% include publication-card.html publication=publication lang='zh' variant='full' %}
+        {% endfor %}
+      </div>
+      <a class="section-more" href="{{ '/zh/' | relative_url }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> 返回主页</a>
+    </section>
+  </main>
 </div>
-
-<p class="section-note">{{ site.data.publications.quartile_note.zh }}</p>
-
-{% assign publications = site.data.publications.items %}
-
-## 论文与公开预印本
-
-{% for publication in publications %}
-  {% if publication.section == 'journal' %}
-    {% include publication-card.html publication=publication lang='zh' variant='full' %}
-  {% endif %}
-{% endfor %}
-
-## 在研与投稿稿件
-
-{% for publication in publications %}
-  {% if publication.section == 'ongoing' %}
-    {% include publication-card.html publication=publication lang='zh' variant='full' %}
-  {% endif %}
-{% endfor %}

@@ -7,37 +7,31 @@ lang_switch_label: "中文"
 lang_switch_url: "/zh/publications/"
 author_profile: false
 profile_cover: true
-author_bio: "B.S. student in Foundational Mathematical Sciences at Dalian University of Technology"
-sidebar_intro: "Take joy in discovery, stay true to what matters. Remain curious in exploration and reflective in work."
+author_bio: "B.S. Student in Foundational Mathematical Sciences"
+profile_intro: "Publications, accepted papers, public preprints, and ongoing manuscripts across efficient learning and intelligent decision-making."
 ---
 
-# Publications and Manuscripts
-
-<p class="page-lead">This page collects my publications, accepted papers, public preprints, and ongoing manuscripts. The COLA/ICML 2026 paper is listed first as requested.</p>
-
-<div class="link-pills">
-  <a class="link-pill" href="/">Homepage</a>
-  <a class="link-pill" href="https://scholar.google.com/citations?user=tF1l1S0AAAAJ&hl=zh-CN">Google Scholar</a>
-  <a class="link-pill" href="https://github.com/Botwwt">GitHub</a>
-  <a class="link-pill" href="https://www.linkedin.com/in/%E6%96%87%E9%9F%AC-%E7%8E%8B-235ab637b/">LinkedIn</a>
+<div class="standalone-publications">
+  <main class="content-shell">
+    <section class="site-section publications-section">
+      <div class="section-heading section-heading--actions">
+        <div>
+          <span class="section-index">Research Output</span>
+          <h2>Publications</h2>
+        </div>
+        <div class="publication-filter" role="group" aria-label="Filter publications">
+          <button type="button" data-filter="selected" aria-pressed="false">Selected</button>
+          <button type="button" class="is-active" data-filter="all" aria-pressed="true">All</button>
+        </div>
+      </div>
+      <p class="publications-intro">COLA, accepted at ICML 2026, is listed first. This page includes published work, accepted papers, public preprints, and manuscripts currently under review.</p>
+      <p class="section-note">{{ site.data.publications.quartile_note.en }}</p>
+      <div class="publication-list">
+        {% for publication in site.data.publications.items %}
+          {% include publication-card.html publication=publication lang='en' variant='full' %}
+        {% endfor %}
+      </div>
+      <a class="section-more" href="{{ '/' | relative_url }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to homepage</a>
+    </section>
+  </main>
 </div>
-
-<p class="section-note">{{ site.data.publications.quartile_note.en }}</p>
-
-{% assign publications = site.data.publications.items %}
-
-## Publications and Preprints
-
-{% for publication in publications %}
-  {% if publication.section == 'journal' %}
-    {% include publication-card.html publication=publication lang='en' variant='full' %}
-  {% endif %}
-{% endfor %}
-
-## Manuscripts in Progress
-
-{% for publication in publications %}
-  {% if publication.section == 'ongoing' %}
-    {% include publication-card.html publication=publication lang='en' variant='full' %}
-  {% endif %}
-{% endfor %}

@@ -7,181 +7,210 @@ lang_switch_label: "中文"
 lang_switch_url: "/zh/"
 author_profile: false
 profile_cover: true
-author_bio: "B.S. student in Foundational Mathematical Sciences at Dalian University of Technology"
-sidebar_intro: "Take joy in discovery, stay true to what matters. Remain curious in exploration and reflective in work."
+author_bio: "B.S. Student in Foundational Mathematical Sciences"
+profile_intro: "I study efficient, decision-oriented machine learning, with current work spanning brain-inspired credit assignment, large language models, and reinforcement learning."
 redirect_from:
   - /about/
   - /about.html
 ---
 
-<span class='anchor' id='bio'></span>
+<div class="academic-homepage">
+  <main class="content-shell">
+    <section id="bio" class="site-section biography-section">
+      <div class="section-heading">
+        <div>
+          <span class="section-index">01</span>
+          <h2>Biography</h2>
+        </div>
+        <p>Mathematics, learning systems, and intelligent decision-making.</p>
+      </div>
 
-## Biography
+      <div class="biography-grid">
+        <div class="biography-copy">
+          <p>I am a B.S. student in <strong>Foundational Mathematical Sciences</strong> at <a href="https://www.dlut.edu.cn/" target="_blank" rel="noopener noreferrer">Dalian University of Technology</a>, expected to graduate in June 2027. My current GPA is <strong>4.22/5.00</strong>, with a weighted average of <strong>91.91/100</strong> and a major rank of <strong>12/102</strong>.</p>
+          <p>My research centers on efficient and decision-oriented machine learning. I am currently a research intern at <strong>Peking University</strong> and the <strong>Institute of Automation, Chinese Academy of Sciences</strong>, working on biologically inspired credit assignment, decision-making LLMs, long-context modeling, and learning-based optimization.</p>
+        </div>
 
-I am a B.S. student in Foundational Mathematical Sciences at Dalian University of Technology, expected to graduate in June 2027. My current GPA is 4.22/5.00, with a weighted average score of 91.91/100 and a major rank of 12/102.
+        <aside class="profile-facts" aria-label="Profile highlights">
+          <div><span>Current</span><strong>Research Intern</strong></div>
+          <div><span>Focus</span><strong>Machine Learning &amp; AI</strong></div>
+          <div><span>Graduation</span><strong>June 2027</strong></div>
+        </aside>
+      </div>
 
-My research focuses on efficient and decision-oriented machine learning. I work across brain-inspired credit assignment, large language models, reinforcement learning, long-context modeling, wireless systems, and neural combinatorial optimization. I am currently a research intern at Peking University and the Institute of Automation, Chinese Academy of Sciences.
+      <div class="institution-row education-row">
+        <div class="institution-logo">
+          <img src="{{ '/images/institutions/dlut.png' | relative_url }}" alt="Dalian University of Technology logo" loading="lazy">
+        </div>
+        <div class="institution-main">
+          <p class="institution-kicker">Education</p>
+          <h3><a href="https://www.dlut.edu.cn/" target="_blank" rel="noopener noreferrer">Dalian University of Technology</a></h3>
+          <p>B.S. in Foundational Mathematical Sciences · Sep. 2023 – Jun. 2027 (expected)</p>
+        </div>
+        <dl class="education-stats">
+          <div><dt>GPA</dt><dd>4.22 / 5.00</dd></div>
+          <div><dt>Average</dt><dd>91.91 / 100</dd></div>
+          <div><dt>Rank</dt><dd>12 / 102</dd></div>
+        </dl>
+      </div>
+    </section>
 
-<div class="highlight-grid">
-  <div class="highlight-card">
-    <h3>Education</h3>
-    <p>B.S. in Foundational Mathematical Sciences, Dalian University of Technology</p>
-    <p>GPA 4.22/5.00, rank 12/102, expected Jun. 2027</p>
-  </div>
-  <div class="highlight-card">
-    <h3>Current Research</h3>
-    <p>Peking University: online/local credit assignment for recurrent and spiking systems</p>
-    <p>CASIA: decision-making LLMs for wireless systems and long-context restoration</p>
-  </div>
-  <div class="highlight-card">
-    <h3>Selected Outputs</h3>
-    <p>ICML 2026 accepted first-author paper, IEEE COMST published survey, IEEE TMC accepted paper, and NeurIPS 2026 submission</p>
-  </div>
+    <section id="research" class="site-section research-section">
+      <div class="section-heading">
+        <div>
+          <span class="section-index">02</span>
+          <h2>Research Focus</h2>
+        </div>
+        <p>Methods that learn efficiently and act under real constraints.</p>
+      </div>
+
+      <div class="focus-grid">
+        <article class="focus-item">
+          <span class="focus-number">01</span>
+          <div>
+            <h3>Brain-Inspired Credit Assignment</h3>
+            <p>Online, biologically plausible, and memory-efficient alternatives to standard backpropagation through time.</p>
+            <div class="inline-links"><a href="https://openreview.net/forum?id=jI2TM7Kzlu" target="_blank" rel="noopener noreferrer">COLA</a><a href="https://github.com/Criticality-Cognitive-Computation-Lab/COLA" target="_blank" rel="noopener noreferrer">Code</a></div>
+          </div>
+        </article>
+        <article class="focus-item">
+          <span class="focus-number">02</span>
+          <div>
+            <h3>Decision-Making LLMs</h3>
+            <p>Language models as policy and reasoning systems for wireless resource allocation and cooperative edge caching.</p>
+            <div class="inline-links"><a href="https://ieeexplore.ieee.org/document/11180008/" target="_blank" rel="noopener noreferrer">COMST Survey</a><a href="https://arxiv.org/abs/2602.13307" target="_blank" rel="noopener noreferrer">Edge Caching</a></div>
+          </div>
+        </article>
+        <article class="focus-item">
+          <span class="focus-number">03</span>
+          <div>
+            <h3>Long-Context Modeling</h3>
+            <p>Linear-memory distillation and restoration methods for extending the usable context of large language models.</p>
+            <div class="inline-links"><a href="mailto:shiyanxi1@mail.dlut.edu.cn?subject=LinearARD%20Preprint%20Request">LinearARD</a></div>
+          </div>
+        </article>
+        <article class="focus-item">
+          <span class="focus-number">04</span>
+          <div>
+            <h3>Neural Combinatorial Optimization</h3>
+            <p>Deep reinforcement learning for structured routing and pickup-and-delivery problems.</p>
+            <div class="inline-links"><a href="{{ '/files/papers/caadrl-pdp.pdf' | relative_url }}" target="_blank">CAADRL</a><a href="https://github.com/Botwwt/CluPDTSP" target="_blank" rel="noopener noreferrer">Code</a></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="publications" class="site-section publications-section">
+      <div class="section-heading section-heading--actions">
+        <div>
+          <span class="section-index">03</span>
+          <h2>Publications</h2>
+        </div>
+        <div class="publication-filter" role="group" aria-label="Filter publications">
+          <button type="button" data-filter="selected" aria-pressed="false">Selected</button>
+          <button type="button" class="is-active" data-filter="all" aria-pressed="true">All</button>
+        </div>
+      </div>
+      <p class="section-note">{{ site.data.publications.quartile_note.en }}</p>
+      <div class="publication-list">
+        {% for publication in site.data.publications.items %}
+          {% include publication-card.html publication=publication lang='en' variant='home' %}
+        {% endfor %}
+      </div>
+      <a class="section-more" href="{{ '/publications/' | relative_url }}">Full publication details <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+    </section>
+
+    <section id="experience" class="site-section experience-section">
+      <div class="section-heading">
+        <div>
+          <span class="section-index">04</span>
+          <h2>Research Experience</h2>
+        </div>
+        <p>Current and recent research appointments.</p>
+      </div>
+
+      <div class="experience-list">
+        <article class="experience-item">
+          <div class="institution-logo"><img src="{{ '/images/institutions/pku.png' | relative_url }}" alt="Peking University logo" loading="lazy"></div>
+          <div class="experience-content">
+            <div class="experience-title-row"><div><p class="institution-kicker">Research Intern</p><h3><a href="https://www.pku.edu.cn/" target="_blank" rel="noopener noreferrer">Peking University</a></h3></div><time>Oct. 2025 – Present</time></div>
+            <p>Study temporal credit assignment beyond standard BPTT through online, biologically inspired, and memory-efficient local learning rules; analyze approximation error, stability, and scalability in recurrent and spiking systems.</p>
+          </div>
+        </article>
+
+        <article class="experience-item">
+          <div class="institution-logo"><img src="{{ '/images/institutions/casia.jpg' | relative_url }}" alt="Institute of Automation, Chinese Academy of Sciences logo" loading="lazy"></div>
+          <div class="experience-content">
+            <div class="experience-title-row"><div><p class="institution-kicker">Research Intern</p><h3><a href="https://ia.cas.cn/" target="_blank" rel="noopener noreferrer">Institute of Automation, Chinese Academy of Sciences</a></h3></div><time>Dec. 2024 – Present</time></div>
+            <p>Work on decision-making LLMs for wireless communication, cooperative edge caching, and long-context restoration; contribute to training pipelines, experiments, visualization, technical writing, and patent materials.</p>
+          </div>
+        </article>
+
+        <article class="experience-item">
+          <div class="institution-logo"><img src="{{ '/images/institutions/dlut.png' | relative_url }}" alt="Dalian University of Technology logo" loading="lazy"></div>
+          <div class="experience-content">
+            <div class="experience-title-row"><div><p class="institution-kicker">Undergraduate Researcher</p><h3><a href="https://www.dlut.edu.cn/" target="_blank" rel="noopener noreferrer">Dalian University of Technology</a></h3></div><time>Oct. 2024 – Mar. 2025</time></div>
+            <p>Led a neural combinatorial optimization project for pickup-and-delivery problems, including model design, reinforcement learning training, benchmark construction, comparative experiments, and manuscript writing.</p>
+          </div>
+        </article>
+
+        <article class="experience-item">
+          <div class="institution-logo institution-logo--dark"><img src="{{ '/images/institutions/eit.jpg' | relative_url }}" alt="Eastern Institute of Technology, Ningbo logo" loading="lazy"></div>
+          <div class="experience-content">
+            <div class="experience-title-row"><div><p class="institution-kicker">Research Intern</p><h3><a href="https://www.eitech.edu.cn/en/" target="_blank" rel="noopener noreferrer">Eastern Institute of Technology, Ningbo</a></h3></div><time>Aug. 2025 – Nov. 2025</time></div>
+            <p>Reviewed representative literature on world models and vision-language models and summarized major technical routes.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="codebase" class="site-section code-section">
+      <div class="section-heading">
+        <div>
+          <span class="section-index">05</span>
+          <h2>Open Source</h2>
+        </div>
+        <a class="heading-link" href="https://github.com/Botwwt" target="_blank" rel="noopener noreferrer">GitHub profile <i class="fas fa-external-link-alt" aria-hidden="true"></i></a>
+      </div>
+
+      <div class="repo-grid">
+        <article class="repo-card"><div class="repo-card__top"><i class="fab fa-github" aria-hidden="true"></i><span>ICML 2026</span></div><h3><a href="https://github.com/Criticality-Cognitive-Computation-Lab/COLA" target="_blank" rel="noopener noreferrer">COLA</a></h3><p>Criticality-driven local learning for global temporal credit assignment.</p><a class="repo-card__link" href="https://openreview.net/forum?id=jI2TM7Kzlu" target="_blank" rel="noopener noreferrer">OpenReview</a></article>
+        <article class="repo-card"><div class="repo-card__top"><i class="fab fa-github" aria-hidden="true"></i><span>IEEE TMC</span></div><h3><a href="https://github.com/gracefulning/CoopLLM-Cache" target="_blank" rel="noopener noreferrer">CoopLLM-Cache</a></h3><p>SFT and GRPO training for LLM-based cooperative edge caching.</p><a class="repo-card__link" href="https://arxiv.org/abs/2602.13307" target="_blank" rel="noopener noreferrer">arXiv</a></article>
+        <article class="repo-card"><div class="repo-card__top"><i class="fab fa-github" aria-hidden="true"></i><span>CAADRL</span></div><h3><a href="https://github.com/Botwwt/CluPDTSP" target="_blank" rel="noopener noreferrer">CluPDTSP</a></h3><p>Cluster-aware deep reinforcement learning for pickup-and-delivery problems.</p><a class="repo-card__link" href="{{ '/files/papers/caadrl-pdp.pdf' | relative_url }}" target="_blank">Paper</a></article>
+      </div>
+    </section>
+
+    <section id="honors" class="site-section honors-section">
+      <div class="section-heading">
+        <div>
+          <span class="section-index">06</span>
+          <h2>Selected Honors</h2>
+        </div>
+      </div>
+      <ol class="honors-list">
+        <li><time>Jun. 2026</time><span>Kaggle BirdCLEF+ 2026 Bronze Medal</span></li>
+        <li><time>Mar. 2026</time><span>Kaggle March Machine Learning Mania 2026 Bronze Medal</span></li>
+        <li><time>Mar. 2026</time><span>Second Prize, Climbing Cup, Dalian University of Technology</span></li>
+        <li><time>Feb. 2026</time><span>Meritorious Winner, Mathematical Contest in Modeling</span></li>
+        <li><time>Nov. 2025</time><span>National Second Prize, National English Translation Competition</span></li>
+        <li><time>2024 &amp; 2025</time><span>Academic Excellence Scholarship, Dalian University of Technology</span></li>
+        <li><time>Nov. 2024</time><span>National First Prize, Asia and Pacific Mathematical Contest in Modeling</span></li>
+        <li><time>Sep. 2024</time><span>Provincial First Prize, Contemporary Undergraduate Mathematical Contest in Modeling</span></li>
+      </ol>
+    </section>
+
+    <section id="service" class="site-section service-section">
+      <div class="section-heading">
+        <div>
+          <span class="section-index">07</span>
+          <h2>Academic Service</h2>
+        </div>
+      </div>
+      <div class="service-grid">
+        <div><i class="fas fa-pen-nib" aria-hidden="true"></i><span>Journal Reviewer</span><strong>Journal on Wireless Communications and Networking</strong></div>
+        <div><i class="fas fa-chart-line" aria-hidden="true"></i><span>Community</span><strong>Kaggle Competitions Expert</strong></div>
+        <div><i class="fas fa-globe-asia" aria-hidden="true"></i><span>Academic Exchange</span><strong>National University of Singapore Summer Program</strong></div>
+      </div>
+    </section>
+  </main>
 </div>
-
-<span class='anchor' id='research'></span>
-
-## Research Interests
-
-<div class="chip-row">
-  <span class="chip">Brain-Inspired Learning</span>
-  <span class="chip">Credit Assignment</span>
-  <span class="chip">Large Language Models</span>
-  <span class="chip">Reinforcement Learning</span>
-  <span class="chip">Long-Context Modeling</span>
-  <span class="chip">Wireless Systems</span>
-  <span class="chip">Neural Combinatorial Optimization</span>
-</div>
-
-My recent work follows three connected directions: criticality-driven local learning rules for temporal credit assignment, LLM-native decision-making for wireless communication and edge caching, and structure-aware learning methods for routing and pickup-and-delivery problems. I care about methods that reduce memory cost and improve stability while keeping strong empirical performance.
-
-<span class='anchor' id='news'></span>
-
-## News
-
-<ul class="news-list">
-  <li><strong>2026:</strong> <em>Global Credit Assignment via Dynamical Criticality</em> was accepted to ICML 2026 (CCF-A). The paper is available on OpenReview, and the COLA codebase is public on GitHub.</li>
-  <li><strong>2026:</strong> <em>Cooperative Edge Caching with Large Language Model in Wireless Networks</em> was accepted by <em>IEEE Transactions on Mobile Computing</em>.</li>
-  <li><strong>2026:</strong> <em>LinearARD: Linear-Memory Attention Distillation for RoPE Restoration</em> is under review at NeurIPS 2026 (CCF-A).</li>
-  <li><strong>2025:</strong> <em>Decision-Making Large Language Model for Wireless Communication</em> was published in <em>IEEE Communications Surveys & Tutorials</em>.</li>
-  <li><strong>Oct. 2025:</strong> Joined Peking University as a research intern on temporal credit assignment and online local learning.</li>
-  <li><strong>Dec. 2024:</strong> Joined the Institute of Automation, Chinese Academy of Sciences, as a research intern.</li>
-</ul>
-
-<span class='anchor' id='publications'></span>
-
-{% assign publications = site.data.publications.items %}
-{% assign publication_limit = site.data.publications.home_limit | default: 5 %}
-
-## Publications
-
-<p class="section-note">{{ site.data.publications.quartile_note.en }}</p>
-
-{% if publications.size <= publication_limit %}
-  {% for publication in publications %}
-    {% include publication-card.html publication=publication lang='en' variant='home' %}
-  {% endfor %}
-{% endif %}
-
-{% if publications.size > publication_limit %}
-  {% for publication in publications limit:publication_limit %}
-    {% include publication-card.html publication=publication lang='en' variant='home' %}
-  {% endfor %}
-  <details class="publication-collapse">
-    <summary>Show remaining publications and manuscripts</summary>
-    {% for publication in publications offset:publication_limit %}
-      {% include publication-card.html publication=publication lang='en' variant='home' %}
-    {% endfor %}
-  </details>
-{% endif %}
-
-<div class="section-actions">
-  <a class="link-pill" href="/publications/">Full Publication List</a>
-</div>
-
-<span class='anchor' id='experience'></span>
-
-## Research Experience
-
-<div class="timeline-card">
-  <h3>Peking University</h3>
-  <p class="timeline-meta">Research Intern | Oct. 2025 - Present | Beijing, China</p>
-  <p>I study temporal credit assignment beyond standard BPTT, focusing on online, biologically inspired, and memory-efficient local learning rules. My recent work analyzes approximation error, stability, and scalability in recurrent, convolutional recurrent, and spiking neural systems.</p>
-</div>
-
-<div class="timeline-card">
-  <h3>Institute of Automation, Chinese Academy of Sciences</h3>
-  <p class="timeline-meta">Research Intern | Dec. 2024 - Present | Beijing, China</p>
-  <p>I work on collaborative edge caching, long-context restoration, and decision-making LLMs for wireless communication. I contribute to environment construction, training pipelines, experiment organization, visualization, technical writing, and follow-up patent materials.</p>
-</div>
-
-<div class="timeline-card">
-  <h3>Dalian University of Technology</h3>
-  <p class="timeline-meta">Undergraduate Researcher | Oct. 2024 - Mar. 2025 | Dalian, China</p>
-  <p>I led a neural combinatorial optimization project for pickup-and-delivery problems, including model design, reinforcement learning training, benchmark construction, comparative experiments, and manuscript writing.</p>
-</div>
-
-<div class="timeline-card">
-  <h3>Eastern Institute of Technology</h3>
-  <p class="timeline-meta">Research Intern | Aug. 2025 - Nov. 2025 | Ningbo, China</p>
-  <p>I reviewed representative literature on world models and vision-language models and summarized major technical routes.</p>
-</div>
-
-<span class='anchor' id='education'></span>
-
-## Education
-
-<div class="timeline-card">
-  <h3>Dalian University of Technology</h3>
-  <p class="timeline-meta">B.S. in Foundational Mathematical Sciences | Sep. 2023 - Jun. 2027 (expected) | Dalian, China</p>
-  <p>GPA: 4.22/5.00 | Weighted average: 91.91/100 | Rank: 12/102</p>
-  <p><strong>Selected coursework:</strong> Mathematical Analysis (99), Advanced Algebra (99), Probability Theory (99), Data Structures and Algorithms (99), Optimization Methods (99), Programming and Algorithms (100), Analytic Geometry (100).</p>
-  <p><strong>English:</strong> CET-6 460, CET-4 522.</p>
-</div>
-
-## Technical Skills
-
-<div class="chip-row">
-  <span class="chip">Python</span>
-  <span class="chip">MATLAB</span>
-  <span class="chip">Java</span>
-  <span class="chip">PyTorch</span>
-  <span class="chip">Hugging Face Transformers</span>
-  <span class="chip">TRL</span>
-  <span class="chip">Unsloth</span>
-  <span class="chip">Git</span>
-  <span class="chip">Linux</span>
-  <span class="chip">LaTeX</span>
-</div>
-
-<span class='anchor' id='service'></span>
-
-## Academic Service and Activities
-
-<div class="timeline-card">
-  <h3>Reviewer</h3>
-  <p class="timeline-meta">Journal on Wireless Communications and Networking</p>
-  <p>Peer reviewer for manuscripts on wireless communications and networking.</p>
-</div>
-
-<div class="timeline-card">
-  <h3>Kaggle and Academic Exchange</h3>
-  <p class="timeline-meta">Kaggle Competitions Expert | National University of Singapore summer academic exchange participant</p>
-  <p>I participate in applied machine learning competitions and academic exchange activities alongside research work.</p>
-</div>
-
-<span class='anchor' id='honors'></span>
-
-## Honors and Awards
-
-- **Jun. 2026:** Kaggle BirdCLEF+ 2026 Bronze Medal
-- **Mar. 2026:** Kaggle March Machine Learning Mania 2026 Bronze Medal
-- **Mar. 2026:** Second Prize, Climbing Cup, Dalian University of Technology
-- **Feb. 2026:** Meritorious Winner, Mathematical Contest in Modeling (MCM)
-- **Nov. 2025:** National Second Prize, National English Translation Competition
-- **Nov. 2025:** Academic Excellence Scholarship, Dalian University of Technology
-- **Dec. 2024:** Key member, Liaoning provincial undergraduate innovation project
-- **Dec. 2024:** Academic Excellence Scholarship, Dalian University of Technology
-- **Nov. 2024:** National First Prize, Asia and Pacific Mathematical Contest in Modeling
-- **Sep. 2024:** Provincial First Prize, Contemporary Undergraduate Mathematical Contest in Modeling
-- **Jan. 2024:** Honorable Mention, Mathematical Contest in Modeling / Interdisciplinary Contest in Modeling

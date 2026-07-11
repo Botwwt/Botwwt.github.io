@@ -1,4 +1,52 @@
 <script src="{{ '/assets/js/main.min.js' | relative_url }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var navToggle = document.querySelector('.nav-toggle');
+    var siteNav = document.getElementById('site-nav');
+
+    if (navToggle && siteNav) {
+      navToggle.addEventListener('click', function () {
+        var isOpen = siteNav.classList.toggle('is-open');
+        navToggle.setAttribute('aria-expanded', String(isOpen));
+      });
+
+      siteNav.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+          siteNav.classList.remove('is-open');
+          navToggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          siteNav.classList.remove('is-open');
+          navToggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    document.querySelectorAll('.publication-filter').forEach(function (filter) {
+      var buttons = filter.querySelectorAll('button[data-filter]');
+      var scope = filter.closest('.site-section') || document;
+      var publications = scope.querySelectorAll('.publication-card');
+
+      buttons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          var mode = button.getAttribute('data-filter');
+          buttons.forEach(function (candidate) {
+            var active = candidate === button;
+            candidate.classList.toggle('is-active', active);
+            candidate.setAttribute('aria-pressed', String(active));
+          });
+          publications.forEach(function (publication) {
+            var visible = mode === 'all' || publication.getAttribute('data-selected') === 'true';
+            publication.hidden = !visible;
+          });
+        });
+      });
+    });
+  });
+</script>
 
 {% include analytics.html %}
 {% include fetch_google_scholar_stats.html %}
