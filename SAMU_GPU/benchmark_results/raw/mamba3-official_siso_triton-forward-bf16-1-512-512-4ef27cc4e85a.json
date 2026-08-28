@@ -1,0 +1,23 @@
+{
+  "backend": "official_siso_triton",
+  "batch": 1,
+  "chunk_size": 64,
+  "d_model": 1024,
+  "d_state": 512,
+  "dtype": "bf16",
+  "environment_file": "../environment.json",
+  "error": "out of resource: shared memory, Required: 139264, Hardware limit: 101376. Reducing block sizes or `num_stages` may help.",
+  "error_type": "OutOfResources",
+  "id": "mamba3-official_siso_triton-forward-bf16-1-512-512-4ef27cc4e85a",
+  "length": 512,
+  "matching_protocol": "same_width+best_native",
+  "memory_guard_estimate_bytes": 32505856,
+  "mode_tile": null,
+  "model": "mamba3",
+  "modes": 512,
+  "num_heads": null,
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"/root/autodl-tmp/site/SAMU_GPU/benchmark/run_benchmarks.py\", line 473, in main\n    first = operation()\n  File \"/root/autodl-tmp/site/SAMU_GPU/benchmark/run_benchmarks.py\", line 270, in <lambda>\n    forward = lambda: model(u)\n  File \"/root/miniconda3/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1518, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n  File \"/root/miniconda3/lib/python3.10/site-packages/torch/nn/modules/module.py\", line 1527, in _call_impl\n    return forward_call(*args, **kwargs)\n  File \"/root/autodl-tmp/mamba-official/mamba_ssm/modules/mamba3.py\", line 249, in forward\n    y = mamba3_siso_combined(\n  File \"/root/autodl-tmp/mamba-official/mamba_ssm/ops/triton/mamba3/mamba3_siso_combined.py\", line 401, in mamba3_siso_combined\n    return _Mamba3Function.apply(\n  File \"/root/miniconda3/lib/python3.10/site-packages/torch/autograd/function.py\", line 539, in apply\n    return super().apply(*args, **kwargs)  # type: ignore[misc]\n  File \"/root/autodl-tmp/mamba-official/mamba_ssm/ops/triton/mamba3/mamba3_siso_combined.py\", line 104, in forward\n    Out, Out_v, SSM_States, DA_CS, DA_CS_SUM, Q_rot, K_scaled, QK_dot, Scale, Gamma, Final_States = mamba3_siso_fwd(\n  File \"/root/autodl-tmp/mamba-official/mamba_ssm/ops/triton/mamba3/mamba3_siso_fwd.py\", line 632, in mamba3_siso_fwd\n    mamba3_siso_fwd_kernel[grid](\n  File \"/root/miniconda3/lib/python3.10/site-packages/triton/runtime/jit.py\", line 419, in <lambda>\n    return lambda *args, **kwargs: self.run(grid=grid, warmup=False, *args, **kwargs)\n  File \"/root/miniconda3/lib/python3.10/site-packages/triton/runtime/autotuner.py\", line 250, in run\n    ret = self.fn.run(\n  File \"/root/miniconda3/lib/python3.10/site-packages/triton/runtime/jit.py\", line 756, in run\n    launch_metadata = kernel.launch_metadata(grid, stream, *bound_args.values())\n  File \"/root/miniconda3/lib/python3.10/site-packages/triton/compiler/compiler.py\", line 490, in launch_metadata\n    self._init_handles()\n  File \"/root/miniconda3/lib/python3.10/site-packages/triton/compiler/compiler.py\", line 464, in _init_handles\n    raise_(OutOfResources(self.metadata.shared, max_shared, \"shared memory\"))\n  File \"/root/miniconda3/lib/python3.10/site-packages/triton/compiler/compiler.py\", line 456, in raise_\n    raise err\ntriton.runtime.errors.OutOfResources: out of resource: shared memory, Required: 139264, Hardware limit: 101376. Reducing block sizes or `num_stages` may help.\n",
+  "track": "A_best_available",
+  "workload": "forward"
+}

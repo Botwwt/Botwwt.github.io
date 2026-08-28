@@ -1,35 +1,42 @@
-# SAMU GPU interactive report
+# SAMU GPU Interactive Course & Benchmark Lab
 
-Pure static HTML/CSS/JavaScript report for the audited SAMU GPU architecture study.
+A static, modular research course that connects the audited SAMU recurrence to GPU dataflow, warp/CTA mappings, chunked affine scan, competing architectures, and real RTX 3090 measurements.
 
-## Local preview
+The page never substitutes theoretical traffic for measured DRAM traffic and never presents the official-source serial RG-LRU reference as a production kernel. Unsupported paths remain visible in the result set.
+
+## Preview the site
 
 ```powershell
 cd D:\Spectral_analysis\spectral\botwwtgithubio_remote_inspect\SAMU_GPU
 python -m http.server 8000
 ```
 
-Open <http://localhost:8000>.
+Open <http://localhost:8000>. A web server is required because the benchmark lab fetches JSON files.
 
-KaTeX is loaded from jsDelivr. If the CDN is unavailable, all explanatory text and diagrams remain usable, while formula source stays visible as a fallback.
+## Verify benchmark code
 
-## Evidence labels
+```bash
+cd SAMU_GPU/benchmark
+python test_correctness.py
+python run_benchmarks.py --preset quick \
+  --output ../benchmark_results \
+  --mamba-source /path/to/mamba \
+  --rglru-source /path/to/recurrentgemma --resume
+```
 
-- `VERIFIED` / `FACT`: confirmed in the inspected repository or primary source.
-- `PROPOSED`: GPU design proposed by this report; not an existing custom kernel.
-- `HYPOTHESIS` / `INFERENCE`: systems interpretation that requires measurement.
-- `BENCHMARK NEEDED`: no fair profiler-backed result was found.
+Use `--preset full` for the resumable B/L/M/dtype/workload sweep. Each configuration is saved immediately to `benchmark_results/raw/`; `aggregate.py` rebuilds `summary.json` and `summary.csv` without rerunning GPU work.
 
-## Main repository sources inspected
+## Repository map
 
-- `spectral/rtus/research_extensions/equilibrium_polar/canonical_grouped_samu_math.py`
-- `spectral/rtus/research_extensions/equilibrium_polar/canonical_grouped_samu_flax.py`
-- `spectral/rtus/research_extensions/equilibrium_polar/equilibrium_polar_math.py`
-- `spectral/rtus/research_extensions/equilibrium_polar/native_timescale_radial_math.py`
-- `spectral/rtus/research_extensions/equilibrium_polar/official_adapter.py`
-- `spectral/rtus/research_extensions/equilibrium_polar/run_canonical_grouped_samu_sweep.py`
-- `spectral/hippocampal_adaptive_memory_validation/experiments/official_baseline_audit_20260823/formal/models.py`
-- `spectral/hippocampal_adaptive_memory_validation/experiments/official_baseline_audit_20260823/engineering/scan.py`
-- `spectral/hippocampal_adaptive_memory_validation/experiments/official_baseline_audit_20260823/engineering/benchmark_torch.py`
+- `index.html`: semantic page shell.
+- `src/lessons.js`: the continuous 24-lesson narrative.
+- `src/visualizations/`: canvas/DOM interactive systems figures.
+- `src/benchmark-lab.js`: JSON-backed charts, filters, environment, and profiler views.
+- `benchmark/`: audited PyTorch prototypes, official-source loaders, correctness, runner, profiler, and aggregator.
+- `benchmark_results/`: raw samples, aggregate files, environment metadata, and profiler evidence.
+- `SAMU_CANONICAL_AUDIT.md`: canonical model/source audit.
+- `BENCHMARK_METHODOLOGY.md`: timing, fairness, matching, and caveats.
 
-No SAMU training or experiment code is modified by this static report.
+## Evidence language
+
+`Verified Code`, `Measured`, `Paper Fact`, `Derived`, `Proposed`, and `Hypothesis` labels deliberately separate current facts from future kernel ideas.
