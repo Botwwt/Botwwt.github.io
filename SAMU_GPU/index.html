@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08111f">
+  <meta name="description" content="SAMU GPU 适配：从 canonical 数学、GPU 映射到 chunked affine scan 的交互式技术报告。">
+  <title>SAMU × GPU — 交互式架构报告</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="scroll-progress" aria-hidden="true"><span id="scrollProgress"></span></div>
+  <a class="skip-link" href="#main">跳到正文</a>
+
+  <header class="topbar">
+    <a class="brand" href="#overview" aria-label="返回报告开头">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span><b>SAMU × GPU</b><small>Architecture Notebook</small></span>
+    </a>
+    <div class="mode-switch" role="group" aria-label="阅读模式">
+      <button class="mode-button is-active" data-mode="overview">快速总览</button>
+      <button class="mode-button" data-mode="learn">从零学习</button>
+    </div>
+    <div class="top-meta"><span class="status-dot"></span> Repository audit · 2026-08-29</div>
+  </header>
+
+  <aside class="toc" aria-label="章节目录">
+    <div class="toc-eyebrow">REPORT MAP</div>
+    <nav>
+      <a href="#overview"><span>00</span>最终架构</a>
+      <a href="#audit"><span>01</span>实现审计</a>
+      <a href="#math"><span>02</span>模型数学</a>
+      <a href="#data"><span>03</span>一步的数据</a>
+      <a href="#write"><span>04</span>Dense write</a>
+      <a href="#memory"><span>05</span>内存与片上状态</a>
+      <a href="#mapping"><span>06</span>Thread / Warp / CTA</a>
+      <a href="#control"><span>07</span>Coherent control</a>
+      <a href="#scan"><span>08</span>Chunked scan</a>
+      <a href="#backends"><span>09</span>双后端</a>
+      <a href="#comparison"><span>10</span>系统对比</a>
+      <a href="#model"><span>11</span>性能模型</a>
+      <a href="#roadmap"><span>12</span>实现与实验</a>
+    </nav>
+    <div class="toc-legend">
+      <span><i class="fact"></i>已验证事实</span>
+      <span><i class="proposed"></i>拟议架构</span>
+      <span><i class="needed"></i>待实测</span>
+    </div>
+  </aside>
+
+  <main id="main">
+    <section id="overview" class="hero report-section" data-title="最终架构">
+      <div class="section-kicker"><span>00</span>30 秒看懂</div>
+      <div class="hero-copy">
+        <div>
+          <div class="badge proposed">PROPOSED GPU ARCHITECTURE</div>
+          <h1>把 dense write 与<br><em>structured recurrence</em> 分开优化</h1>
+          <p class="lead">SAMU 最自然的 GPU 实现不是“普通串行 RNN kernel”，而是宽实数 GEMM、紧凑 coherent control、mode-parallel decode，以及面向 prefill / training 的压缩 affine scan。</p>
+        </div>
+        <div class="hero-verdict">
+          <span class="verdict-label">核心判断</span>
+          <strong>Tensor Core 负责规则的线性投影；scan / recurrence 负责时间依赖。</strong>
+          <p>两者结构不同，也应分别建立 baseline。</p>
+        </div>
+      </div>
+
+      <div class="architecture-shell">
+        <div class="arch-toolbar">
+          <span>EXECUTION PATH</span>
+          <div class="segmented" role="group" aria-label="后端选择">
+            <button class="backend-button is-active" data-backend="decode">Decode</button>
+            <button class="backend-button" data-backend="train">Prefill / Train</button>
+          </div>
+        </div>
+        <div class="architecture" id="architectureDiagram">
+          <div class="arch-node input"><small>INPUT SEQUENCE</small><b>U ∈ ℝ<sup>B×L×d</sup></b></div>
+          <div class="arch-split" aria-hidden="true"></div>
+          <div class="arch-node gemm"><small>WRITE BRANCH</small><b>Tensor-Core GEMM</b><span>U · [W<sub>R</sub> W<sub>I</sub>]</span></div>
+          <div class="arch-node controller"><small>TRANSITION BRANCH</small><b>Controller</b><span>c<sub>t</sub>, d<sub>t</sub> → g, cos d, sin d</span></div>
+          <div class="arch-merge" aria-hidden="true"></div>
+          <div class="arch-node backend decode-panel"><small>SAMU GPU BACKEND</small><b>Mode-parallel recurrence</b><span>state cache · one token</span></div>
+          <div class="arch-node backend train-panel"><small>SAMU GPU BACKEND</small><b>Time × mode chunked scan</b><span>(C, G, D, q) · full sequence</span></div>
+          <div class="arch-output"><span class="decode-panel">next state / token</span><span class="train-panel">all sequence states</span></div>
+        </div>
+        <p class="diagram-note"><span class="badge needed">BENCHMARK NEEDED</span> Current implementation does not yet prove this speedup.</p>
+      </div>
+
+      <div class="question-strip" aria-label="报告回答的问题">
+        <span>模型数学</span><span>GPU 映射</span><span>内存流量</span><span>时间并行</span><span>系统对比</span><span>实现路线</span>
+      </div>
+    </section>
+
+    <section id="audit" class="report-section">
+      <div class="section-kicker"><span>01</span>Implementation Audit / 实现审计</div>
+      <div class="section-heading">
+        <div><h2>先确认现在的 SAMU，<br>再讨论未来的 kernel</h2></div>
+        <p>结论来自当前仓库的 canonical JAX/Flax、PPO adapter、监督学习与 PyTorch formal-task scan。下表刻意分开“代码事实”和“用于 GPU 推导的等价记号”。</p>
+      </div>
+
+      <div class="audit-grid">
+        <article class="audit-card important">
+          <div class="badge fact">VERIFIED · CANONICAL</div>
+          <h3>控制不是任意自由标量</h3>
+          <div class="formula compact">\(\delta_t=M^{-1/2}\tanh(a_\phi)\,s_{\phi,t}\)</div>
+          <div class="formula compact">\(\eta_t=M^{-1/2}\tanh(a_r)\,\frac{s_{r,t}}{1+s_{r,t}^2}\)</div>
+          <p>其中 selector 是增广输入沿归一化方向的投影再过 tanh。本文用 <code>d_t≡δ_t</code>、<code>c_t≡η_t</code> 连接 GPU 记号。</p>
+        </article>
+        <article class="audit-card">
+          <div class="badge fact">VERIFIED · WRITE</div>
+          <h3>JAX canonical write</h3>
+          <div class="formula compact">\(\gamma_j=\sqrt{1-e^{-2\nu_j}}+10^{-8}\)</div>
+          <p><code>W_R</code>、<code>W_I</code> 与 base <code>ν</code> 决定 write；token 控制只改 transition，不改本次 forward 内的 B。</p>
+        </article>
+        <article class="audit-card warning-soft">
+          <div class="badge inference">IMPLEMENTATION DIFFERENCE</div>
+          <h3>PyTorch formal wrapper 的 γ 已解耦</h3>
+          <p><code>gamma_log</code> 从 base radius 初始化，但随后是独立 parameter。它不再保证训练后始终等于 canonical 的 <code>γ(ν)</code>。GPU 报告以 JAX canonical 为主。</p>
+        </article>
+        <article class="audit-card">
+          <div class="badge fact">VERIFIED · INPUTS</div>
+          <h3>PPO 的两条输入路径不同</h3>
+          <p><b>write：</b><code>shared_repr</code>；<b>selector：</b>raw observation。监督/H64 路径通常让 raw task input 同时服务两支。</p>
+        </article>
+        <article class="audit-card">
+          <div class="badge fact">VERIFIED · WIDTH</div>
+          <h3>M 是 complex modes</h3>
+          <p><b>1 complex mode = 2 real scalars。</b>项目里的 <code>n_hidden</code> / 某些 H 在本文记作 M；公平比较 state bytes 时必须匹配 <code>D_state=2M</code>。</p>
+        </article>
+        <article class="audit-card warning-soft">
+          <div class="badge needed">NO CUSTOM-KERNEL RESULT</div>
+          <h3>已有 generic scan，未有压缩 GPU scan</h3>
+          <p>formal-task PyTorch 路径已有 work-efficient affine tree scan；但它物化每个 timestep × mode 的 multiplier，不是本文提出的 <code>(C,G,D,q)</code> custom kernel。<b>No measured GPU kernel results found yet.</b></p>
+        </article>
+      </div>
+
+      <details class="source-ledger">
+        <summary>审计过的主要仓库来源 <span>展开</span></summary>
+        <div class="source-list">
+          <code>spectral/rtus/research_extensions/equilibrium_polar/canonical_grouped_samu_math.py</code>
+          <code>spectral/rtus/research_extensions/equilibrium_polar/canonical_grouped_samu_flax.py</code>
+          <code>spectral/rtus/research_extensions/equilibrium_polar/equilibrium_polar_math.py</code>
+          <code>spectral/rtus/research_extensions/equilibrium_polar/official_adapter.py</code>
+          <code>.../official_baseline_audit_20260823/formal/models.py</code>
+          <code>.../official_baseline_audit_20260823/engineering/scan.py</code>
+          <code>.../official_baseline_audit_20260823/engineering/benchmark_torch.py</code>
+        </div>
+      </details>
+    </section>
+
+    <section id="math" class="report-section">
+      <div class="section-kicker"><span>02–03</span>Model Math · 一步到底算什么</div>
+      <div class="section-heading">
+        <div><h2>一条 recurrence，<br>两条独立上游分支</h2></div>
+        <p>在最终相加之前，transition branch 与 write branch 没有数据依赖，因此可以并行准备。</p>
+      </div>
+
+      <div class="math-flow">
+        <div class="flow-branch transition-flow">
+          <small>TRANSITION BRANCH</small>
+          <div><span>token</span><b>c<sub>t</sub>, d<sub>t</sub></b></div>
+          <i>+</i>
+          <div><span>mode</span><b>ν<sub>j</sub>, θ<sub>j</sub></b></div>
+          <i>→</i>
+          <div class="flow-result"><span>multiplier</span><b>A<sub>j,t</sub></b></div>
+        </div>
+        <div class="flow-branch write-flow">
+          <small>WRITE BRANCH</small>
+          <div><span>token</span><b>u<sub>t</sub></b></div>
+          <i>+</i>
+          <div><span>static</span><b>W<sub>R</sub>, W<sub>I</sub>, γ</b></div>
+          <i>→</i>
+          <div class="flow-result"><span>additive input</span><b>write<sub>j,t</sub></b></div>
+        </div>
+        <div class="flow-equation">
+          <span>MERGE AT RECURRENCE</span>
+          <div class="formula display">\(z_{j,t+1}=A_{j,t}z_{j,t}+\operatorname{write}_{j,t}\)</div>
+        </div>
+      </div>
+
+      <div class="equation-stage">
+        <div>
+          <div class="badge fact">CANONICAL GPU NOTATION</div>
+          <div class="formula display">\(A_{j,t}=e^{-\nu_j e^{c_t}}\,e^{i(\theta_j+d_t)}\)</div>
+          <div class="formula display">\(\operatorname{write}_{j,t}=\gamma_j\!\left(u_t^\top w_j^{(R)}+i\,u_t^\top w_j^{(I)}\right)\)</div>
+        </div>
+        <div class="equation-notes">
+          <p><b>随 token：</b>u<sub>t</sub>, c<sub>t</sub>, d<sub>t</sub>, state</p>
+          <p><b>随 mode：</b>ν<sub>j</sub>, θ<sub>j</sub>, γ<sub>j</sub>, W columns</p>
+          <p><b>两维都变：</b>A<sub>j,t</sub>, write<sub>j,t</sub></p>
+        </div>
+      </div>
+
+      <h3 class="subheading">Complex notation → 实数 GPU 操作</h3>
+      <div class="real-ops">
+        <div class="complex-disc" aria-label="复数平面旋转与衰减示意">
+          <svg viewBox="0 0 320 270" role="img" aria-label="状态向量经过旋转和衰减">
+            <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto"><polygon points="0 0, 8 3.5, 0 7"/></marker></defs>
+            <line x1="45" y1="220" x2="285" y2="220" class="axis"/><line x1="80" y1="250" x2="80" y2="30" class="axis"/>
+            <path d="M80 220 L245 85" class="vector old" marker-end="url(#arrow)"/><text x="239" y="72">zₜ</text>
+            <path d="M80 220 L174 66" class="vector new" marker-end="url(#arrow)"/><text x="168" y="50">ρR(φ)zₜ</text>
+            <path d="M80 220 A67 67 0 0 0 119 158" class="phase-arc"/><text x="124" y="182">φ</text>
+            <circle cx="80" cy="220" r="4"/><text x="267" y="242">real</text><text x="25" y="38">imag</text>
+          </svg>
+        </div>
+        <div class="real-formulas">
+          <div class="formula-line"><span>x′</span><code>= ρ ( cosφ·x − sinφ·y ) + write_R</code></div>
+          <div class="formula-line"><span>y′</span><code>= ρ ( sinφ·x + cosφ·y ) + write_I</code></div>
+          <div class="formula-defs"><b>ρ = exp(−ν·exp(c))</b><b>φ = θ + d</b></div>
+          <p class="callout"><b>不要 materialize complex A<sub>t,j</sub>。</b>kernel 直接生成 ρ、cosφ、sinφ，再更新 register 中的 x、y。</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="data" class="report-section">
+      <div class="section-kicker"><span>04</span>Data Taxonomy · 一个 timestep 的数据</div>
+      <div class="section-heading compact-heading"><div><h2>先分清“随谁变化”</h2></div><p>这张表决定广播、缓存、预计算和 tile 布局。</p></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>量</th><th>角色 / shape</th><th>随 token</th><th>随 mode</th><th>GPU 处理</th></tr></thead>
+          <tbody>
+            <tr><td><b>ν<sub>j</sub>, θ<sub>j</sub></b><span class="badge fact">STATIC SPECTRAL</span></td><td>[M]</td><td class="no">—</td><td class="yes">●</td><td>tile 加载；可缓存 cosθ/sinθ</td></tr>
+            <tr><td><b>W<sub>R</sub>, W<sub>I</sub></b><span class="badge fact">STATIC DENSE</span></td><td>[d, M] × 2</td><td class="no">—</td><td class="yes">●</td><td>一次宽 real GEMM</td></tr>
+            <tr><td><b>γ<sub>j</sub></b><span class="badge fact">DERIVED STATIC</span></td><td>[M], γ(ν)</td><td class="no">—</td><td class="yes">●</td><td>epilogue scale / inference fold</td></tr>
+            <tr><td><b>c<sub>t</sub>, d<sub>t</sub></b><span class="badge fact">DYNAMIC CONTROL</span></td><td>[B,L,2]</td><td class="yes">●</td><td class="no">—</td><td>每 token 仅两标量；warp 广播</td></tr>
+            <tr><td><b>u<sub>t</sub></b><span class="badge fact">WRITE INPUT</span></td><td>[B,L,d]</td><td class="yes">●</td><td class="no">—</td><td>GEMM rows</td></tr>
+            <tr><td><b>x<sub>j,t</sub>, y<sub>j,t</sub></b><span class="badge fact">STATE</span></td><td>[B,L,M,2]</td><td class="yes">●</td><td class="yes">●</td><td>recurrence hot state</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="misread"><b>不要误解：</b>“B 在固定 forward 内 time-independent”不等于“B 永远是常数”。训练时 W 与（canonical 中的）ν 会随 optimizer update 改变。</div>
+    </section>
+
+    <section id="write" class="report-section">
+      <div class="section-kicker"><span>05–06</span>Dense Write · 从 GEMV 到 GEMM</div>
+      <div class="section-heading">
+        <div><h2>单 token 像 GEMV，<br>整段序列变 GEMM</h2></div>
+        <p>把 batch 与 time 合并为 N=B·L，再把实部和虚部权重并成 2M 列。real input 不需要 complex GEMM。</p>
+      </div>
+      <div class="gemm-visual">
+        <div class="matrix input-matrix"><span>U</span><b>N × d</b><i>tokens</i></div>
+        <div class="matmul">×</div>
+        <div class="matrix weight-matrix"><span>[ W<sub>R</sub> &nbsp; W<sub>I</sub> ]</span><b>d × 2M</b><i>shared weights</i></div>
+        <div class="matmul">=</div>
+        <div class="matrix output-matrix"><span>Y = [ R &nbsp; I ]</span><b>N × 2M</b><i>all writes</i></div>
+      </div>
+      <div class="three-column">
+        <article><span class="metric-index">01</span><h3>Tensor Core 友好</h3><p>time / batch 提供大量 rows，同一权重 tile 被反复使用，提高 arithmetic intensity。</p></article>
+        <article><span class="metric-index">02</span><h3>γ 是列缩放</h3><p>优先尝试 GEMM epilogue：R[:,j] 与 I[:,j] 同乘 γ<sub>j</sub>。inference 可 fold；training 保留 ν 的梯度路径。</p></article>
+        <article><span class="metric-index">03</span><h3>先分离，再考虑融合</h3><p>GEMM 规则且计算密集；recurrence elementwise 且有时间结构。V1 先分别做到强 baseline。</p></article>
+      </div>
+      <details class="code-details"><summary>Conceptual pseudocode · dense write</summary><pre><code># Conceptual pseudocode — not production CUDA
+U2 = reshape(U, [B * L, d])
+W_RI = concat(W_R, W_I, axis=1)       # [d, 2M]
+Y = gemm(U2, W_RI)                    # Tensor Core path
+R, I = split(Y, M)
+R *= gamma[None, :]                   # candidate: GEMM epilogue
+I *= gamma[None, :]</code></pre></details>
+    </section>
+
+    <section id="memory" class="report-section">
+      <div class="section-kicker"><span>07–08</span>Memory · 中间张量与片上状态</div>
+      <div class="section-heading">
+        <div><h2>真正昂贵的常常不是 FLOPs，<br>而是数据走了多远</h2></div>
+        <p>独立 GEMM 会把 write 写出，recurrence 再读入。这是 logical global-memory traffic；缓存命中可能使实际 DRAM/HBM 流量更低。</p>
+      </div>
+      <div class="traffic-pipeline">
+        <div><span>KERNEL 1</span><b>Tensor Core GEMM</b></div><i>→</i><div class="traffic-hot"><span>GLOBAL TENSOR</span><b>write[B,L,2M]</b><small>write once</small></div><i>→</i><div><span>KERNEL 2</span><b>Recurrence / Scan</b><small>read once</small></div>
+      </div>
+      <div class="memory-example">
+        <div>
+          <div class="badge inference">ILLUSTRATIVE · NOT MEASURED</div>
+          <h3>B=4 · L=8192 · M=2048 · BF16</h3>
+          <p>4 × 8192 × 4096 = 134,217,728 real scalars</p>
+        </div>
+        <div class="memory-meter" aria-label="内存流量示意">
+          <div class="meter-row"><span>write tensor</span><b>256 MiB</b><i style="--w:50%"></i></div>
+          <div class="meter-row"><span>write + read</span><b>512 MiB</b><i style="--w:100%"></i></div>
+        </div>
+      </div>
+
+      <div class="state-story">
+        <div class="state-bad">
+          <small>STEP-BY-STEP GLOBAL ROUNDTRIP</small>
+          <div><b>load z<sub>t</sub></b><i>→</i><b>update</b><i>→</i><b>store z<sub>t+1</sub></b></div>
+          <div><b>load z<sub>t+1</sub></b><i>→</i><b>update</b><i>→</i><b>store …</b></div>
+        </div>
+        <div class="state-good">
+          <small>STATE-STATIONARY INSIDE A MULTI-STEP KERNEL</small>
+          <div class="register"><span>REGISTER</span><b>x<sub>j</sub>, y<sub>j</sub></b></div>
+          <div class="loop-ring">t → t+1 → t+2 → …</div>
+        </div>
+      </div>
+      <p class="caveat"><b>边界：</b>state-stationary 不代表所有 timestep output 都不用写；也不代表普通 decode 的多次 kernel invocation 之间 register 会持久化。跨 invocation 的 state 仍在 global-memory hierarchy / state cache，persistent multi-step kernel 才能真正跨步保留 register residency。</p>
+    </section>
+
+    <section id="mapping" class="report-section">
+      <div class="section-kicker"><span>09–12</span>Mapping · Thread / Warp / CTA</div>
+      <div class="section-heading">
+        <div><h2>mode 可并行，time 有依赖</h2></div>
+        <p>最直观 baseline：一个 lane 长期负责一个 complex mode。32 lanes 组成一个 warp；多个 warp 组成 CTA，处理更大的 mode tile。</p>
+      </div>
+
+      <div class="interactive-card warp-card">
+        <div class="interactive-head"><div><span class="eyebrow">INTERACTIVE 01</span><h3>Warp Viewer · 32 lanes</h3></div><div class="segmented compact"><button class="warp-map-button is-active" data-map="mode">lane → mode</button><button class="warp-map-button" data-map="time">lane → time</button></div></div>
+        <div id="warpGrid" class="warp-grid" aria-live="polite"></div>
+        <div id="warpExplanation" class="interaction-explain"></div>
+      </div>
+
+      <div class="mapping-levels">
+        <article><small>LANE j</small><div class="lane-registers"><span>ν<sub>j</sub></span><span>θ<sub>j</sub></span><span>x<sub>j</sub></span><span>y<sub>j</sub></span></div><p>持有 mode-local 参数与 state。</p></article>
+        <article><small>WARP</small><div class="warp-bar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><p>一次覆盖 32 modes；c<sub>t</sub>,d<sub>t</sub> 广播。</p></article>
+        <article><small>CTA</small><div class="cta-block"><span>warp 0</span><span>warp 1</span><span>warp 2</span><span>warp 3</span></div><p>128-mode tile 示例；共享 control staging。</p></article>
+      </div>
+
+      <div class="interactive-card grid-card">
+        <div class="interactive-head"><div><span class="eyebrow">INTERACTIVE 02</span><h3>Time × Mode Grid</h3></div><p>调节维度，观察 tiles 与 jobs。</p></div>
+        <div class="control-row grid-controls">
+          <label>M modes <input id="gridM" type="number" min="32" max="8192" step="32" value="512"></label>
+          <label>L length <input id="gridL" type="number" min="32" max="65536" step="32" value="2048"></label>
+          <label>chunk C <input id="gridC" type="number" min="16" max="1024" step="16" value="256"></label>
+          <label>mode tile <input id="gridTile" type="number" min="32" max="1024" step="32" value="128"></label>
+        </div>
+        <canvas id="timeModeCanvas" width="900" height="360" aria-label="时间和模式二维切片图"></canvas>
+        <div id="gridStats" class="stat-strip"></div>
+      </div>
+    </section>
+
+    <section id="control" class="report-section">
+      <div class="section-kicker"><span>13</span>Coherent Control · 为什么适合 GPU</div>
+      <div class="section-heading">
+        <div><h2>token 只产生两坐标，<br>mode 提供丰富静态谱</h2></div>
+        <p>低维动态控制不等于所有 modes 做相同更新：同一个 c,d 作用在不同 ν<sub>j</sub>,θ<sub>j</sub> 上，仍产生 mode-specific transition。</p>
+      </div>
+      <div class="control-broadcast">
+        <div class="control-token"><small>PER TOKEN / CTA</small><b>g = exp(c)</b><b>cos d, sin d</b></div>
+        <div class="broadcast-lines" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="mode-cards">
+          <div style="--h:74%"><small>mode 0</small><b>ν₀, θ₀</b><span>ρ₀ · R(θ₀+d)</span></div>
+          <div style="--h:52%"><small>mode 1</small><b>ν₁, θ₁</b><span>ρ₁ · R(θ₁+d)</span></div>
+          <div style="--h:88%"><small>mode 2</small><b>ν₂, θ₂</b><span>ρ₂ · R(θ₂+d)</span></div>
+          <div style="--h:63%"><small>mode 3</small><b>ν₃, θ₃</b><span>ρ₃ · R(θ₃+d)</span></div>
+        </div>
+      </div>
+      <div class="phase-factor">
+        <div class="formula display">\(\cos(\theta_j+d_t)=\cos\theta_j\cos d_t-\sin\theta_j\sin d_t\)</div>
+        <div class="formula display">\(\sin(\theta_j+d_t)=\sin\theta_j\cos d_t+\cos\theta_j\sin d_t\)</div>
+        <p><span class="badge proposed">PROPOSED</span> 每 mode 的 sinθ/cosθ 可预存；每 token 的 sind/cosd 可由一个 lane/warp/CTA 计算后广播。<b>预计算还是重算必须 benchmark。</b></p>
+      </div>
+      <details class="code-details"><summary>Conceptual pseudocode · serial mode recurrence</summary><pre><code># Conceptual pseudocode — one lane owns one complex mode j
+x, y = load_state(j)
+cth, sth = cos_theta[j], sin_theta[j]
+for t in timesteps:
+    g = exp(c[t])
+    rho = exp(-nu[j] * g)
+    cp = cth * cos_d[t] - sth * sin_d[t]
+    sp = sth * cos_d[t] + cth * sin_d[t]
+    x, y = rho*(cp*x - sp*y) + wr[t,j], rho*(sp*x + cp*y) + wi[t,j]
+store_state(j, x, y)</code></pre></details>
+      <details class="code-details"><summary>Conceptual pseudocode · phasor factorization</summary><pre><code># Candidate factorization — benchmark against direct sincos(theta + d)
+cos_phi = cos_theta[j] * cos_d[t] - sin_theta[j] * sin_d[t]
+sin_phi = sin_theta[j] * cos_d[t] + cos_theta[j] * sin_d[t]
+# cos_d / sin_d are token-wise and can be broadcast across the mode tile.</code></pre></details>
+    </section>
+
+    <section id="scan" class="report-section">
+      <div class="section-kicker"><span>14–20</span>Parallelism · Chunked affine scan</div>
+      <div class="section-heading">
+        <div><h2>训练不能只并行 mode，<br>还要缩短 time 的并行深度</h2></div>
+        <p>把每个 timestep 看成 affine operator，把连续时间段压成可结合的 summary，再对 chunks 做 prefix scan。</p>
+      </div>
+
+      <div class="affine-derivation">
+        <div><small>ONE STEP</small><div class="formula">\(T_t(z)=a_tz+w_t\)</div></div><i>→</i>
+        <div><small>TWO STEPS</small><div class="formula">\(T_1(T_0(z))=a_1a_0z+a_1w_0+w_1\)</div></div><i>→</i>
+        <div class="affine-final"><small>ONE CHUNK</small><div class="formula">\(z_{out}=Pz_{in}+q\)</div></div>
+      </div>
+      <div class="q-intuition"><span>q 的直觉</span><b>zero state</b><i>→</i><b>运行 chunk 内 recurrence</b><i>→</i><b>最终 state = q<sub>chunk</sub></b></div>
+      <p class="diagram-note"><span class="badge fact">CURRENT FACT</span> 当前 canonical Flax <code>initialize_state</code> 把 recurrent x,y 初始化为 zero；scan 推导仍保留 non-zero z<sub>0</sub> 的通用公式。</p>
+
+      <div class="compressed-summary">
+        <div class="summary-equations">
+          <div class="badge proposed">SAMU STRUCTURE</div>
+          <div class="formula display">\(C=|S|,\quad G_S=\sum_{t\in S}e^{c_t},\quad D_S=\sum_{t\in S}d_t\)</div>
+          <div class="formula display accent">\(P_{j,S}=e^{-\nu_jG_S}\,e^{i(C\theta_j+D_S)}\)</div>
+        </div>
+        <div class="summary-compare">
+          <div><small>GENERIC DIAGONAL AFFINE</small><b>(P, q)</b><span>P ∈ ℂ<sup>M</sup>, q ∈ ℂ<sup>M</sup></span></div>
+          <i>compress transition</i>
+          <div class="compact-summary"><small>SAMU</small><b>(C, G, D, q)</b><span>C,G,D = O(1); q ∈ ℂ<sup>M</sup></span></div>
+        </div>
+        <p class="warning-banner"><b>不要夸大：</b>整个 summary 仍是 O(M)，因为 q 没有消失。真正压缩的是 dynamic transition P 的表示。</p>
+      </div>
+
+      <div class="interactive-card chunk-card">
+        <div class="interactive-head"><div><span class="eyebrow">INTERACTIVE 03</span><h3>4-token Chunk Summary</h3></div><p>修改每步 a 与 write；观察 prefix 的 (P,q)。</p></div>
+        <div class="toy-inputs" id="toyInputs"></div>
+        <div class="toy-results"><div id="toySteps"></div><div id="toySummary" class="toy-summary"></div></div>
+      </div>
+
+      <div class="composition-law">
+        <div class="formula display">\(S_B\circ S_A=(C_A+C_B,\ G_A+G_B,\ D_A+D_B,\ P_Bq_A+q_B)\)</div>
+        <div><span class="badge fact">ASSOCIATIVE</span><span class="badge danger">NOT COMMUTATIVE</span><p>可以树形并行组合，但时间顺序不能反。</p></div>
+      </div>
+
+      <div class="interactive-card scan-card">
+        <div class="interactive-head"><div><span class="eyebrow">INTERACTIVE 04</span><h3>Prefix Scan Animation</h3></div><div class="scan-actions"><button id="scanSizeButton" class="small-button">4 chunks</button><button id="scanPlay" class="primary-button">播放一层</button><button id="scanReset" class="small-button">重置</button></div></div>
+        <div id="scanVisualizer" class="scan-visualizer" aria-live="polite"></div>
+        <div id="scanCaption" class="interaction-explain">Layer 0 · 每个 chunk 只有自己的 local summary。</div>
+      </div>
+
+      <div class="scan-baselines">
+        <article><span>BASELINE</span><h3>Local serial + chunk prefix</h3><p>每个 chunk 内串行，chunks 间 scan；实现简单，先验证 (C,G,D,q) 正确性。</p></article>
+        <article><span>ADVANCED</span><h3>Warp time scan</h3><p>lane 映射 time，warp shuffle 做局部 prefix；需要 mode tiling 与更复杂寄存器布局。</p></article>
+        <article><span>LAYOUT</span><h3>Time × mode tile</h3><p>CTA 同时覆盖一段时间与一组 modes；平衡并行深度、occupancy 与 shared memory。</p></article>
+      </div>
+      <div class="chunk-tradeoff">
+        <div><b>更小 C</b><span>更多 chunks / prefix 工作与 launch，同步更频繁；局部串行深度更短。</span></div>
+        <i>chunk size is a tuning knob</i>
+        <div><b>更大 C</b><span>更少 summary / prefix 开销；局部串行深度、register lifetime 与单 job 工作更长。</span></div>
+      </div>
+    </section>
+
+    <section id="backends" class="report-section">
+      <div class="section-kicker"><span>21–22</span>Dual Backend · Decode 与 Prefill/Training</div>
+      <div class="section-heading"><div><h2>同一数学，两个执行问题</h2></div><p>decode 只有一个新 token；prefill/training 已知整段序列。最优 parallelism 不同。</p></div>
+      <div class="backend-compare">
+        <article class="decode-backend">
+          <div class="backend-title"><span>DECODE</span><b>latency-first</b></div>
+          <ul><li>time 不可并行：当前只有 1 token</li><li>mode-parallel：lane / warp 覆盖 modes</li><li>state cache 持久化，kernel 内放 register</li><li>control 只需两标量广播</li></ul>
+          <div class="backend-target">目标：低 launch / state latency</div>
+        </article>
+        <article class="train-backend">
+          <div class="backend-title"><span>PREFILL / TRAIN</span><b>throughput-first</b></div>
+          <ul><li>batch × time 先做 dense write GEMM</li><li>time × mode chunk jobs 并行</li><li>(C,G,D,q) 做 chunk prefix</li><li>必要时 materialize 全序列 output</li></ul>
+          <div class="backend-target">目标：短并行深度 + 高 occupancy</div>
+        </article>
+      </div>
+      <div class="two-pass">
+        <div><b>Pass 1</b><span>每个 chunk 从 zero state 算 local q 与 C,G,D</span></div><i>→</i><div><b>Pass 2</b><span>scan 得到真实 z<sub>in</sub>，重放或修正 chunk output</span></div>
+      </div>
+      <details class="code-details"><summary>Conceptual pseudocode · decode kernel skeleton</summary><pre><code># One token; mode-parallel. Not production CUDA.
+parallel_for mode j:
+    x, y = state_cache[j]
+    rho, cos_phi, sin_phi = transition(control_t, nu[j], theta[j])
+    x, y = rotate_decay_add(x, y, rho, cos_phi, sin_phi, write_t[j])
+    state_cache[j] = (x, y)</code></pre></details>
+      <details class="code-details"><summary>Conceptual pseudocode · training chunk kernel skeleton</summary><pre><code># Pass 1: batch × chunk × mode-tile jobs
+summary[k] = local_zero_state_summary(write[k], control[k])
+# Cross-chunk associative prefix
+prefix = exclusive_scan(compose, summary)
+# Pass 2: seed each chunk with prefix state and produce requested outputs
+parallel_for chunk k: replay_or_correct(prefix[k], write[k], control[k])</code></pre></details>
+    </section>
+
+    <section id="comparison" class="report-section">
+      <div class="section-kicker"><span>23–25</span>Comparison · SAMU / RG-LRU / Mamba-3</div>
+      <div class="section-heading">
+        <div><h2>结构优势不等于<br>端到端胜利</h2></div>
+        <p>SAMU 的 transition metadata 更紧凑；Mamba-3 的训练路径更成熟、更偏 matmul/SSD。谁更快必须在公平 state width 与完整系统上实测。</p>
+      </div>
+      <div class="comparison-intro">
+        <article><div class="badge inference">SAMU HYPOTHESIS</div><h3>coherent dynamic coordinates</h3><p>2 个 token-level controls × M 个 static spectral modes。</p></article>
+        <article><div class="badge fact">RG-LRU FACT</div><h3>mode-wise real retention</h3><p>动态门通常按通道变化；门可融合或重算，数学 O(LM) 不等于必然 HBM 流量。</p></article>
+        <article><div class="badge fact">MAMBA-3 FACT</div><h3>mature hardware-aware path</h3><p>官方实现已有 complex state、MIMO、Triton / CuTe / TileLang 相关训练与 step 路径。</p></article>
+      </div>
+      <div class="table-wrap comparison-table-wrap">
+        <table class="comparison-table">
+          <thead><tr><th>维度</th><th>SAMU</th><th>RG-LRU / Griffin</th><th>Mamba-3</th><th>证据</th></tr></thead>
+          <tbody>
+            <tr><td>dynamic transition control</td><td><b>2 scalars/token</b>（G=1）</td><td>通常 O(M) real gates</td><td>更丰富、head/state structured</td><td><span class="badge fact">FACT</span></td></tr>
+            <tr><td>mode transition diversity</td><td>静态 ν,θ + coherent c,d</td><td>static base + mode-wise gate</td><td>complex/selective discretized update</td><td><span class="badge fact">FACT</span></td></tr>
+            <tr><td>dynamic write B</td><td>canonical：否</td><td>通常 gate/write 路径可动态</td><td>是，选择性与 MIMO 更丰富</td><td><span class="badge inference">MODEL</span></td></tr>
+            <tr><td>chunk transition metadata</td><td><b>C,G,D</b> 三标量</td><td>一般为 mode-wise products</td><td>由 SSD/chunk formulation 组织</td><td><span class="badge proposed">PROPOSED</span></td></tr>
+            <tr><td>需要显式 P[chunk,mode]?</td><td>可由 C,G,D 重建</td><td>generic scan 常需要/重建</td><td>不是同一种 P,q 接口</td><td><span class="badge inference">INFERENCE</span></td></tr>
+            <tr><td>Tensor Core 友好部分</td><td>dense write 很强；scan 待开发</td><td>投影强；recurrence elementwise</td><td><b>核心训练设计高度 matmul-oriented</b></td><td><span class="badge fact">FACT</span></td></tr>
+            <tr><td>SFU / elementwise burden</td><td>exp + complex rotation 较多</td><td>sigmoid/sqrt + elementwise</td><td>仍有选择性/complex 元素操作</td><td><span class="badge inference">INFERENCE</span></td></tr>
+            <tr><td>training kernel maturity</td><td>generic PyTorch scan；custom 待做</td><td>已有成熟 fused 实现生态</td><td><b>官方 hardware-aware kernels</b></td><td><span class="badge fact">FACT</span></td></tr>
+            <tr><td>expected bottleneck</td><td>state/write traffic, exp/trig, registers</td><td>gate + state traffic</td><td>matmul layout / memory / kernel tuning</td><td><span class="badge needed">MEASURE</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="fairness-note"><b>公平性底线：</b>SAMU 的 M complex modes 是 2M real state scalars。对 RG-LRU / Mamba-3 比 bytes、参数或 throughput 时必须同时报告 complex/real state convention。</div>
+      <div class="reference-links"><span>PRIMARY REFERENCES</span><a href="https://arxiv.org/abs/2402.19427" target="_blank" rel="noreferrer">Griffin / RG-LRU ↗</a><a href="https://arxiv.org/abs/2603.15569" target="_blank" rel="noreferrer">Mamba-3 paper ↗</a><a href="https://github.com/state-spaces/mamba" target="_blank" rel="noreferrer">Official Mamba code ↗</a></div>
+    </section>
+
+    <section id="model" class="report-section">
+      <div class="section-kicker"><span>26–27</span>Roofline · Performance Model</div>
+      <div class="section-heading"><div><h2>FLOPs 只是账本的一列</h2></div><p>同时检查 bytes、arithmetic intensity、parallel depth、occupancy、Tensor Core / SFU 使用、launch 与同步。</p></div>
+      <div class="roofline-factors">
+        <span>FLOPs</span><span>Bytes moved</span><span>Parallel depth</span><span>Occupancy</span><span>Tensor Core</span><span>SFU</span><span>Launch</span><span>Sync</span>
+      </div>
+      <div class="interactive-card perf-card">
+        <div class="interactive-head"><div><span class="eyebrow">INTERACTIVE 05</span><h3>Theoretical / Logical Bytes Calculator</h3></div><p>这些不是 profiler-measured DRAM bytes。</p></div>
+        <div class="control-row perf-controls">
+          <label>Batch B <input id="perfB" type="number" min="1" max="4096" value="4"></label>
+          <label>Length L <input id="perfL" type="number" min="1" max="1048576" value="8192"></label>
+          <label>Modes M <input id="perfM" type="number" min="1" max="65536" value="2048"></label>
+          <label>Input d <input id="perfD" type="number" min="1" max="65536" value="2048"></label>
+          <label>Mode tile <input id="perfTile" type="number" min="1" max="4096" value="128"></label>
+          <label>Chunk C <input id="perfC" type="number" min="1" max="8192" value="256"></label>
+          <label>dtype bytes <select id="perfType"><option value="2">2 · BF16/FP16</option><option value="4">4 · FP32</option><option value="1">1 · FP8/INT8</option></select></label>
+        </div>
+        <div id="perfResults" class="perf-results"></div>
+        <div class="storage-bars"><div><span>Generic (P,q)</span><i id="genericBar"></i><b id="genericLabel"></b></div><div><span>SAMU (C,G,D,q)</span><i id="samuBar"></i><b id="samuLabel"></b></div></div>
+      </div>
+      <p class="roofline-warning"><b>关键提醒：</b>transition metadata 更 compact，不自动等于训练更快。SAMU 的 exp/trig、q、state 与 output 流量必须与 Mamba-3 的 matmul/SSD 路径在同一硬件上测。</p>
+    </section>
+
+    <section id="roadmap" class="report-section">
+      <div class="section-kicker"><span>28–31</span>Implementation Plan · V0–V4</div>
+      <div class="section-heading"><div><h2>先建立真相，<br>再追求漂亮 kernel</h2></div><p>每个版本只回答一个系统问题，并设置进入下一阶段的 evidence gate。</p></div>
+      <div class="roadmap">
+        <article><span>V0</span><div><small>CORRECTNESS</small><h3>Reference equivalence</h3><p>complex ↔ real 2×2 ↔ chunk summary ↔ prefix composition；覆盖 zero/non-zero initial state。</p></div></article>
+        <article><span>V1</span><div><small>BASELINE</small><h3>Dense GEMM + serial recurrence</h3><p>先定位 write、state traffic、exp、trig、register pressure、occupancy 的真实占比。</p></div></article>
+        <article><span>V2</span><div><small>COHERENT CONTROL</small><h3>Broadcast + phasor factorization</h3><p>比较 per-lane / per-warp recompute、precompute 与 CTA-shared。</p></div></article>
+        <article><span>V3</span><div><small>PARALLEL TRAINING</small><h3>Compressed affine scan</h3><p>实现 (C,G,D,q)，先做正确且透明的 two-pass chunk scan。</p></div></article>
+        <article><span>V4</span><div><small>PROFILE-GATED</small><h3>Advanced CuTe / CUDA</h3><p>只有 profiling 证明值得时再做 single-pass、look-back、persistent 或 projection-recurrence fusion。</p></div></article>
+      </div>
+
+      <div class="fusion-warning">
+        <div><div class="badge danger">WHY NOT FUSE FIRST</div><h3>GEMM epilogue 不能直接跨 row/time 解决 recurrence</h3></div>
+        <p>真正 fusion 需要 persistent scheduling、producer/consumer pipeline 与自定义 CuTe/CUDA；它也可能降低 GEMM occupancy、Tensor Core utilization，并增加 register pressure。V1 的分离路径是测量 fusion 价值的必要基线。</p>
+      </div>
+
+      <h3 class="subheading">不要夸大 · Research boundaries</h3>
+      <div class="warning-grid">
+        <article><b>01</b><p>SAMU 不是 O(L) total compute；write/state/q 仍有 O(LM) 或 O(M) 量。</p></article>
+        <article><b>02</b><p>(C,G,D) 是 O(1) transition metadata；完整 (C,G,D,q) 仍是 O(M)。</p></article>
+        <article><b>03</b><p>SAMU 不自动避开 memory-bound recurrence。</p></article>
+        <article><b>04</b><p>普通 decode kernel 之间 register state 不会自然持久化。</p></article>
+        <article><b>05</b><p>RG-LRU gates 可融合/重算；数学尺寸不能直接当 HBM bytes。</p></article>
+        <article><b>06</b><p>Mamba-3 已有成熟 hardware-aware training；chunking 本身不是 SAMU 的新发明。</p></article>
+        <article><b>07</b><p>precompute controls vs recompute controls 必须 benchmark。</p></article>
+        <article><b>08</b><p>没有公平 benchmark 前，不能声称 SAMU training 比 Mamba-3 快。</p></article>
+      </div>
+
+      <h3 class="subheading">Benchmark matrix</h3>
+      <div class="benchmark-matrix">
+        <article><span>A</span><h4>Correctness</h4><p>naive / real form / serial kernel / chunk scan；误差、梯度、reset。</p></article>
+        <article><span>B</span><h4>Recurrence microbench</h4><p>sweep B,L,M,dtype；time、tokens/s、GB/s、registers、occupancy、L2/DRAM、SFU。</p></article>
+        <article><span>C</span><h4>Control & phase</h4><p>lane/warp/CTA control；direct sincos vs phasor factorization。</p></article>
+        <article><span>D</span><h4>Chunk / tile</h4><p>C∈{16…512}；mode tile∈{64…512}；serial vs chunked vs advanced。</p></article>
+        <article><span>E</span><h4>Fair baselines</h4><p>RG-LRU / Mamba-like / Mamba-2 / Mamba-3；匹配 parameters 与 real state width。</p></article>
+        <article><span>F</span><h4>End-to-end + ablation</h4><p>train/prefill/decode/memory；no-d / no-c / static spectral / mode-wise control。</p></article>
+      </div>
+
+      <details class="code-details"><summary>Conceptual pseudocode · chunk summary / composition / prefix</summary><pre><code># Local zero-state summary for chunk S
+C = len(S); G = sum(exp(c[t]) for t in S); D = sum(d[t] for t in S)
+q = 0
+for t in S: q = A(t) * q + write[t]
+summary = (C, G, D, q)
+
+# Later B after earlier A
+def compose(B, A):
+    P_B = reconstruct_transition(B.C, B.G, B.D, nu, theta)
+    return (A.C+B.C, A.G+B.G, A.D+B.D, P_B*A.q+B.q)
+
+# Conceptual exclusive scan — associative, order-preserving
+prefix[k] = scan(compose, summary[0:k])
+z_in[k] = apply(prefix[k], z0)</code></pre></details>
+
+      <div class="research-story">
+        <small>THE RESEARCH STORY</small>
+        <blockquote>High-dimensional state does not necessarily require high-dimensional input-dependent transition control.</blockquote>
+        <div class="story-chain"><span>low-dimensional dynamic coordinates<br><b>(c<sub>t</sub>, d<sub>t</sub>)</b></span><i>×</i><span>rich static spectral basis<br><b>(ν<sub>j</sub>, θ<sub>j</sub>)</b></span><i>→</i><span>coherent selectivity<br><b>compact + mode-diverse</b></span><i>→</i><span>structured scan<br><b>(C,G,D,q)</b></span></div>
+        <p>真正要验证的是：SAMU 能否在保留丰富 mode-specific transition dynamics 的同时，进入 expressivity × memory efficiency × parallel training efficiency 的更好 Pareto frontier。</p>
+      </div>
+    </section>
+
+    <footer>
+      <div><b>SAMU × GPU</b><span>Interactive technical report · repository-audited</span></div>
+      <div><span>Current facts ≠ proposed kernels ≠ measured speedup</span><a href="#overview">回到顶部 ↑</a></div>
+    </footer>
+  </main>
+
+  <div id="learningOverlay" class="learning-overlay" hidden>
+    <div class="lesson-shell" role="dialog" aria-modal="true" aria-labelledby="lessonTitle">
+      <div class="lesson-top"><span id="lessonProgress">01 / 22</span><button id="closeLearning" aria-label="关闭从零学习模式">×</button></div>
+      <div class="lesson-track"><i id="lessonTrack"></i></div>
+      <article id="lessonContent"></article>
+      <div class="lesson-nav"><button id="lessonPrev">← 上一步</button><div id="lessonDots"></div><button id="lessonNext" class="primary-button">下一步 →</button></div>
+      <p class="lesson-keyboard">键盘：← / → 切换，Esc 关闭</p>
+    </div>
+  </div>
+</body>
+</html>
