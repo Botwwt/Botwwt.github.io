@@ -1,0 +1,1563 @@
+{
+  "schema_version": 1,
+  "generated_utc": "2026-08-29T16:29:13Z",
+  "paper_mapping": {
+    "source": "Griffin Figure 3 and Section 4.3",
+    "matched": [
+      "three model scales",
+      "sequence lengths 2048, 4096 and 8192",
+      "8192 tokens per complete optimizer step",
+      "BF16 autocast, cross entropy, backward, clipping and AdamW"
+    ],
+    "hardware_difference": "one H800 PCIe instead of a multi-device TPU-v3 setup",
+    "scale_difference": "explicit small/medium/large models instead of 400M/1.3B/7B; the original sizes require model and ZeRO sharding unavailable on the rented single-GPU node"
+  },
+  "official_recurrentgemma_commit": "2efa84dac0e68e63547a27a18fa943c98f1c312e",
+  "environment": {
+    "hostname": "autodl-container-ebc6489f38-eb33db1f",
+    "gpu": "NVIDIA H800 PCIe",
+    "gpu_total_memory_bytes": 85019590656,
+    "sm_count": 114,
+    "compute_capability": "9.0",
+    "torch": "2.1.2+cu118",
+    "torch_cuda": "11.8"
+  },
+  "fixed_tokens_per_step": 8192,
+  "records": [
+    {
+      "scale": "small",
+      "config": {
+        "vocab_size": 65,
+        "width": 256,
+        "rnn_width": 384,
+        "depth": 6,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "samu",
+      "parameters": 5363736,
+      "recurrent_mixer_parameters": 6936,
+      "shared_initialization": {
+        "tensors": 86,
+        "parameters": 5356800
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 26.053206529468298,
+          "tokens_per_second": 314433.46486867865,
+          "peak_allocated_bytes": 1255522304,
+          "samples_ms": [
+            26.02362900506705,
+            25.966944987885654,
+            25.869203032925725,
+            26.05472697177902,
+            25.868483004160225,
+            25.969694019295275,
+            26.035702030640095,
+            26.192826975602657,
+            26.083524979185313,
+            26.169805030804127,
+            26.14748803898692,
+            26.13671903964132,
+            26.056282047647983,
+            26.11601701937616
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 26.418060500873253,
+          "tokens_per_second": 310090.8940582225,
+          "peak_allocated_bytes": 1255499264,
+          "samples_ms": [
+            26.078263006638736,
+            26.193013007286936,
+            26.34302101796493,
+            26.21956600341946,
+            26.320941047742963,
+            26.838639983907342,
+            26.062065036967397,
+            26.13910101354122,
+            26.135755993891507,
+            26.826285000424832,
+            28.16261100815609,
+            27.689899026881903,
+            26.616554998327047,
+            26.26466000219807
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.876533502014354,
+          "tokens_per_second": 316580.2714402335,
+          "peak_allocated_bytes": 1258634752,
+          "samples_ms": [
+            25.771724991500378,
+            25.82385699497536,
+            25.79328801948577,
+            25.726496998686343,
+            25.776214024517685,
+            25.689993984997272,
+            25.685712054837495,
+            25.955494958907366,
+            25.90233099181205,
+            26.01650799624622,
+            25.921157968696207,
+            25.98134201252833,
+            26.06305095832795,
+            26.104767981451005
+          ],
+          "order_balanced_passes": 2
+        }
+      ]
+    },
+    {
+      "scale": "small",
+      "config": {
+        "vocab_size": 65,
+        "width": 256,
+        "rnn_width": 384,
+        "depth": 6,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "rglru",
+      "parameters": 5474304,
+      "recurrent_mixer_parameters": 117504,
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.14843753306195,
+          "tokens_per_second": 325745.8833866003,
+          "peak_allocated_bytes": 1897082880,
+          "samples_ms": [
+            25.147159991320223,
+            25.00251802848652,
+            25.116499979048967,
+            25.00353701179847,
+            24.99993401579559,
+            25.03376401728019,
+            25.035389000549912,
+            25.45612899120897,
+            25.799782015383244,
+            25.45444999122992,
+            25.26311104884371,
+            25.230119994375855,
+            25.24871501373127,
+            25.21403197897598
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.12998750898987,
+          "tokens_per_second": 325985.0406638458,
+          "peak_allocated_bytes": 1897059840,
+          "samples_ms": [
+            25.04767494974658,
+            25.000531983096153,
+            24.969980004243553,
+            24.975589010864496,
+            25.162855978123844,
+            25.01260000281036,
+            25.017443986143917,
+            25.234022992663085,
+            26.390923012513667,
+            25.247375015169382,
+            25.06087999790907,
+            25.14057804364711,
+            27.52435498405248,
+            27.319410990457982
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 24.86516599310562,
+          "tokens_per_second": 329456.8796472704,
+          "peak_allocated_bytes": 1821552128,
+          "samples_ms": [
+            24.670676968526095,
+            25.203533994499594,
+            24.776305945124477,
+            24.652840045746416,
+            24.74180399440229,
+            24.795656965579838,
+            24.76273395586759,
+            24.86279798904434,
+            28.008466004393995,
+            24.96759803034365,
+            25.00323799904436,
+            24.86900397343561,
+            24.859239987563342,
+            25.32873401651159
+          ],
+          "order_balanced_passes": 2
+        }
+      ]
+    },
+    {
+      "scale": "medium",
+      "config": {
+        "vocab_size": 65,
+        "width": 384,
+        "rnn_width": 512,
+        "depth": 8,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "samu",
+      "parameters": 15432480,
+      "recurrent_mixer_parameters": 12320,
+      "shared_initialization": {
+        "tensors": 114,
+        "parameters": 15420160
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 34.886506997281685,
+          "tokens_per_second": 234818.57901790828,
+          "peak_allocated_bytes": 2361942016,
+          "samples_ms": [
+            34.826651972252876,
+            35.422955988906324,
+            35.35857901442796,
+            34.96949200052768,
+            34.87111895810813,
+            34.84954102896154,
+            43.6614949721843,
+            34.73668295191601,
+            34.704947960563004,
+            34.81296403333545,
+            34.70741101773456,
+            34.80352199403569,
+            34.82342400820926,
+            35.19577800761908
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 34.97926899581216,
+          "tokens_per_second": 234195.86043895813,
+          "peak_allocated_bytes": 2361905152,
+          "samples_ms": [
+            35.16423801193014,
+            35.158291982952505,
+            35.25023796828464,
+            35.07447900483385,
+            35.43689596699551,
+            35.176727978978306,
+            34.99452298274264,
+            37.658259039744735,
+            34.74022599402815,
+            35.07724101655185,
+            34.79429997969419,
+            34.728389990050346,
+            34.89426302257925,
+            34.74941203603521
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 34.78179397643544,
+          "tokens_per_second": 235525.51675598032,
+          "peak_allocated_bytes": 2361886720,
+          "samples_ms": [
+            34.739750961307436,
+            34.70106504391879,
+            34.69002200290561,
+            34.87585298717022,
+            35.93879198888317,
+            34.79618899291381,
+            34.78276199894026,
+            34.674426016863436,
+            37.325861980207264,
+            34.73590197972953,
+            35.95474699977785,
+            34.68001901637763,
+            37.45989897288382,
+            34.780825953930616
+          ],
+          "order_balanced_passes": 2
+        }
+      ]
+    },
+    {
+      "scale": "medium",
+      "config": {
+        "vocab_size": 65,
+        "width": 384,
+        "rnn_width": 512,
+        "depth": 8,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "rglru",
+      "parameters": 15694592,
+      "recurrent_mixer_parameters": 274432,
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 36.43327101599425,
+          "tokens_per_second": 224849.42393461466,
+          "peak_allocated_bytes": 3501826048,
+          "samples_ms": [
+            36.51004598941654,
+            36.55695298220962,
+            36.491236998699605,
+            36.42325900727883,
+            36.44361702026799,
+            36.39048303011805,
+            36.41837800387293,
+            36.72625601757318,
+            36.49652504827827,
+            36.39854502398521,
+            37.58738102624193,
+            36.36815695790574,
+            36.42292501172051,
+            36.32166999159381
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 36.62049351260066,
+          "tokens_per_second": 223699.87988231872,
+          "peak_allocated_bytes": 3501807616,
+          "samples_ms": [
+            36.53900302015245,
+            36.630131013225764,
+            36.52501699980348,
+            36.56390804098919,
+            37.010717031080276,
+            36.83775902027264,
+            36.57630202360451,
+            38.37557102087885,
+            36.66399302892387,
+            37.56857296684757,
+            36.535296007059515,
+            36.53285198379308,
+            36.66468500159681,
+            36.740583018399775
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 36.18655799073167,
+          "tokens_per_second": 226382.40426453896,
+          "peak_allocated_bytes": 3366922240,
+          "samples_ms": [
+            36.39952198136598,
+            36.20971698546782,
+            36.19474603328854,
+            36.124297010246664,
+            36.161246011033654,
+            36.03291098261252,
+            36.06526803923771,
+            36.076402000617236,
+            36.215701955370605,
+            36.14609898068011,
+            36.21186997042969,
+            36.45764500834048,
+            36.2116529722698,
+            36.285414011217654
+          ],
+          "order_balanced_passes": 2
+        }
+      ]
+    },
+    {
+      "scale": "large",
+      "config": {
+        "vocab_size": 65,
+        "width": 512,
+        "rnn_width": 768,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "samu",
+      "parameters": 42654768,
+      "recurrent_mixer_parameters": 27696,
+      "shared_initialization": {
+        "tensors": 170,
+        "parameters": 42627072
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 55.544734495924786,
+          "tokens_per_second": 147484.72693844693,
+          "peak_allocated_bytes": 4903776256,
+          "samples_ms": [
+            55.96073000924662,
+            55.687363957986236,
+            55.358900979626924,
+            55.35906302975491,
+            55.94438698608428,
+            55.6438869680278,
+            55.502364004496485,
+            55.44130102498457,
+            55.793212028220296,
+            56.73770501744002,
+            55.44157704571262,
+            55.44558202382177,
+            55.413032008800656,
+            57.34494002535939
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 56.63220351561904,
+          "tokens_per_second": 144652.67977327888,
+          "peak_allocated_bytes": 4903767040,
+          "samples_ms": [
+            65.57195301866159,
+            65.52530801855028,
+            123.02827695384622,
+            57.17675801133737,
+            55.908488982822746,
+            55.90855999616906,
+            56.03171500843018,
+            55.983843049034476,
+            55.95152801834047,
+            56.08764901990071,
+            56.27557501429692,
+            55.93992298236117,
+            56.43161496846005,
+            56.53325101593509
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 56.333092506974936,
+          "tokens_per_second": 145420.74002036545,
+          "peak_allocated_bytes": 4903762432,
+          "samples_ms": [
+            56.0816100332886,
+            58.34509897977114,
+            56.41620198730379,
+            56.24444899149239,
+            58.36719402577728,
+            56.075952015817165,
+            56.160948995966464,
+            56.42173602245748,
+            56.271646986715496,
+            56.299932999536395,
+            56.285639002453536,
+            56.521621998399496,
+            62.75593099417165,
+            56.480024999473244
+          ],
+          "order_balanced_passes": 2
+        }
+      ]
+    },
+    {
+      "scale": "large",
+      "config": {
+        "vocab_size": 65,
+        "width": 512,
+        "rnn_width": 768,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "rglru",
+      "parameters": 43539456,
+      "recurrent_mixer_parameters": 912384,
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 69.28689050255343,
+          "tokens_per_second": 118233.04438374385,
+          "peak_allocated_bytes": 7480254464,
+          "samples_ms": [
+            69.2021069698967,
+            69.1584320156835,
+            69.16198000544682,
+            69.24223701935261,
+            68.96469299681485,
+            69.33150597615167,
+            69.13187896134332,
+            69.72362496890128,
+            69.55649197334424,
+            69.31382999755442,
+            69.26998501876369,
+            69.41180099966004,
+            69.28145396523178,
+            69.46451700059697
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 69.80130946612917,
+          "tokens_per_second": 117361.69511225485,
+          "peak_allocated_bytes": 7480180736,
+          "samples_ms": [
+            69.8037359979935,
+            70.60091197490692,
+            69.73951496183872,
+            71.47721399087459,
+            69.64057998266071,
+            69.59030701545998,
+            69.67214302858338,
+            69.77862404892221,
+            69.9619859806262,
+            70.17569697927684,
+            69.86310397041962,
+            69.88041300792247,
+            69.73766401642933,
+            69.66014095814899
+          ],
+          "order_balanced_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 68.3683889801614,
+          "tokens_per_second": 119821.45728747667,
+          "peak_allocated_bytes": 7177121792,
+          "samples_ms": [
+            68.35993798449636,
+            68.51669296156615,
+            68.37648997316137,
+            68.41384299332276,
+            68.28115502139553,
+            68.41072399402037,
+            68.34804196842015,
+            68.52616096148267,
+            68.35441599832848,
+            68.9305190462619,
+            68.32834600936621,
+            68.36028798716143,
+            68.36657499661669,
+            68.32293496700004
+          ],
+          "order_balanced_passes": 2
+        }
+      ]
+    }
+  ],
+  "measurement_passes": [
+    {
+      "measurement_pass": "forward",
+      "scale": "small",
+      "config": {
+        "vocab_size": 65,
+        "width": 256,
+        "rnn_width": 384,
+        "depth": 6,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "samu",
+      "parameters": 5363736,
+      "recurrent_mixer_parameters": 6936,
+      "shared_initialization": {
+        "tensors": 86,
+        "parameters": 5356800
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.969694019295275,
+          "tokens_per_second": 315444.60993315553,
+          "peak_allocated_bytes": 1255522304,
+          "samples_ms": [
+            26.02362900506705,
+            25.966944987885654,
+            25.869203032925725,
+            26.05472697177902,
+            25.868483004160225,
+            25.969694019295275,
+            26.035702030640095
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 26.21956600341946,
+          "tokens_per_second": 312438.4285739752,
+          "peak_allocated_bytes": 1255499264,
+          "samples_ms": [
+            26.078263006638736,
+            26.193013007286936,
+            26.34302101796493,
+            26.21956600341946,
+            26.320941047742963,
+            26.838639983907342,
+            26.062065036967397
+          ]
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.771724991500378,
+          "tokens_per_second": 317867.74081679655,
+          "peak_allocated_bytes": 1258634752,
+          "samples_ms": [
+            25.771724991500378,
+            25.82385699497536,
+            25.79328801948577,
+            25.726496998686343,
+            25.776214024517685,
+            25.689993984997272,
+            25.685712054837495
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "forward",
+      "scale": "small",
+      "config": {
+        "vocab_size": 65,
+        "width": 256,
+        "rnn_width": 384,
+        "depth": 6,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "rglru",
+      "parameters": 5474304,
+      "recurrent_mixer_parameters": 117504,
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.03376401728019,
+          "tokens_per_second": 327238.0451595399,
+          "peak_allocated_bytes": 1897082880,
+          "samples_ms": [
+            25.147159991320223,
+            25.00251802848652,
+            25.116499979048967,
+            25.00353701179847,
+            24.99993401579559,
+            25.03376401728019,
+            25.035389000549912
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.01260000281036,
+          "tokens_per_second": 327514.93243723427,
+          "peak_allocated_bytes": 1897059840,
+          "samples_ms": [
+            25.04767494974658,
+            25.000531983096153,
+            24.969980004243553,
+            24.975589010864496,
+            25.162855978123844,
+            25.01260000281036,
+            25.017443986143917
+          ]
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 24.76273395586759,
+          "tokens_per_second": 330819.6911778752,
+          "peak_allocated_bytes": 1821552128,
+          "samples_ms": [
+            24.670676968526095,
+            25.203533994499594,
+            24.776305945124477,
+            24.652840045746416,
+            24.74180399440229,
+            24.795656965579838,
+            24.76273395586759
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "forward",
+      "scale": "medium",
+      "config": {
+        "vocab_size": 65,
+        "width": 384,
+        "rnn_width": 512,
+        "depth": 8,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "rglru",
+      "parameters": 15694592,
+      "recurrent_mixer_parameters": 274432,
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 36.44361702026799,
+          "tokens_per_second": 224785.59127223972,
+          "peak_allocated_bytes": 3501826048,
+          "samples_ms": [
+            36.51004598941654,
+            36.55695298220962,
+            36.491236998699605,
+            36.42325900727883,
+            36.44361702026799,
+            36.39048303011805,
+            36.41837800387293
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 36.57630202360451,
+          "tokens_per_second": 223970.15408264328,
+          "peak_allocated_bytes": 3501807616,
+          "samples_ms": [
+            36.53900302015245,
+            36.630131013225764,
+            36.52501699980348,
+            36.56390804098919,
+            37.010717031080276,
+            36.83775902027264,
+            36.57630202360451
+          ]
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 36.161246011033654,
+          "tokens_per_second": 226540.86636009242,
+          "peak_allocated_bytes": 3366922240,
+          "samples_ms": [
+            36.39952198136598,
+            36.20971698546782,
+            36.19474603328854,
+            36.124297010246664,
+            36.161246011033654,
+            36.03291098261252,
+            36.06526803923771
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "forward",
+      "scale": "medium",
+      "config": {
+        "vocab_size": 65,
+        "width": 384,
+        "rnn_width": 512,
+        "depth": 8,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "samu",
+      "parameters": 15432480,
+      "recurrent_mixer_parameters": 12320,
+      "shared_initialization": {
+        "tensors": 114,
+        "parameters": 15420160
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 34.96949200052768,
+          "tokens_per_second": 234261.3384225423,
+          "peak_allocated_bytes": 2359963648,
+          "samples_ms": [
+            34.826651972252876,
+            35.422955988906324,
+            35.35857901442796,
+            34.96949200052768,
+            34.87111895810813,
+            34.84954102896154,
+            43.6614949721843
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 35.16423801193014,
+          "tokens_per_second": 232963.95608574562,
+          "peak_allocated_bytes": 2359932928,
+          "samples_ms": [
+            35.16423801193014,
+            35.158291982952505,
+            35.25023796828464,
+            35.07447900483385,
+            35.43689596699551,
+            35.176727978978306,
+            34.99452298274264
+          ]
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 34.78276199894026,
+          "tokens_per_second": 235518.96195735087,
+          "peak_allocated_bytes": 2359917568,
+          "samples_ms": [
+            34.739750961307436,
+            34.70106504391879,
+            34.69002200290561,
+            34.87585298717022,
+            35.93879198888317,
+            34.79618899291381,
+            34.78276199894026
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "forward",
+      "scale": "large",
+      "config": {
+        "vocab_size": 65,
+        "width": 512,
+        "rnn_width": 768,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "samu",
+      "parameters": 42654768,
+      "recurrent_mixer_parameters": 27696,
+      "shared_initialization": {
+        "tensors": 170,
+        "parameters": 42627072
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 55.6438869680278,
+          "tokens_per_second": 147221.92223391958,
+          "peak_allocated_bytes": 4903776256,
+          "samples_ms": [
+            55.96073000924662,
+            55.687363957986236,
+            55.358900979626924,
+            55.35906302975491,
+            55.94438698608428,
+            55.6438869680278,
+            55.502364004496485
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 57.17675801133737,
+          "tokens_per_second": 143274.99992874096,
+          "peak_allocated_bytes": 4903767040,
+          "samples_ms": [
+            65.57195301866159,
+            65.52530801855028,
+            123.02827695384622,
+            57.17675801133737,
+            55.908488982822746,
+            55.90855999616906,
+            56.03171500843018
+          ]
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 56.24444899149239,
+          "tokens_per_second": 145649.92895990735,
+          "peak_allocated_bytes": 4903762432,
+          "samples_ms": [
+            56.0816100332886,
+            58.34509897977114,
+            56.41620198730379,
+            56.24444899149239,
+            58.36719402577728,
+            56.075952015817165,
+            56.160948995966464
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "forward",
+      "scale": "large",
+      "config": {
+        "vocab_size": 65,
+        "width": 512,
+        "rnn_width": 768,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "rglru",
+      "parameters": 43539456,
+      "recurrent_mixer_parameters": 912384,
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 69.16198000544682,
+          "tokens_per_second": 118446.5800336376,
+          "peak_allocated_bytes": 7478679552,
+          "samples_ms": [
+            69.2021069698967,
+            69.1584320156835,
+            69.16198000544682,
+            69.24223701935261,
+            68.96469299681485,
+            69.33150597615167,
+            69.13187896134332
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 69.73951496183872,
+          "tokens_per_second": 117465.6864832318,
+          "peak_allocated_bytes": 7478615040,
+          "samples_ms": [
+            69.8037359979935,
+            70.60091197490692,
+            69.73951496183872,
+            71.47721399087459,
+            69.64057998266071,
+            69.59030701545998,
+            69.67214302858338
+          ]
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 68.37648997316137,
+          "tokens_per_second": 119807.26128550124,
+          "peak_allocated_bytes": 7176592896,
+          "samples_ms": [
+            68.35993798449636,
+            68.51669296156615,
+            68.37648997316137,
+            68.41384299332276,
+            68.28115502139553,
+            68.41072399402037,
+            68.34804196842015
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "large",
+      "config": {
+        "vocab_size": 65,
+        "width": 512,
+        "rnn_width": 768,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "rglru",
+      "parameters": 43539456,
+      "recurrent_mixer_parameters": 912384,
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 68.36028798716143,
+          "tokens_per_second": 119835.6566540287,
+          "peak_allocated_bytes": 7177121792,
+          "samples_ms": [
+            68.52616096148267,
+            68.35441599832848,
+            68.9305190462619,
+            68.32834600936621,
+            68.36028798716143,
+            68.36657499661669,
+            68.32293496700004
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 69.86310397041962,
+          "tokens_per_second": 117257.88770376612,
+          "peak_allocated_bytes": 7480180736,
+          "samples_ms": [
+            69.77862404892221,
+            69.9619859806262,
+            70.17569697927684,
+            69.86310397041962,
+            69.88041300792247,
+            69.73766401642933,
+            69.66014095814899
+          ]
+        },
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 69.41180099966004,
+          "tokens_per_second": 118020.27727302627,
+          "peak_allocated_bytes": 7480254464,
+          "samples_ms": [
+            69.72362496890128,
+            69.55649197334424,
+            69.31382999755442,
+            69.26998501876369,
+            69.41180099966004,
+            69.28145396523178,
+            69.46451700059697
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "large",
+      "config": {
+        "vocab_size": 65,
+        "width": 512,
+        "rnn_width": 768,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "samu",
+      "parameters": 42654768,
+      "recurrent_mixer_parameters": 27696,
+      "shared_initialization": {
+        "tensors": 170,
+        "parameters": 42627072
+      },
+      "rows": [
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 56.42173602245748,
+          "tokens_per_second": 145192.27123283388,
+          "peak_allocated_bytes": 4903762432,
+          "samples_ms": [
+            56.42173602245748,
+            56.271646986715496,
+            56.299932999536395,
+            56.285639002453536,
+            56.521621998399496,
+            62.75593099417165,
+            56.480024999473244
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 56.08764901990071,
+          "tokens_per_second": 146057.11138103434,
+          "peak_allocated_bytes": 4903767040,
+          "samples_ms": [
+            55.983843049034476,
+            55.95152801834047,
+            56.08764901990071,
+            56.27557501429692,
+            55.93992298236117,
+            56.43161496846005,
+            56.53325101593509
+          ]
+        },
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 55.44558202382177,
+          "tokens_per_second": 147748.47158210675,
+          "peak_allocated_bytes": 4903776256,
+          "samples_ms": [
+            55.44130102498457,
+            55.793212028220296,
+            56.73770501744002,
+            55.44157704571262,
+            55.44558202382177,
+            55.413032008800656,
+            57.34494002535939
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "medium",
+      "config": {
+        "vocab_size": 65,
+        "width": 384,
+        "rnn_width": 512,
+        "depth": 8,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "samu",
+      "parameters": 15432480,
+      "recurrent_mixer_parameters": 12320,
+      "shared_initialization": {
+        "tensors": 114,
+        "parameters": 15420160
+      },
+      "rows": [
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 34.780825953930616,
+          "tokens_per_second": 235532.07191947705,
+          "peak_allocated_bytes": 2361886720,
+          "samples_ms": [
+            34.674426016863436,
+            37.325861980207264,
+            34.73590197972953,
+            35.95474699977785,
+            34.68001901637763,
+            37.45989897288382,
+            34.780825953930616
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 34.79429997969419,
+          "tokens_per_second": 235440.86257751464,
+          "peak_allocated_bytes": 2361905152,
+          "samples_ms": [
+            37.658259039744735,
+            34.74022599402815,
+            35.07724101655185,
+            34.79429997969419,
+            34.728389990050346,
+            34.89426302257925,
+            34.74941203603521
+          ]
+        },
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 34.80352199403569,
+          "tokens_per_second": 235378.47696574702,
+          "peak_allocated_bytes": 2361942016,
+          "samples_ms": [
+            34.73668295191601,
+            34.704947960563004,
+            34.81296403333545,
+            34.70741101773456,
+            34.80352199403569,
+            34.82342400820926,
+            35.19577800761908
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "medium",
+      "config": {
+        "vocab_size": 65,
+        "width": 384,
+        "rnn_width": 512,
+        "depth": 8,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "rglru",
+      "parameters": 15694592,
+      "recurrent_mixer_parameters": 274432,
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 36.21186997042969,
+          "tokens_per_second": 226224.1636979675,
+          "peak_allocated_bytes": 3366594560,
+          "samples_ms": [
+            36.076402000617236,
+            36.215701955370605,
+            36.14609898068011,
+            36.21186997042969,
+            36.45764500834048,
+            36.2116529722698,
+            36.285414011217654
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 36.66468500159681,
+          "tokens_per_second": 223430.25719826107,
+          "peak_allocated_bytes": 3501807616,
+          "samples_ms": [
+            38.37557102087885,
+            36.66399302892387,
+            37.56857296684757,
+            36.535296007059515,
+            36.53285198379308,
+            36.66468500159681,
+            36.740583018399775
+          ]
+        },
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 36.42292501172051,
+          "tokens_per_second": 224913.29286057892,
+          "peak_allocated_bytes": 3501826048,
+          "samples_ms": [
+            36.72625601757318,
+            36.49652504827827,
+            36.39854502398521,
+            37.58738102624193,
+            36.36815695790574,
+            36.42292501172051,
+            36.32166999159381
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "small",
+      "config": {
+        "vocab_size": 65,
+        "width": 256,
+        "rnn_width": 384,
+        "depth": 6,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "rglru",
+      "parameters": 5474304,
+      "recurrent_mixer_parameters": 117504,
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 24.96759803034365,
+          "tokens_per_second": 328105.2502545134,
+          "peak_allocated_bytes": 1821030400,
+          "samples_ms": [
+            24.86279798904434,
+            28.008466004393995,
+            24.96759803034365,
+            25.00323799904436,
+            24.86900397343561,
+            24.859239987563342,
+            25.32873401651159
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.247375015169382,
+          "tokens_per_second": 324469.3753341882,
+          "peak_allocated_bytes": 1896540160,
+          "samples_ms": [
+            25.234022992663085,
+            26.390923012513667,
+            25.247375015169382,
+            25.06087999790907,
+            25.14057804364711,
+            27.52435498405248,
+            27.319410990457982
+          ]
+        },
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.26311104884371,
+          "tokens_per_second": 324267.2679608455,
+          "peak_allocated_bytes": 1896567808,
+          "samples_ms": [
+            25.45612899120897,
+            25.799782015383244,
+            25.45444999122992,
+            25.26311104884371,
+            25.230119994375855,
+            25.24871501373127,
+            25.21403197897598
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "small",
+      "config": {
+        "vocab_size": 65,
+        "width": 256,
+        "rnn_width": 384,
+        "depth": 6,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32
+      },
+      "architecture": "samu",
+      "parameters": 5363736,
+      "recurrent_mixer_parameters": 6936,
+      "shared_initialization": {
+        "tensors": 86,
+        "parameters": 5356800
+      },
+      "rows": [
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 25.98134201252833,
+          "tokens_per_second": 315303.18934448337,
+          "peak_allocated_bytes": 1258634752,
+          "samples_ms": [
+            25.955494958907366,
+            25.90233099181205,
+            26.01650799624622,
+            25.921157968696207,
+            25.98134201252833,
+            26.06305095832795,
+            26.104767981451005
+          ]
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 26.616554998327047,
+          "tokens_per_second": 307778.3732911678,
+          "peak_allocated_bytes": 1255499264,
+          "samples_ms": [
+            26.13910101354122,
+            26.135755993891507,
+            26.826285000424832,
+            28.16261100815609,
+            27.689899026881903,
+            26.616554998327047,
+            26.26466000219807
+          ]
+        },
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 26.13671903964132,
+          "tokens_per_second": 313428.78146163904,
+          "peak_allocated_bytes": 1255522304,
+          "samples_ms": [
+            26.192826975602657,
+            26.083524979185313,
+            26.169805030804127,
+            26.14748803898692,
+            26.13671903964132,
+            26.056282047647983,
+            26.11601701937616
+          ]
+        }
+      ]
+    }
+  ],
+  "trained_L256_point": [
+    {
+      "architecture": "rglru",
+      "sequence_length": 256,
+      "batch_size": 32,
+      "tokens_per_step": 8192,
+      "median_step_ms": 24.63004650780931,
+      "tokens_per_second": 332601.889217002,
+      "peak_allocated_bytes": 1896954880,
+      "samples_ms": [
+        24.526127032004297,
+        24.59560998249799,
+        25.5421360488981,
+        24.837509961798787,
+        24.602545017842203,
+        24.628805986139923,
+        24.643337994348258,
+        24.61731602670625,
+        24.631470965687186,
+        24.711397010833025,
+        24.614836962427944,
+        24.6312870294787,
+        24.58673296496272,
+        24.63875903049484
+      ],
+      "order_balanced_passes": 2
+    },
+    {
+      "architecture": "samu",
+      "sequence_length": 256,
+      "batch_size": 32,
+      "tokens_per_step": 8192,
+      "median_step_ms": 24.410707992501557,
+      "tokens_per_second": 335590.43033558904,
+      "peak_allocated_bytes": 1255844864,
+      "samples_ms": [
+        24.389275000430644,
+        24.41438101232052,
+        24.372501007746905,
+        28.289506037253886,
+        24.485055007971823,
+        24.448356009088457,
+        24.359322036616504,
+        24.407034972682595,
+        24.3156980141066,
+        24.512887001037598,
+        24.315039976499975,
+        24.461938010063022,
+        24.346087011508644,
+        24.41436902154237
+      ],
+      "order_balanced_passes": 2
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "gpu": "NVIDIA H800 PCIe",
+  "torch": "2.1.2+cu118",
+  "cuda": "11.8",
+  "device_capability": [
+    9,
+    0
+  ],
+  "data_sha256": "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed",
+  "data_characters": 1115394,
+  "alphabet_size": 65,
+  "official_recurrentgemma_commit": "2efa84dac0e68e63547a27a18fa943c98f1c312e",
+  "config": {
+    "vocab_size": 65,
+    "width": 256,
+    "rnn_width": 384,
+    "depth": 6,
+    "mlp_expansion": 3,
+    "num_gate_blocks": 16,
+    "conv_width": 4,
+    "train_sequence_length": 256,
+    "train_batch_size": 32
+  }
+}

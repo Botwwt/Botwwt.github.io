@@ -181,6 +181,56 @@ class SamuInputs:
 
         return operation
 
+    def framework_linear(self):
+        """Transparent PyTorch linear loop corresponding to native JAX scan."""
+
+        modes = self.modes
+
+        def operation():
+            projected = self.projected
+            raw_phase = projected[..., 2 * modes].float()
+            raw_radial = projected[..., 2 * modes + 1].float()
+            phase_selector = torch.tanh(raw_phase + self.packed.phase_bias)
+            radial_selector = torch.tanh(raw_radial + self.packed.radial_bias)
+            delta = self.packed.phase_scale * phase_selector
+            eta = self.packed.radial_scale * radial_selector / (
+                1.0 + radial_selector.square()
+            )
+            radius = torch.exp(
+                -self.packed.nu * torch.exp(eta).unsqueeze(-1)
+            )
+            cos_delta, sin_delta = torch.cos(delta).unsqueeze(-1), torch.sin(delta).unsqueeze(-1)
+            ar = radius * (
+                self.packed.cos_theta * cos_delta
+                - self.packed.sin_theta * sin_delta
+            )
+            ai = radius * (
+                self.packed.sin_theta * cos_delta
+                + self.packed.cos_theta * sin_delta
+            )
+            write_r = projected[..., 0:2 * modes:2] * self.packed.gamma
+            write_i = projected[..., 1:2 * modes:2] * self.packed.gamma
+            state_r = torch.zeros(
+                self.batch, modes, device="cuda", dtype=torch.float32
+            )
+            state_i = torch.zeros_like(state_r)
+            output_r, output_i = [], []
+            for index in range(self.length):
+                next_r = (
+                    ar[:, index] * state_r - ai[:, index] * state_i
+                    + write_r[:, index].float()
+                )
+                next_i = (
+                    ai[:, index] * state_r + ar[:, index] * state_i
+                    + write_i[:, index].float()
+                )
+                state_r, state_i = next_r, next_i
+                output_r.append(state_r.to(torch.bfloat16))
+                output_i.append(state_i.to(torch.bfloat16))
+            return torch.stack(output_r, 1), torch.stack(output_i, 1)
+
+        return operation
+
 
 class RGLRUInputs:
     def __init__(self, batch: int, length: int, width: int, RGLRU):
@@ -268,6 +318,34 @@ class RGLRUInputs:
 
         return operation
 
+    def framework_linear(self):
+        """Unfused PyTorch equation path, analogous to the paper's native JAX scan."""
+
+        batch, length, width = self.batch, self.length, self.width
+        heads, head_dim = self.packed.num_heads, self.packed.head_dim
+
+        def operation():
+            projected_x = self.projected[..., :head_dim].permute(1, 0, 2).reshape(batch, length, width)
+            projected_a = self.projected[..., head_dim:].permute(1, 0, 2).reshape(batch, length, width)
+            bias_x = self.packed.gate_bias[..., :head_dim].reshape(width)
+            bias_a = self.packed.gate_bias[..., head_dim:].reshape(width)
+            gate_x = torch.sigmoid(projected_x + bias_x)
+            gate_a = torch.sigmoid(projected_a + bias_a)
+            log_a = -8.0 * gate_a * self.packed.softplus_a
+            transition = torch.exp(log_a)
+            multiplier = torch.sqrt(
+                torch.clamp(1.0 - torch.exp(2.0 * log_a), min=0.0)
+            )
+            write = self.x * gate_x * multiplier.to(self.x.dtype)
+            state = torch.zeros(batch, width, device="cuda", dtype=torch.float32)
+            outputs = []
+            for index in range(length):
+                state = transition[:, index].float() * state + write[:, index].float()
+                outputs.append(state.to(torch.bfloat16))
+            return torch.stack(outputs, 1)
+
+        return operation
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -283,22 +361,21 @@ def main() -> None:
         samu = SamuInputs(8, length, 1024)
         rg = RGLRUInputs(8, length, 1024, RGLRU)
         operations = {
+            "samu_framework_linear_reference": samu.framework_linear(),
             "samu_linear": samu.serial(4),
             "samu_chunk32": samu.chunk(32, 2),
             "samu_chunk32_spectral_taylor": samu.chunk(32, 2, rho_taylor=True),
             "samu_chunk32_compressed_transition": samu.chunk(32, 2, compressed_p=True),
+            "rglru_framework_linear_reference": rg.framework_linear(),
             "rglru_linear": rg.serial(4),
             "rglru_chunk32": rg.chunk(32, 4),
         }
-        # Associative references materialize O(BLD) transitions and keep every
-        # tree level live.  Limit them to 8K to avoid turning OOM into a timing.
-        if length <= 8192:
-            operations.update({
-                "samu_associative_bf16_reference": samu.associative(torch.bfloat16),
-                "samu_associative_fp32_reference": samu.associative(torch.float32),
-                "rglru_associative_bf16_reference": rg.associative(torch.bfloat16),
-                "rglru_associative_fp32_reference": rg.associative(torch.float32),
-            })
+        operations.update({
+            "samu_associative_bf16_reference": samu.associative(torch.bfloat16),
+            "samu_associative_fp32_reference": samu.associative(torch.float32),
+            "rglru_associative_bf16_reference": rg.associative(torch.bfloat16),
+            "rglru_associative_fp32_reference": rg.associative(torch.float32),
+        })
         for order_name, names in (("forward", tuple(operations)),
                                   ("reverse", tuple(reversed(tuple(operations))))):
             stabilize_gpu(seconds=0.5)
@@ -309,7 +386,13 @@ def main() -> None:
                     "scope": "post-projection forward scan/gate stage",
                 }
                 try:
-                    result = timed(operations[name], 20, args.rep_ms)
+                    # The transparent framework loop is intentionally slow;
+                    # one untimed pass is enough to initialize it.  Triton
+                    # paths retain the longer warm-up used by the main timing
+                    # protocol, while associative references use five passes.
+                    warmup = (1 if "framework_linear" in name else
+                              5 if "associative" in name else 20)
+                    result = timed(operations[name], warmup, args.rep_ms)
                     rows.append({**base, "status": "measured", **result})
                 except (RuntimeError, torch.cuda.OutOfMemoryError) as error:
                     rows.append({**base, "status": "unsupported", "error": repr(error)})
@@ -339,7 +422,6 @@ def main() -> None:
             "not_measured": [
                 "multi-device model-parallel all-reduce (only one H800 is available)",
                 "ZeRO optimizer sharding (only one H800 is available)",
-                "full backward/training step; current custom Triton paths are inference-forward kernels",
             ],
         },
         "environment": {

@@ -38,15 +38,16 @@ export function initArchitecture() {
   if (!canvas) return;
   const explainer = document.querySelector("#architecture-explainer");
   const descriptions = [
-    "当前输入先进入一次打包的 BF16 稠密投影。",
-    "投影同时得到 2M 个写入实数和两个共享控制量 c、d。",
-    "静态 ν、θ 与共享 c、d 组合，为每个复数模态重建衰减和旋转。",
-    "不同模态并行更新；同一模态仍沿时间读取上一状态。",
-    "新状态写回固定大小的 FP32 缓存，供下一个 token 使用。",
+    "块内已有的输入分支和因果卷积先生成递推输入；这部分与 RG-LRU 共用。",
+    "递推输入的前后两半直接作为复数写入，不再增加一块 D×D 稠密矩阵。",
+    "同一递推输入只做两次向量归约，得到所有模态共享的径向控制和相位控制。",
+    "静态频谱参数与两个共享控制量组合，为每个模态恢复本步的衰减和旋转。",
+    "不同模态由不同 GPU 线程并行处理；每个线程沿时间轴顺序更新自己的状态。",
+    "最后状态直接以 FP32 写入缓存；BF16 输出继续进入块内的乘法连接。",
   ];
   const controller = new AnimationController({
     steps: descriptions.length,
-    duration: 1900,
+    duration: 2500,
     onFrame: draw,
     onStep(step) { if (explainer) explainer.textContent = descriptions[step]; },
   });
@@ -60,13 +61,14 @@ export function initArchitecture() {
     const motion = css("--motion");
     const lineColor = css("--line-strong");
     const nodes = [
-      {x: w * .035, y: h * .39, w: w * .15, h: h * .2, title: "当前输入", sub: "[B,D] · BF16", color: dynamic},
-      {x: w * .25, y: h * .18, w: w * .19, h: h * .2, title: "共享控制 c、d", sub: "每个 token 仅 2 个", color: dynamic},
-      {x: w * .25, y: h * .63, w: w * .19, h: h * .2, title: "复数写入", sub: "[B,M,2] · BF16", color: write},
-      {x: w * .53, y: h * .28, w: w * .25, h: h * .44, title: "模态状态更新", sub: "衰减 · 旋转 · 加写入", color: state},
-      {x: w * .84, y: h * .39, w: w * .13, h: h * .2, title: "新状态", sub: "[B,M,2] · FP32", color: state},
+      {x: w * .025, y: h * .39, w: w * .14, h: h * .2, title: "块输入", sub: "[B,D] · BF16", color: dynamic},
+      {x: w * .20, y: h * .39, w: w * .17, h: h * .2, title: "输入分支与卷积", sub: "双方共用 · [B,2M]", color: motion},
+      {x: w * .42, y: h * .14, w: w * .18, h: h * .2, title: "两个共享控制量", sub: "[B,2] · FP32", color: dynamic},
+      {x: w * .42, y: h * .66, w: w * .18, h: h * .2, title: "复数写入", sub: "拆分 · [B,M,2]", color: write},
+      {x: w * .65, y: h * .29, w: w * .21, h: h * .42, title: "模态状态更新", sub: "衰减 · 旋转 · 加写入", color: state},
+      {x: w * .89, y: h * .39, w: w * .095, h: h * .2, title: "新状态", sub: "FP32", color: state},
     ];
-    const links = [[0, 1], [0, 2], [1, 3], [2, 3], [3, 4]];
+    const links = [[0, 1], [1, 3], [1, 2], [2, 4], [3, 4], [4, 5]];
     links.forEach(([from, to]) => {
       const a = nodes[from], b = nodes[to];
       arrow(ctx, [a.x + a.w, a.y + a.h / 2], [b.x, b.y + b.h / 2], lineColor);
@@ -74,12 +76,12 @@ export function initArchitecture() {
     nodes.forEach((node, index) => card(
       ctx, node.x, node.y, node.w, node.h,
       node.title, node.sub, node.color,
-      [0, 1, 1, 3, 4][step] === index,
+      [0, 1, 2, 4, 4, 5][step] === index,
     ));
-    label(ctx, "静态谱参数 ν、θ", nodes[3].x + nodes[3].w / 2, h * .1, css("--static"), 11);
-    arrow(ctx, [nodes[3].x + nodes[3].w / 2, h * .13], [nodes[3].x + nodes[3].w / 2, nodes[3].y], css("--static"));
-    label(ctx, "上一状态（固定大小缓存）", nodes[3].x + nodes[3].w / 2, h * .91, state, 11);
-    arrow(ctx, [nodes[3].x + nodes[3].w / 2, h * .87], [nodes[3].x + nodes[3].w / 2, nodes[3].y + nodes[3].h], state);
+    label(ctx, "静态频谱参数 ν、θ", nodes[4].x + nodes[4].w / 2, h * .1, css("--static"), 11);
+    arrow(ctx, [nodes[4].x + nodes[4].w / 2, h * .13], [nodes[4].x + nodes[4].w / 2, nodes[4].y], css("--static"));
+    label(ctx, "上一状态（固定大小缓存）", nodes[4].x + nodes[4].w / 2, h * .91, state, 11);
+    arrow(ctx, [nodes[4].x + nodes[4].w / 2, h * .87], [nodes[4].x + nodes[4].w / 2, nodes[4].y + nodes[4].h], state);
     const [from, to] = links[Math.min(step, links.length - 1)];
     const a = nodes[from], b = nodes[to];
     dot(

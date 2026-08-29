@@ -1,22 +1,13 @@
 export const parts = {
   0: { id: "learn", roman: "I", title: "从方程到 GPU 数据", text: "明确 GPU 实际读取什么、保存什么，以及哪些量随时间或模态变化。" },
-  4: { id: "gpu-explorer", roman: "II", title: "针对瓶颈选择执行方法", text: "短序列减少显存往返，长序列利用结合律拆开时间依赖。" },
-  8: { id: "compare", roman: "III", title: "与 RG‑LRU 对比", text: "对手固定为 Griffin 方程、RecurrentGemma 官方语义和 16 个门分块。" },
-  10: { id: "benchmark-course", roman: "IV", title: "论文实验轴与结论", text: "按照 Griffin 第 4、5 节及附录的实验问题组织 H800 测试。" },
+  3: { id: "gpu-explorer", roman: "II", title: "针对瓶颈选择执行方法", text: "短序列减少显存往返，长序列利用结合律拆开时间依赖。" },
+  7: { id: "compare", roman: "III", title: "与 RG‑LRU 对比", text: "对手固定为 Griffin 方程、RecurrentGemma 官方语义和 16 个门分块。" },
+  13: { id: "benchmark-course", roman: "IV", title: "完整训练与推理", text: "按照 Griffin 第 4、5 节及附录的实验问题组织 H800 测试。" },
 };
 
 const math = (tex, note = "") => `<div class="formula"><div class="math-display" data-katex>${tex}</div>${note ? `<small>${note}</small>` : ""}</div>`;
 
 export const lessons = [
-  {
-    title: "结论与证据范围",
-    context: ["标准 SAMU", "官方 RG‑LRU", "性能与模型质量分开"],
-    lead: "这份汇报只回答实现正确性和硬件效率，不把未经训练的结构候选当成方法优势。",
-    body: `
-      <p>主对比中的 SAMU 固定为单组共享控制的标准方程；RG‑LRU 固定为 RecurrentGemma 官方方程和论文使用的 16 个门分块。16 组 SAMU、直接控制器、低阶函数近似和压缩分块转移都不进入主结论。</p>
-      <p>当前能严谨回答两件事：第一，投影完成后，两种递推在论文长序列形状上的运行成本；第二，在相同递推状态字节数下，把各自方程必需的投影也计入后，单层连续解码的真实延迟。没有反向传播内核，就不能把前向结果称为训练速度；没有训练好的同规模模型参数文件，也不能声称模型质量领先。</p>
-      <div class="term-note"><b>本页怎样使用“公平”</b><p>同一张 H800、相同批量和序列长度、相同 BF16 输入输出、相同 FP32 状态字节数；双方都包含本方程完成该实验所需的计算。任何改变 SAMU 参数化并需要重训的候选都单独留档，不参与主图。</p></div>`,
-  },
   {
     title: "GPU 真正看到的四类数据",
     context: ["输入", "静态参数", "当前控制", "递推状态"],
@@ -29,9 +20,10 @@ export const lessons = [
         <div><span>04</span><h4>递推状态与写入</h4><p><b>形状：</b><code>[B,M,2]</code>。复数状态由实部和虚部两个 FP32 标量保存；写入也有实部和虚部。M 个复数模态等于 2M 个实状态量。</p></div>
       </div>
       ${math(String.raw`\begin{aligned}
-      \text{输入投影:}\quad &[B,L,D]\,[D,2M+2]\longrightarrow[B,L,2M+2],\\
+      \text{共同输入分支:}\quad &[B,L,D]\,[D,2M]\longrightarrow[B,L,2M],\\
+      \text{SAMU 控制归约:}\quad &[B,L,2M]\longrightarrow[B,L,2],\\
       \text{递推状态:}\quad &[B,M,2]_{\mathrm{FP32}}.
-      \end{aligned}`, "前 2M 列是复数写入，最后 2 列生成共享控制。标准 SAMU 的写入投影是稠密矩阵，不能从成本中删掉。")}
+      \end{aligned}`, "完整模型不再增加单独写入矩阵：共同输入分支的 2M 个输出直接拆成复数写入；随后用两个归一化方向生成共享控制。")}
       <div class="terminology"><strong>本报告会反复出现的硬件词</strong><dl>
         <div><dt>HBM（显存）</dt><dd>GPU 的大容量存储。容量大，但每次读写的距离和能耗高于片上存储。</dd></div>
         <div><dt>SRAM（片上静态存储）</dt><dd>包括共享内存和缓存等片上存储，容量较小，但访问更快。Griffin 在 TPU 上对应使用 VMEM。</dd></div>
@@ -100,9 +92,9 @@ export const lessons = [
     lead: "这张图只画实际发生的数据读写，避免把 HBM、缓存、寄存器和计算单元混在同一层。",
     body: `
       <div class="memory-map" aria-label="SAMU 预填充的数据移动">
-        <div class="memory-map-row"><b>阶段一：稠密投影</b><span class="flow-node memory">HBM：输入与权重</span><em>→</em><span class="flow-node tensor">Tensor Core：BF16 矩阵乘</span><em>→</em><span class="flow-node memory">HBM：写入与两个控制量</span></div>
-        <div class="memory-map-row"><b>短序列：顺序扫描</b><span class="flow-node memory">HBM：投影结果</span><em>→</em><span class="flow-node compute">寄存器：逐步更新 FP32 状态</span><em>→</em><span class="flow-node memory">HBM：序列输出与最终状态</span></div>
-        <div class="memory-map-row"><b>长序列：分块扫描</b><span class="flow-node memory">HBM：投影结果</span><em>→</em><span class="flow-node compute">并行生成分块摘要</span><em>→</em><span class="flow-node memory">HBM：摘要与分块入口</span><em>→</em><span class="flow-node compute">并行局部回放</span><em>→</em><span class="flow-node memory">HBM：序列输出</span></div>
+        <div class="memory-map-row"><b>阶段一：共同输入分支</b><span class="flow-node memory">HBM：块输入与权重</span><em>→</em><span class="flow-node tensor">Tensor Core：BF16 矩阵乘</span><em>→</em><span class="flow-node compute">因果深度卷积</span></div>
+        <div class="memory-map-row"><b>短序列：控制—转移—扫描融合</b><span class="flow-node memory">HBM：卷积输出</span><em>→</em><span class="flow-node compute">两个共享控制量</span><em>→</em><span class="flow-node compute">寄存器：重建转移并更新 FP32 状态</span><em>→</em><span class="flow-node memory">HBM：序列输出与最终状态</span></div>
+        <div class="memory-map-row"><b>长序列：分块扫描</b><span class="flow-node memory">HBM：卷积输出</span><em>→</em><span class="flow-node compute">并行生成分块摘要</span><em>→</em><span class="flow-node memory">HBM：摘要与分块入口</span><em>→</em><span class="flow-node compute">并行局部回放</span><em>→</em><span class="flow-node memory">HBM：序列输出</span></div>
       </div>
       <div class="term-note"><b>为什么分块不总是更快</b><p>顺序扫描只需一次递推内核；分块扫描要额外保存摘要和分块入口，并启动三个递推内核。长序列获得更多并行度，短序列却可能被额外读写和启动时间抵消，所以切换点必须在目标 GPU 上实测。</p></div>`,
   },
@@ -132,37 +124,101 @@ export const lessons = [
   },
   {
     title: "SAMU 可以利用的独特结构",
-    context: ["共享转移坐标", "复数配对模态", "稠密写入瓶颈"],
-    lead: "SAMU 的硬件机会来自转移结构，而不是把写入成本凭空消失。",
+    context: ["共享转移坐标", "复数配对模态", "直接写入"],
+    lead: "SAMU 真正适合 GPU 的地方，是用两个共享坐标控制全部模态，并让模型已有的输入分支直接提供复数写入。",
     body: `
       <div class="advantage-list">
-        <div><b>两个共享转移坐标</b><p>RG‑LRU 为每个实状态通道生成两个门；SAMU 每个词元只生成 c、d，再与静态 ν、θ 重建全部模态的转移。控制描述从随状态宽度增长变为固定两个标量。</p></div>
-        <div><b>复数配对模态</b><p>两个实状态通道被绑定为一个旋转—缩放块。一次相位计算同时决定 2×2 变换中的四个系数关系，不需要为四个矩阵元素分别生成动态参数；代价是每个模态仍要计算指数和正弦余弦。</p></div>
-        <div><b>分块转移可由共享统计重建</b><p>一段词元的乘法转移只需 Σexp(c)、Σd 和长度就可与静态谱重建。但是当前压缩转移原型没有快过直接保存每个模态的转移，因此它没有实测收益，也不列为现有优势。</p></div>
-        <div><b>当前最大的限制：稠密写入</b><p>标准 SAMU 仍需把输入稠密投影为 2M 个写入值。到 Griffin 的 D_RNN=2560 宽度时，这部分可能比 RG‑LRU 的 16 组块对角门更贵。新的 H800 主测会把这项投影完整计入。</p></div>
+        <div><b>两个共享转移坐标</b><p>RG‑LRU 为每个实状态通道生成输入门和递推门；SAMU 每个词元只生成 <i>c</i>、<i>d</i>，再与静态 <i>ν</i>、<i>θ</i> 重建全部模态的转移。控制器输出从随状态宽度增长变为两个标量。</p></div>
+        <div><b>复数配对模态</b><p>两个实状态通道绑定为一个旋转—缩放块。每个模态只存一个半径尺度和一个基础相位，运行时用四次乘加完成二维更新；状态容量仍按两个实数计算，不靠少算缓存获得优势。</p></div>
+        <div><b>共享量只计算一次</b><p>当前词元的径向公共因子，以及相位偏移的正弦和余弦，对所有模态都相同。内核先计算一次，再广播给负责不同模态的线程；若每个模态重复计算，就浪费了共享控制带来的结构约束。</p></div>
+        <div><b>模型已有输入分支可直接写入</b><p>Griffin 的递推块本来就有 <code>linear_x</code>。把它的 <code>D_RNN</code> 个输出拆为实部和虚部，便得到 SAMU 写入；这样不再追加一张 <code>D_RNN×D_RNN</code> 稠密矩阵。</p></div>
       </div>
-      ${math(String.raw`P_j^{(C)}=\exp\!\left(-\nu_j\sum_{t=1}^{C}\exp(c_t)\right)\exp\!\left(i\left(C\theta_j+\sum_{t=1}^{C}d_t\right)\right)`, "这是准确的结构恒等式；当前实现没有因它获得速度提升，所以只作为负结果和后续方向。")}`,
+      ${math(String.raw`\begin{aligned}
+      [u_t^{\mathrm R},u_t^{\mathrm I}]&=\operatorname{linear\_x}(x_t),\\
+      w_{j,t}&=\gamma_j\left(u_{j,t}^{\mathrm R}+i u_{j,t}^{\mathrm I}\right).
+      \end{aligned}`, "训练模型采用这一定义：外层结构不变，linear_x 同时承担输入变换和 SAMU 复数写入。")}`,
   },
   {
-    title: "Training Recurrent Models Efficiently on Device：对照项目",
-    context: ["附录图 8(a)", "完整训练步骤", "多卡并行"],
-    lead: "原论文第 4 节包含三个层次；本报告逐项对应，不用一个前向微基准代替整章。",
+    title: "消除隔离微基准中的八倍投影差距",
+    context: ["完整递推块", "参数来源", "公平口径"],
+    lead: "旧表中 656 万对 81.9 万参数比较的是两个不同边界：SAMU 计入了完整写入矩阵，RG‑LRU 却只计入门矩阵，因此不适合解释完整模型。",
     body: `
-      <div class="coverage-table"><div><b>论文第 4.1 节：模型并行</b><p>论文讨论 Megatron 风格切分、前向和反向各一次 all-reduce（跨卡求和通信）、卷积按通道独立切分，以及 ZeRO（把优化器和参数分散到多卡）。当前租用节点只有一张 H800，不能实测跨卡通信；该项标记为未覆盖。</p></div>
-      <div><b>论文第 4.2 节与附录图 8(a)：扫描内核</b><p>主测严格采用 B=8、1024 个实状态量、L=2K/4K/8K/16K。双方比较顺序 Triton 和分块 Triton；计时从投影完成后开始，只回答递推扫描成本。</p></div>
-      <div><b>论文附录图 8(b)：扫描对完整 Hawk 的影响</b><p>论文报告 400M、1B、7B Hawk 的完整训练步骤。当前 SAMU Triton 没有反向内核，也没有标准 SAMU Hawk 模型，因此不能复制这一图。旧的随机权重前向外壳缺少官方 Conv1D、双分支和 D_RNN，已从主证据删除。</p></div>
-      <div><b>论文第 4.3 节：完整训练步骤随长度变化</b><p>论文固定每批词元总数，比较 400M、1B、7B、L=2K/4K/8K 的完整训练步骤。要完成对应实验，仍需标准 SAMU 语言模型定义、反向 Triton、训练模型参数、多卡切分和相同优化器；这些不能由前向扫描数字替代。</p></div></div>
-      <p>因此，当前“训练侧优势”只能写成“投影后的前向递推扫描优势”，不能写成“完整训练快若干倍”。页面会直接展示已覆盖和未覆盖项目。</p>`,
+      <p>在隔离单层微基准里，SAMU 从一个 <code>D_RNN</code> 宽向量再次投影到 <code>2M+2</code> 个值；RG‑LRU 只列两张 16 分块门矩阵。取 <code>D_RNN=2560</code>、<code>M=1280</code> 时，前者约有 656 万权重，后者约有 81.9 万权重，正好相差约八倍。这个数字解释了旧微基准的大批量瓶颈，却不是完整递推块的总参数对比。</p>
+      <p>完整 Griffin 递推块的双方都具有三张共同矩阵：输入分支 <code>linear_x</code>、门控分支 <code>linear_y</code> 和输出矩阵 <code>linear_out</code>。新的小模型训练让 SAMU 直接使用 <code>linear_x</code> 的输出作为写入，只额外添加两个归一化控制方向和每模态的静态谱参数；RG‑LRU 则在 <code>linear_x</code> 之后添加两张块对角门矩阵。</p>
+      ${math(String.raw`\begin{aligned}
+      N_{\mathrm{shared}}&=2D D_{\mathrm{RNN}}+D_{\mathrm{RNN}}D,\\
+      N_{\mathrm{RG\!-​LRU}}^{\mathrm{extra}}&=\frac{2D_{\mathrm{RNN}}^2}{16}+O(D_{\mathrm{RNN}}),\\
+      N_{\mathrm{SAMU}}^{\mathrm{extra}}&=O(D_{\mathrm{RNN}}).
+      \end{aligned}`, "第一行是双方共同的三张矩阵；后两行才是递推方法带来的额外参数。")}
+      <div class="term-note"><b>这项修改为什么必须重新训练</b><p>虽然递推方程没有删除，但写入来源从“额外稠密矩阵”改为“复用外层输入分支”，模型参数化发生了变化。只有完成同数据、同预算训练并验证损失，才能证明这种集成没有以质量下降换速度。</p></div>`,
   },
   {
-    title: "Inference Speed：严格对应的测量轴",
-    context: ["B=16 延迟", "空提示与 4K 提示", "最佳吞吐"],
-    lead: "原论文第 5 节的核心不是单次微内核，而是连续生成延迟、可容纳批量和完整轨迹吞吐。",
+    title: "官方 TPU 路径与本项目 H800 路径的对应关系",
+    context: ["官方方程", "自定义反向", "设备映射"],
+    lead: "我们迁移的是方程、精度和反向递推，不是把 TPU Pallas 源码逐行改成 Triton。",
     body: `
-      <p>H800 对比采用论文 1.3B 配置的递推宽度 D_RNN=2560。延迟轨道固定 B=16，从空提示和 4096 词元提示建立的状态开始，连续执行 128、256、512、1024、2048、4096 步；提示处理时间不计入生成延迟。</p>
-      <p>吞吐轨道先在预先固定的 B=1…256 候选上运行短探针，各方法选出前两名，再使用两边候选的并集完成 512、1024、2048、4096 步整条轨迹。这样不会只给某一方测试更有利的批量。</p>
-      ${math(String.raw`t_{\mathrm{step}}\approx\frac{\text{参数字节数}+B\times\text{每个序列的缓存字节数}}{\text{有效显存带宽}}`, "这是 Griffin 公式 (5)。在本对比中两边递推状态均为 2560 个 FP32 实数；参数读取和内核实现是主要差异。")}
-      <p>本轮结果的范围是“单个递推层，包含各自方程必需的投影和状态更新”。它严格使用论文解码轴，但不是完整 1.3B 模型：仓库里没有训练好的标准 SAMU Griffin 模型，也不能自行发明 Conv1D、双分支、输出投影和层布局后称为官方规模。</p>`,
+      <p>RecurrentGemma 官方仓库明确说明：Flax/Pallas 路径为 TPU 优化，PyTorch 路径主要作为参考。官方 Pallas 前向让每个程序持有一块状态并沿时间顺序更新；自定义梯度在反向时间方向执行另一条线性递推，并用前向输出计算转移系数的梯度。</p>
+      ${math(String.raw`\begin{aligned}
+      h_t&=a_t h_{t-1}+b_t,\\
+      r_t&=g_t+a_{t+1}r_{t+1},\\
+      \frac{\partial\mathcal L}{\partial b_t}&=r_t,\qquad
+      \frac{\partial\mathcal L}{\partial a_t}=r_t h_{t-1}.
+      \end{aligned}`, "g_t 是上游对当前输出的梯度，r_t 是包含未来时间步影响的伴随状态。")}
+      <p>H800 上的 Triton 前向和反向使用同一递推，但把状态宽度切成 128 通道左右的线程块，由 CUDA 线程束共同处理。前向状态和反向伴随量都以 FP32 留在寄存器中，序列输出和梯度按 BF16 写回。这个映射已经分别与显式 PyTorch 前向和自动微分逐值对照。</p>
+      <div class="term-note"><b>能否称为最优</b><p>不能只凭设计声称全局最优。当前能证明的是：候选块宽、线程束数、顺序和分块路径经过目标形状搜索，且完整轨迹复测稳定。真正的最优性还要继续用寄存器数、溢出、占用率和显存流量解释，并与新的融合候选复测。</p></div>`,
+  },
+  {
+    title: "双方都获得精确分块训练后，差异还剩什么",
+    context: ["同等级对手", "精确分块", "动态中间量"],
+    lead: "仿射结合律不是 SAMU 独占的能力，因此 RG‑LRU 也必须获得同样的时间分块前向和反向。",
+    body: `
+      <p>RG‑LRU 的实数递推和 SAMU 的二维旋转—缩放递推都属于仿射变换。两边现在都按“分块摘要、块间入口、块内回放”执行；反向也都先概括每块的伴随变换，再从序列末端向前传播块边界。每一步仍使用原方程，没有缩短序列、跳过梯度或换成近似函数。</p>
+      <div class="advantage-list">
+        <div><b>RG‑LRU 的分块摘要</b><p>每个实状态通道保存一个乘法系数和一个加法系数。扫描前已经生成形状为 <code>[B,L,D]</code> 的保留系数与写入，因此块内只需实数乘加，计算很轻。</p></div>
+        <div><b>SAMU 的分块摘要</b><p>每个复数模态保存二维旋转—缩放的乘法系数和复数加法项。逐词元动态描述只有 <code>[B,L,2]</code> 的径向、相位控制；逐模态转移在块内由静态谱参数重建。</p></div>
+        <div><b>共同得到的收益</b><p>当序列增长而批量下降时，时间块为 H800 提供更多并行任务。顺序依赖从全部词元缩短为“块内长度 + 块数”，代价是额外的摘要与边界读写。</p></div>
+        <div><b>仍然不同的代价</b><p>RG‑LRU 需要两张块对角门矩阵和随状态宽度展开的动态门；SAMU 的门投影很小，但每个模态要计算指数与旋转。哪一侧更快取决于状态宽度，不能只由公式计数决定。</p></div>
+      </div>`,
+  },
+  {
+    title: "SAMU 的 GPU 优势在哪些形状出现",
+    context: ["宽度拐点", "共享控制", "实测边界"],
+    lead: "共享控制不是让所有形状都变快，而是让控制成本不随递推宽度同步增长。",
+    body: `
+      <div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>比较项目</th><th>RG‑LRU</th><th>SAMU</th></tr></thead><tbody>
+        <tr><td>动态控制形状</td><td>输入门和保留门随实状态宽度展开，为 <code>[B,L,2D]</code>。</td><td>径向和相位控制在所有复数模态间共享，为 <code>[B,L,2]</code>。</td></tr>
+        <tr><td>状态容量口径</td><td><i>D</i> 个 FP32 实状态。</td><td><i>D/2</i> 个复数模态，即 <i>D</i> 个 FP32 实标量；状态字节相同。</td></tr>
+        <tr><td>短序列路径</td><td>顺序扫描把状态留在寄存器中。</td><td>同样使用顺序扫描；避免分块启动与摘要开销。</td></tr>
+        <tr><td>长序列路径</td><td>32 词元精确分块，实数乘加便宜，但门张量随宽度增长。</td><td>16 词元精确分块，在扫描内重建旋转；控制张量不随宽度增长。</td></tr>
+        <tr><td>单步解码</td><td>融合两组块对角门、非线性与状态更新。</td><td>融合两个控制归约、谱转移、复数写入和状态更新；B=16 复用预打包静态谱。</td></tr>
+      </tbody></table></div>
+      ${math(String.raw`\begin{aligned}
+      \text{RG-LRU 动态门输出}&:\ [B,L,2D_{\mathrm{RNN}}],\\
+      \text{SAMU 动态控制}&:\ [B,L,2].
+      \end{aligned}`, "这里比较随词元变化、为状态转移服务的动态描述。输入、状态输出等双方都必须处理的数据没有从口径中删除。")}
+      <p>H800 完整训练步显示了宽度拐点：536 万参数的小模型中 RG‑LRU 快约 3.6%–5.1%；1543 万参数的中模型中 SAMU 快约 4.0%–4.7%；递推宽度增至 768、完整模型约 4265 万参数时，SAMU 快约 21%–25%。因此当前证据支持“状态变宽后，共享控制的收益逐渐超过复数运算成本”，不支持“所有规模全面领先”。</p>`,
+  },
+  {
+    title: "训练实验：从扫描内核到完整小模型",
+    context: ["自定义反向", "配对训练", "固定每步词元数"],
+    lead: "训练侧同时测递推扫描、完整前向与反向、优化器更新和验证损失，不再用前向微基准替代完整训练。",
+    body: `
+      <div class="coverage-table"><div><b>递推扫描对照</b><p>沿用 Griffin 附录图 8(a) 的 B=8、1024 个实状态量和 L=2K/4K/8K/16K，比较顺序与分块前向。这一轨道隔离数据移动和递推本身。</p></div>
+      <div><b>训练反向对照</b><p>双方都使用自定义 CUDA 反向扫描：RG‑LRU 保存实数转移和前向状态；SAMU 只保存两个共享控制序列与前向状态，并在反向中重算复数转移。两边都把伴随状态留在 FP32 寄存器中沿时间倒序更新。</p></div>
+      <div><b>完整小模型配对训练</b><p>模型为 6 层 Hawk 风格字符语言模型：宽度 256、递推宽度 384、门分块 16、卷积宽度 4、词表 65。两边共享嵌入、归一化、三张递推块矩阵和 MLP 的初始化。</p></div>
+      <div><b>质量与随机性</b><p>数据、训练窗口、优化器、学习率日程、梯度裁剪、每步 8192 个字符及验证窗口完全相同。使用 3 个随机种子，每个模型训练 3000 步，即每个种子读取 2457.6 万个训练字符。</p></div></div>
+      <p>完成训练步骤的速度轴严格保留 Griffin 图 3 的关键方法：每步总词元数固定为 8192，序列长度取 2K、4K、8K，批量相应为 4、2、1；计时包含完整模型前向、交叉熵、反向传播、梯度裁剪和 AdamW 更新。</p>
+      ${math(String.raw`B\times L=8192\qquad (B,L)\in\{(4,2048),(2,4096),(1,8192)\}`, "这样长度变化不会同时改变每步训练词元数。")}`,
+  },
+  {
+    title: "推理实验：训练后的完整模型连续生成",
+    context: ["B=16 延迟", "空提示与 4K 提示", "CUDA 图"],
+    lead: "推理主结果来自训练后的完整小模型，包括嵌入、六个递推块、MLP、最终归一化、词表输出和下一个词元选择。",
+    body: `
+      <p>延迟轨道固定 B=16，从空状态以及 4096 字符提示建立的状态开始，连续生成 128、256、512、1024、2048、4096 步。提示处理时间不计入生成延迟，但后续每一步都使用提示产生的真实卷积缓存和递推状态。</p>
+      <p>吞吐轨道在共同的 B=1、4、16、32、64、128、256 候选上运行 512、1024、2048、4096 步完整轨迹。每个批量预先捕获一张 CUDA 图；图内执行整模型并把预测词元和每层缓存写回静态缓冲区，因此测到的不是孤立递推函数。</p>
+      ${math(String.raw`t_{\mathrm{step}}\approx\frac{\text{参数字节数}+B\times\text{每个序列的缓存字节数}}{\text{有效显存带宽}}`, "这是 Griffin 公式 (5)。完整小模型中每个递推层的双方状态均为 384 个 FP32 实数；参数读取和内核实现是主要差异。")}
+      <p>上式用于解释低批量解码的主要瓶颈。完整小模型里，两边三张共同矩阵相同；额外差异是 RG‑LRU 的两张块对角门矩阵，以及 SAMU 的共享控制与复数转移。旧的 D_RNN=2560 单层轨道仍保留为放大硬件差异的补充诊断，不再替代完整模型。</p>`,
   },
   {
     title: "如何证明 SAMU 方法真正有效",
@@ -172,9 +228,9 @@ export const lessons = [
       <ol class="research-checklist">
         <li><b>方程正确：</b>标准 SAMU 对照自己的 PyTorch 参考；RG‑LRU 对照固定提交的官方 RecurrentGemma，覆盖普通位置和分段重置。</li>
         <li><b>内核公平：</b>相同真实状态字节数、精度、批量、序列长度和计时边界；双方分别调优，但不能改变模型参数化。</li>
-        <li><b>系统完整：</b>训练实验必须包含前向传播、反向传播、优化器和多卡通信；推理实验必须包含真实模型全部层、连续采样和内存上限。</li>
+        <li><b>系统完整：</b>单卡训练实验必须包含前向传播、反向传播和优化器；只有在声称多卡收益时才必须进一步计入设备间通信。推理实验必须包含真实模型全部层、连续采样和内存上限。</li>
         <li><b>质量不下降：</b>在相同数据、词元数、优化器和调参预算下训练 SAMU 与 RG‑LRU，比较验证损失及下游任务。只有速度和质量同时成立，才能证明方法有效。</li>
       </ol>
-      <p>当前最值得做的 SAMU 专属优化不是继续缩短两个控制量的计算，而是重新设计“稠密写入投影如何与上游线性层合并”，同时保持标准方程和可训练性。若不能在模型定义中合法合并，扫描微内核的优势不会自动变成完整模型优势。</p>`,
+      <p>本轮已经把复数写入合并到模型原有输入分支，并把转移重建合并进训练扫描。三随机种子小模型测试中，SAMU 为 2.3364 BPC，RG‑LRU 为 2.3154 BPC；SAMU 尚未取得质量优势。速度方面，小模型仍略慢，中模型开始领先，宽状态模型领先约 21%–25%。下一轮优化应在不改变方程的前提下，根据可获得的寄存器数、特殊函数吞吐和显存流量证据选择卷积融合或更合适的模态分块，并继续用训练质量约束速度改动。</p>`,
   },
 ];
