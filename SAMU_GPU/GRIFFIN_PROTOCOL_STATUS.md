@@ -1,30 +1,54 @@
-# Griffin training and inference protocol status
+# Griffin 第 4、5 节实验覆盖表
 
-This file separates completed H800 evidence from experiments that the current
-hardware or kernels cannot yet support. “Mapped” means the independent variable,
-shape and timing boundary follow the paper; it does not mean the paper's TPU-v3
-number is reproduced.
+本表把 Griffin 论文正文与附录中的系统实验分成独立证据。前向递推、完整训练步骤、单层解码和完整模型推理不能相互替代。
 
-| Griffin item | Current SAMU/RG-LRU status | Evidence boundary |
-|---|---|---|
-| Section 4.1 model parallelism | Not measured | One H800 cannot measure tensor-parallel all-reduce or the paper's sharding communication. |
-| Section 4.1 ZeRO optimizer sharding | Not measured | No multi-device optimizer run is present. |
-| Section 4.2 linear recurrence scan | Measured | Post-projection forward scan/gate stage on H800. |
-| Appendix D / Figure 8(a), `B=8`, state 1024, length sweep | Mapped and measured at 2K–16K | H800 instead of the paper's two-chip TPU-v3 pod. |
-| Linear versus associative scan precision | Measured as a transparent reference | The associative PyTorch implementation is not claimed to be an optimized GPU baseline. |
-| Figure 8(b)-style full-model forward effect | Mapped at one ~1B random-weight proxy | Exact shared shell, `B=8`, lengths 2K–16K, five samples per AB/BA order; this isolates the forward effect only. |
-| Figure 8(b), complete 400M/1B/7B training runtime | Not measured | Custom backward and full training step do not exist yet; the forward proxy is not substituted for this result. |
-| Section 5 latency, `B=16`, prompt 0/4096 | Measured in the 1B random-weight proxy | Prompt prefill is excluded; decode checkpoints are 128–4096 tokens. |
-| Section 5 throughput, output 512–4096 | Measured in the 1B random-weight proxy | Candidate batches come from a declared 1–256 probe, then complete full trajectories. |
-| Equation (5) cache/bandwidth model | Applied analytically | Both models use equal fixed-size recurrent state; no hardware bandwidth value is inferred. |
-| Trained model quality | Not measured | SAMU-16 direct changes the architecture and must be retrained before perplexity or downstream claims. |
-| DRAM, L2, SFU and achieved occupancy | Not measured | The host blocks Nsight Compute counters with `RmProfilingAdminOnly=1`. |
+| 论文项目 | 论文设置 | 当前 SAMU / RG‑LRU 对比 | 状态 |
+|---|---|---|---|
+| 第 4.1 节：模型并行 | Megatron 风格切分；前向和反向通信；卷积按通道切分；ZeRO | 租用节点只提供一张 H800，不能测跨卡通信或 ZeRO | 未覆盖 |
+| 第 4.2 节：低计算强度递推 | 分析状态读写与 FLOPs/byte；Pallas 顺序扫描减少 HBM↔VMEM 搬运 | 给双方实现 Triton 顺序扫描；逻辑字节和运算量单独列出 | 已覆盖单卡前向 |
+| 附录图 8(a)：扫描运行时间 | B=8、状态宽度 1024、L 到 16K；Pallas、JAX、结合扫描 | B=8、1024 个实状态量、L=2K/4K/8K/16K；SAMU 与 RG‑LRU‑16 的顺序/分块 Triton | 已覆盖对应形状 |
+| 附录图 8(b)：完整 Hawk 训练步骤 | 400M、1B、7B；比较不同扫描实现 | 没有 canonical SAMU Hawk 模型和 backward Triton | 未覆盖 |
+| 第 4.3 节图 3：完整训练步骤 | 400M、1B、7B；L=2K/4K/8K；每批 token 总数固定 | 缺少 backward、优化器、多卡切分和同规模训练模型 | 未覆盖 |
+| 第 5.1 节：解码带宽模型 | 参数字节 + B×缓存字节，再除以有效带宽 | 记录双方 BF16 参数字节、FP32 状态字节和每步启动数；性能计数器无权限 | 分析已覆盖，硬件计数未覆盖 |
+| 第 5.2 节图 4：生成延迟 | 约 1B；B=16；空提示/4K 提示；连续生成 128–4096 token | D_RNN=2560 的单递推层；相同实验轴；完整计入各自投影 | 单层已覆盖；完整模型未覆盖 |
+| 第 5.2 节图 1(b)：最大吞吐 | 空提示；生成 512/1024/2048/4096 token；为每个模型选择最佳批量 | 预先固定 B=1–256，短探针筛选后在双方候选并集上完成整条轨迹 | 单层已覆盖；完整模型未覆盖 |
+| 附录 F.1–F.4：计算/缓存分析 | 线性层带宽界、注意力缓存、递推状态、卷积缓存和局部注意力缓存 | 相同状态字节比较；不引入注意力对手；明确 Conv1D 缓存未包含在单层递推主测 | 递推层范围已覆盖 |
 
-The current strongest recurrence-level candidate is grouped SAMU-16 with direct
-shared control. It halves the grouped write/gate projection MAC relative to the
-official RG-LRU-16 temporal layer while preserving equal recurrent-state bytes.
-The exact shared-shell proxy retains a `1.026x–1.047x` full-forward advantage,
-but official RG-LRU remains `1.023x–1.038x` faster in continuous decode and
-`1.016x–1.020x` higher in completed-trajectory throughput. This is therefore a
-hypothesis about a better quality–efficiency point until retraining is complete,
-not an established end-to-end win.
+## 官方 RG‑LRU 语义
+
+固定来源提交：`2efa84dac0e68e63547a27a18fa943c98f1c312e`。
+
+$$
+\begin{aligned}
+i_t &= \sigma(W_xx_t+b_x),\\
+r_t &= \sigma(W_ax_t+b_a),\\
+\log a_t &= -8r_t\odot\operatorname{softplus}(a_{\mathrm{param}}),\\
+h_t &= a_t\odot h_{t-1}+\sqrt{1-a_t^2}\odot(i_t\odot x_t).
+\end{aligned}
+$$
+
+实现包含官方分段重置：`segment_pos == 0` 时令递推系数为零，并把输入乘子设为一。主对比固定 16 个块对角门分块，BF16 输入/输出，FP32 递推缓存。
+
+## canonical SAMU 语义
+
+主结果固定单组共享控制，不使用 grouped SAMU、direct control、低阶特殊函数近似或压缩分块转移。
+
+$$
+\begin{aligned}
+\rho_{j,t}&=\exp\!\left(-\nu_j\exp(c_t)\right),\\
+\phi_{j,t}&=\theta_j+d_t,\\
+z_{j,t+1}&=\rho_{j,t}\exp(i\phi_{j,t})z_{j,t}+w_{j,t}.
+\end{aligned}
+$$
+
+M 个复数模态按 2M 个实状态量计算缓存字节。Section 5 单层轨道使用 D_RNN=2560，因此双方每个序列都保存 2560 个 FP32 实数，即 10 KiB。
+
+## 完整论文级证据仍需要什么
+
+1. 定义并冻结 canonical SAMU 的 Griffin/Hawk 语言模型块，不能临时删掉 Conv1D、双分支或输出投影后称为同一模型。
+2. 为 SAMU 和 RG‑LRU 实现同等级 forward/backward 内核，并验证输入梯度、状态梯度和参数梯度。
+3. 在 400M、1.3B、7B 模型上按相同 token 数、优化器、精度和调参预算训练。
+4. 使用相同设备数测量完整训练步骤、跨卡通信、峰值内存和模型质量。
+5. 使用训练好的约 1B checkpoint 测量完整模型的空提示/4K 提示延迟与最佳完整轨迹吞吐。
+
+在这些条件完成前，投影后前向扫描优势不能改写为完整训练优势，随机权重硬件轨道也不能改写为模型质量优势。

@@ -1,52 +1,54 @@
-import {lessons,parts} from "./lessons.js";
-import {initArchitecture,initCoreFigure} from "./visualizations/core.js";
-import {initSystemFigure} from "./visualizations/systems.js";
-import {initBenchmarkLab} from "./benchmark-lab.js";
-import {initSystemAnalysis} from "./system-analysis.js";
+import {lessons, parts} from "./lessons.js";
+import {initArchitecture, initCoreFigure} from "./visualizations/core.js";
 import {initCompleteAnalysis} from "./complete-analysis.js";
 import {renderMathWhenReady} from "./math.js";
 
-const content=document.querySelector("#lesson-content"),nav=document.querySelector("#lesson-links");
+const content = document.querySelector("#lesson-content");
+const nav = document.querySelector("#lesson-links");
 
-function lessonHTML(lesson,i){
-  const part=parts[i]?`<section class="part-divider" id="${parts[i].id}"><p class="part-label">第 ${parts[i].roman} 部分</p><h2>${parts[i].title}</h2><p>${parts[i].text}</p></section>`:"";
-  return `${part}<section class="lesson" id="lesson-${i}" data-lesson="${i}" data-context='${JSON.stringify(lesson.context)}'><header class="lesson-header"><span class="lesson-number">${String(i).padStart(2,"0")}</span><h3>${lesson.title}</h3></header><p class="lead">${lesson.lead}</p>${lesson.body}${i<lessons.length-1?`<a class="lesson-next" href="#lesson-${i+1}">下一节 · ${lessons[i+1].title} ↓</a>`:""}</section>`;
+function lessonHTML(lesson, index) {
+  const part = parts[index] ? `<section class="part-divider" id="${parts[index].id}"><p class="part-label">第 ${parts[index].roman} 部分</p><h2>${parts[index].title}</h2><p>${parts[index].text}</p></section>` : "";
+  return `${part}<section class="lesson" id="lesson-${index}" data-lesson="${index}"><header class="lesson-header"><span class="lesson-number">${String(index).padStart(2, "0")}</span><h3>${lesson.title}</h3></header><p class="lead">${lesson.lead}</p>${lesson.body}${index < lessons.length - 1 ? `<a class="lesson-next" href="#lesson-${index + 1}">下一节 · ${lessons[index + 1].title} ↓</a>` : ""}</section>`;
 }
 
-content.innerHTML=lessons.map(lessonHTML).join("");
-nav.innerHTML=lessons.map((l,i)=>`<li><a href="#lesson-${i}"><span>${String(i).padStart(2,"0")}</span> ${l.title}</a></li>`).join("");
+content.innerHTML = lessons.map(lessonHTML).join("");
+nav.innerHTML = lessons.map((lesson, index) => `<li><a href="#lesson-${index}"><span>${String(index).padStart(2, "0")}</span> ${lesson.title}</a></li>`).join("");
 renderMathWhenReady(document);
-
 initArchitecture();
-document.querySelectorAll("[data-figure]").forEach(root=>{initCoreFigure(root);initSystemFigure(root);});
-initBenchmarkLab();
-initSystemAnalysis();
-initCompleteAnalysis().catch(error=>{
-  console.error("complete H800 analysis unavailable",error);
-  document.querySelector("#training-result").innerHTML="<p><b>训练扫描结果读取失败。</b> 请直接打开原始 JSON 核对。</p>";
-  document.querySelector("#forward-result").innerHTML="<p><b>完整前向结果读取失败。</b> 请直接打开原始 JSON 核对。</p>";
-  document.querySelector("#adaptation-result").innerHTML="<p><b>解码适配结果读取失败。</b> 请直接打开原始 JSON 核对。</p>";
+document.querySelectorAll("[data-figure]").forEach(initCoreFigure);
+initCompleteAnalysis().catch(error => {
+  console.error("canonical H800 results unavailable", error);
+  document.querySelector("#training-result").innerHTML = "<p><b>扫描结果尚未写入。</b> 页面不会用旧候选结果代替。</p>";
+  document.querySelector("#inference-result").innerHTML = "<p><b>canonical 连续生成实验尚未完成。</b> 页面不会用需要重训的结果代替。</p>";
 });
 
-document.addEventListener("click",e=>{
-  const answer=e.target.closest("[data-answer]");if(!answer)return;const q=answer.closest(".quiz"),correct=answer.dataset.answer===q.dataset.correct;q.querySelectorAll("[data-answer]").forEach(b=>{b.classList.toggle("primary",b===answer);b.setAttribute("aria-pressed",b===answer);});q.querySelector(".quiz-feedback").innerHTML=`<b>${correct?"正确。":"再想一步。"}</b> ${q.querySelector("template").innerHTML}`;
+const navItems = [...nav.children];
+const sections = [...document.querySelectorAll(".lesson")];
+const observer = new IntersectionObserver(entries => {
+  const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!visible) return;
+  const index = Number(visible.target.dataset.lesson);
+  navItems.forEach((item, itemIndex) => item.classList.toggle("active", index === itemIndex));
+}, {rootMargin: "-18% 0px -62% 0px", threshold: [0, .15, .5]});
+sections.forEach(section => observer.observe(section));
+
+function progress() {
+  const doc = document.documentElement;
+  const maximum = doc.scrollHeight - innerHeight;
+  const fraction = maximum > 0 ? Math.min(1, scrollY / maximum) : 0;
+  document.querySelector("#progress-bar").style.width = `${fraction * 100}%`;
+  document.querySelector("#progress-value").textContent = `${Math.round(fraction * 100)}%`;
+}
+addEventListener("scroll", progress, {passive: true});
+progress();
+
+const theme = document.querySelector("#theme-toggle");
+const saved = localStorage.getItem("samu-theme");
+if (saved) document.documentElement.dataset.theme = saved;
+theme.addEventListener("click", () => {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem("samu-theme", next);
 });
 
-const live=document.querySelector("#live-context"),navItems=[...nav.children],sections=[...document.querySelectorAll(".lesson")];
-const observer=new IntersectionObserver(entries=>{const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];if(!visible)return;const i=+visible.target.dataset.lesson,ctx=JSON.parse(visible.target.dataset.context);navItems.forEach((li,j)=>li.classList.toggle("active",i===j));live.innerHTML=`<span class="context-label">汇报章节 ${String(i).padStart(2,"0")}</span><strong>${ctx[0]}</strong><p>${ctx.slice(1).join("<br>")}</p>`;},{rootMargin:"-18% 0px -62% 0px",threshold:[0,.15,.5]});sections.forEach(s=>observer.observe(s));
-
-document.addEventListener("samu:context",e=>{live.innerHTML=`<span class="context-label">当前图中选择</span><strong>${e.detail.title}</strong><p>${e.detail.lines.join("<br>")}</p>`;});
-
-function progress(){const doc=document.documentElement,max=doc.scrollHeight-innerHeight,p=max>0?Math.min(1,scrollY/max):0;document.querySelector("#progress-bar").style.width=`${p*100}%`;document.querySelector("#progress-value").textContent=`${Math.round(p*100)}%`;}
-addEventListener("scroll",progress,{passive:true});progress();
-
-const theme=document.querySelector("#theme-toggle");
-const saved=localStorage.getItem("samu-theme");if(saved)document.documentElement.dataset.theme=saved;
-theme.addEventListener("click",()=>{const next=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=next;localStorage.setItem("samu-theme",next);});
-
-const tooltip=document.querySelector("#tooltip");
-document.addEventListener("pointerover",e=>{const target=e.target.closest("[data-tip]");if(!target)return;tooltip.textContent=target.dataset.tip;tooltip.hidden=false;});
-document.addEventListener("pointermove",e=>{if(tooltip.hidden)return;tooltip.style.left=`${Math.min(innerWidth-290,e.clientX+14)}px`;tooltip.style.top=`${Math.min(innerHeight-100,e.clientY+14)}px`;});
-document.addEventListener("pointerout",e=>{if(e.target.closest("[data-tip]"))tooltip.hidden=true;});
-
-console.info(`SAMU GPU report ready: ${lessons.length} sections; benchmark figures read from JSON.`);
+console.info(`SAMU GPU report ready: ${lessons.length} sections.`);

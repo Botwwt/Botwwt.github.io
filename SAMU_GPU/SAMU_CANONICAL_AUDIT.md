@@ -123,7 +123,7 @@ The previous page already corrected several common errors and the rebuild must p
 The website engineering branch now contains audited inference experiments in `benchmark/triton_samu.py`:
 
 - one packed BF16 projection followed by FP32 serial recurrence;
-- chunk summary, exclusive prefix, and local replay kernels with C8/C16/C32 variants;
+- 分块摘要、分块入口计算和局部回放内核，包含 C8/C16/C32 变体；
 - one-launch decode that fuses write/controller dot products, coherent-control reconstruction, transition, and state update;
 - an H800-specific dispatch policy selected in a separate calibration sweep.
 

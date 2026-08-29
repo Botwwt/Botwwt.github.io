@@ -1,94 +1,37 @@
-# SAMU GPU · official RG-LRU comparison
+# SAMU GPU：与官方 RG‑LRU 的公平对比
 
-A static research report and reproducible H800 benchmark suite for SAMU and
-RG-LRU. The primary opponent follows Griffin equations 1–4, the pinned
-RecurrentGemma PyTorch semantics, and the paper-default 16 block-diagonal gate
-groups. No additional recurrent baseline is included in this report.
+静态汇报页面与 H800 测试代码。主页只加载 canonical SAMU 与官方 RG‑LRU‑16 主测，不加载 grouped SAMU、direct control、特殊函数近似或压缩分块转移候选。
 
-## What is measured
+## 主对比
 
-Four tracks are kept separate:
+- RG‑LRU 来源：RecurrentGemma 提交 `2efa84dac0e68e63547a27a18fa943c98f1c312e`。
+- RG‑LRU 结构：Griffin 方程、分段重置语义、16 个块对角门分块。
+- SAMU 结构：单组共享控制的 canonical 方程，稠密复数写入，通用指数/正弦/余弦。
+- 精度：BF16 输入、输出与投影；FP32 递推缓存。
+- 状态匹配：M 个复数 SAMU 模态按 2M 个实数计，双方缓存字节相同。
 
-1. **Official-structure decode.** At `D=2048`, both paths time RMSNorm plus one
-   recurrent update with equal 8 KiB FP32 state per sequence and two logical
-   launches. The SAMU-16 direct-control candidate is `1.032x–1.650x` faster
-   than official RG-LRU-16 for every measured batch in `{1,4,16,64,128}`.
-2. **Griffin training-scan axis.** With `B=8`, 1024 real state scalars and
-   lengths 2K–16K, SAMU chunk-32 is `4.91x–5.69x` faster than the equal-level
-   RG-LRU-16 chunk path. Serial paths differ by only about `1.08x`, so the
-   larger gain comes from shared control plus chunk parallelization. In the
-   exact shared ~1B shell, the complete forward advantage is only
-   `1.026x–1.047x`; common embedding/MLP/norm work dominates. Neither
-   measurement is a full training step because backward is absent.
-3. **Griffin inference-speed axis.** In the random-weight ~1B proxy, both
-   candidates reference the exact same embedding, 24-layer MLP/norm shell and
-   final-normalization tensors. Official RG-LRU-16 is `1.023x–1.038x` faster on
-   the batch-16 continuous decode trajectories and has `1.016x–1.020x` higher
-   completed-trajectory throughput. Each AB/BA order contains two complete
-   repetitions. The isolated recurrence win has not yet become a full-system
-   win.
-4. **Artificial parameter-matched microbenchmark.** Dense SAMU versus
-   RG-LRU-2 at `D=128` is retained only to isolate equation cost. RG-LRU-2 is
-   not the paper-default architecture and is not used for the main claim.
+## Griffin 第 4、5 节实验轴
 
-SAMU-16 direct control changes the architecture: two normalized activation
-channels provide the shared controls, and the complex write projection is
-grouped 16 ways. It requires retraining and quality validation. Current results
-are systems evidence, not a perplexity or downstream-quality result.
+`benchmark/run_canonical_griffin_axes.py` 包含两条主测：
 
-## Preview
+1. 附录图 8(a) 对应形状：B=8、1024 个实状态量、L=2K/4K/8K/16K，比较投影后的顺序与分块前向递推。
+2. 第 5 节对应轴：D_RNN=2560、B=16、空提示/4K 提示、连续 128–4096 步；吞吐在固定 B=1–256 候选中筛选后完成 512–4096 步整条轨迹。
 
-```powershell
-cd D:\Spectral_analysis\spectral\botwwtgithubio_remote_inspect\SAMU_GPU
-python -m http.server 8000
-```
+第二条是单递推层测试，不是完整 1.3B 模型。仓库没有训练好的 canonical SAMU Griffin 模型，也没有 backward Triton，因此不报告完整训练速度或模型质量优势。详细范围见 [GRIFFIN_PROTOCOL_STATUS.md](GRIFFIN_PROTOCOL_STATUS.md)。
 
-Open <http://localhost:8000>. A web server is required because the figures load
-the committed JSON evidence.
-
-## Reproduce the current H800 tracks
+## 运行
 
 ```bash
 cd SAMU_GPU/benchmark
-
-python run_samu_gpu_adaptation.py \
-  --output ../benchmark_results_griffin_complete/samu_gpu_adaptation.json \
-  --rglru-source /path/to/recurrentgemma
-
-python run_training_on_device.py \
-  --output ../benchmark_results_griffin_complete/training_on_device.json \
-  --rglru-source /path/to/recurrentgemma
-
-python run_griffin_candidate_inference.py \
-  --output ../benchmark_results_griffin_complete/griffin_candidate_inference.json \
-  --rglru-source /path/to/recurrentgemma
+python run_canonical_griffin_axes.py \
+  --output ../benchmark_results_griffin_complete/canonical_griffin_axes.json \
+  --rglru-source /path/to/recurrentgemma-pinned
 ```
 
-Calibration and final samples are separate. Final microkernel timing is run in
-forward and reverse model order and retains every Triton driver-event sample.
-Compilation, packing, dispatch and warm-up are outside the steady-state region.
+## 主要文件
 
-## Repository map
-
-- `benchmark/triton_rglru.py`: official-equation RG-LRU serial, chunk and fused
-  decode Triton kernels, including reset and eager-BF16 behavior.
-- `benchmark/triton_samu.py`: dense SAMU serial/chunk/decode kernels and bounded
-  spectral fast paths.
-- `benchmark/triton_samu_grouped.py`: grouped complex write, fused
-  RMSNorm/controller and grouped decode candidate.
-- `benchmark/run_samu_gpu_adaptation.py`: D=2048 calibration, correctness,
-  compiler resources and counterbalanced timing.
-- `benchmark/run_training_on_device.py`: Griffin Figure 8(a)-shaped forward
-  scan experiment on one H800.
-- `benchmark/run_griffin_candidate_inference.py`: random-weight ~1B shell,
-  continuous decode and bounded full-trajectory throughput.
-- `benchmark_results_griffin_complete/`: raw timing, calibration, correctness,
-  resource and environment JSON loaded by the report.
-- `BENCHMARK_METHODOLOGY.md`: equations, matching rules and evidence limits.
-- `SAMU_CANONICAL_AUDIT.md`: canonical SAMU source audit.
-
-Nsight Compute counters are unavailable because the host enforces
-`RmProfilingAdminOnly=1`; DRAM, L2, SFU utilization and achieved occupancy stay
-`null`. Compiler registers, spills and a resource-limit occupancy upper bound
-are reported separately and are never presented as hardware counters. Current
-custom kernels do not include backward, multi-device all-reduce or ZeRO.
+- `benchmark/triton_samu.py`：canonical SAMU 顺序、分块和单步解码 Triton 内核。
+- `benchmark/triton_rglru.py`：官方方程 RG‑LRU 顺序、分块和融合单步解码 Triton 内核。
+- `benchmark/run_canonical_griffin_axes.py`：第 4、5 节实验轴主测。
+- `SAMU_CANONICAL_AUDIT.md`：SAMU 方程来源与代码审计。
+- `GRIFFIN_PROTOCOL_STATUS.md`：论文系统实验覆盖表。
