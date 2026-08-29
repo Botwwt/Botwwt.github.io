@@ -1,98 +1,94 @@
-# SAMU GPU · equal-kernel RG-LRU comparison
+# SAMU GPU · official RG-LRU comparison
 
-A static research report and benchmark lab connecting the audited SAMU
-recurrence to GPU dataflow and an official-equation Triton RG-LRU baseline.
+A static research report and reproducible H800 benchmark suite for SAMU and
+RG-LRU. The primary opponent follows Griffin equations 1–4, the pinned
+RecurrentGemma PyTorch semantics, and the paper-default 16 block-diagonal gate
+groups. No additional recurrent baseline is included in this report.
 
-The public comparison contains 38 measured rows. It fixes
-`d_model=128`, near-identical parameter count (16,772 vs 16,768), and identical
-512-byte FP32 recurrent state. It never uses the official RecurrentGemma Python
-scan as the equal-kernel opponent.
+## What is measured
 
-On the counterbalanced H800 PCIe run, the crossover is the main result rather
-than an all-shape win. At batch 1, RG-LRU is faster at `L=128`; the two kernels
-are essentially tied at `L=512` and `L=2048`; SAMU is about `1.16x` faster at
-`L=8192`/`32768` and `1.33x` faster at `L=65536`. At `L=512`, SAMU's advantage
-grows from roughly parity at `B=4` to `1.46x` at `B=16` and `2.18x` at `B=64`.
-Conversely, the tiny one-launch `d_model=128` decode microkernel favors RG-LRU
-by about `1.31x–1.40x`. These are pooled Triton driver-event samples from both
-execution orders; compile, packing, calibration, and shape dispatch are outside
-the timed region.
+Four tracks are kept separate:
 
-The separate 1.07B-parameter decoder proxy shows why the microkernel and system
-numbers must not be conflated.  After pooling both execution orders, SAMU uses
-about `0.8%–1.3%` less time for the six empty-prefix, batch-16 decode
-trajectories and `2.1%–2.7%` less after a 4096-token prefix.  Within the
-predeclared `B≤128` search, its complete-trajectory throughput is
-`1.003x–1.013x` that of RG-LRU.  An independently labelled 8-step stress test
-reaches 102,521.7 token/s for SAMU and 100,905.3 token/s for RG-LRU; those short
-probes are not substituted for full trajectories.
+1. **Official-structure decode.** At `D=2048`, both paths time RMSNorm plus one
+   recurrent update with equal 8 KiB FP32 state per sequence and two logical
+   launches. The SAMU-16 direct-control candidate is `1.032x–1.650x` faster
+   than official RG-LRU-16 for every measured batch in `{1,4,16,64,128}`.
+2. **Griffin training-scan axis.** With `B=8`, 1024 real state scalars and
+   lengths 2K–16K, SAMU chunk-32 is `4.91x–5.69x` faster than the equal-level
+   RG-LRU-16 chunk path. Serial paths differ by only about `1.08x`, so the
+   larger gain comes from shared control plus chunk parallelization. In the
+   exact shared ~1B shell, the complete forward advantage is only
+   `1.026x–1.047x`; common embedding/MLP/norm work dominates. Neither
+   measurement is a full training step because backward is absent.
+3. **Griffin inference-speed axis.** In the random-weight ~1B proxy, both
+   candidates reference the exact same embedding, 24-layer MLP/norm shell and
+   final-normalization tensors. Official RG-LRU-16 is `1.023x–1.038x` faster on
+   the batch-16 continuous decode trajectories and has `1.016x–1.020x` higher
+   completed-trajectory throughput. Each AB/BA order contains two complete
+   repetitions. The isolated recurrence win has not yet become a full-system
+   win.
+4. **Artificial parameter-matched microbenchmark.** Dense SAMU versus
+   RG-LRU-2 at `D=128` is retained only to isolate equation cost. RG-LRU-2 is
+   not the paper-default architecture and is not used for the main claim.
 
-## Preview the site
+SAMU-16 direct control changes the architecture: two normalized activation
+channels provide the shared controls, and the complex write projection is
+grouped 16 ways. It requires retraining and quality validation. Current results
+are systems evidence, not a perplexity or downstream-quality result.
+
+## Preview
 
 ```powershell
 cd D:\Spectral_analysis\spectral\botwwtgithubio_remote_inspect\SAMU_GPU
 python -m http.server 8000
 ```
 
-Open <http://localhost:8000>. A web server is required because the benchmark
-lab fetches JSON files.
+Open <http://localhost:8000>. A web server is required because the figures load
+the committed JSON evidence.
 
-## Reproduce
+## Reproduce the current H800 tracks
 
 ```bash
 cd SAMU_GPU/benchmark
-python run_equal_kernel_benchmarks.py \
-  --output ../benchmark_results_equal_kernel \
+
+python run_samu_gpu_adaptation.py \
+  --output ../benchmark_results_griffin_complete/samu_gpu_adaptation.json \
   --rglru-source /path/to/recurrentgemma
 
-python profile_equal_kernels.py \
-  --output ../benchmark_results_equal_kernel/profiles.json \
+python run_training_on_device.py \
+  --output ../benchmark_results_griffin_complete/training_on_device.json \
   --rglru-source /path/to/recurrentgemma
 
-# Griffin Section 5-inspired system proxy: about 1.07B parameters, B=16
-# latency after 0/4096-token prompts, and a single-GPU batch search.
-python run_griffin_section5.py \
-  --output ../benchmark_results_griffin_section5/summary.json \
+python run_griffin_candidate_inference.py \
+  --output ../benchmark_results_griffin_complete/griffin_candidate_inference.json \
   --rglru-source /path/to/recurrentgemma
 ```
 
+Calibration and final samples are separate. Final microkernel timing is run in
+forward and reverse model order and retains every Triton driver-event sample.
+Compilation, packing, dispatch and warm-up are outside the steady-state region.
+
 ## Repository map
 
-- `benchmark/triton_samu.py`: packed projection, serial/chunk prefill, fused
-  decode, bounded phase polynomial, and FP32 cache.
-- `benchmark/triton_rglru.py`: official-equation serial/chunk/decode Triton
-  kernels with reset and eager-BF16 semantics.
-- `benchmark/run_equal_kernel_benchmarks.py`: equal-kernel correctness and timing
-  runner.
-- `benchmark/audit_equal_microbench.py`: event-method and cold-cache timing
-  audit for short kernels.
-- `benchmark/audit_samu_dispatch.py`: reproducible chunk-size dispatch sweep.
-- `benchmark/audit_samu_fastpath.py`: certified bounded-exponential A/B audit.
-- `benchmark/audit_samu_compressed_p.py`: experimental compressed-summary A/B
-  audit; the slower path remains disabled by default.
-- `benchmark/profile_equal_kernels.py`: launch and Triton compiler-resource
-  profiler.
-- `benchmark/profile_system_temporal.py`: launch and compiler-resource audit
-  for the width-2048 temporal paths used by the system proxy.
-- `benchmark/run_griffin_section5.py`: equal-shell 1.07B random-weight systems
-  proxy following the latency and bounded full-trajectory throughput axes in
-  Griffin Section 5.
-- `benchmark/run_system_saturation.py`: separate large-batch short-probe stress
-  test; its samples are not presented as full-trajectory throughput.
-- `benchmark_results_equal_kernel/`: raw samples, aggregate files, environment,
-  correctness audit, and profile evidence loaded by the site.
-- `benchmark_results_griffin_section5/`: full autoregressive trajectories and
-  batch-search results. This is a systems measurement, not a trained-model
-  quality comparison or a reproduction of the paper's TPU numbers.
-- `BENCHMARK_METHODOLOGY.md`: equations, matching rules, timing, and caveats.
-- `SAMU_CANONICAL_AUDIT.md`: canonical SAMU model/source audit.
+- `benchmark/triton_rglru.py`: official-equation RG-LRU serial, chunk and fused
+  decode Triton kernels, including reset and eager-BF16 behavior.
+- `benchmark/triton_samu.py`: dense SAMU serial/chunk/decode kernels and bounded
+  spectral fast paths.
+- `benchmark/triton_samu_grouped.py`: grouped complex write, fused
+  RMSNorm/controller and grouped decode candidate.
+- `benchmark/run_samu_gpu_adaptation.py`: D=2048 calibration, correctness,
+  compiler resources and counterbalanced timing.
+- `benchmark/run_training_on_device.py`: Griffin Figure 8(a)-shaped forward
+  scan experiment on one H800.
+- `benchmark/run_griffin_candidate_inference.py`: random-weight ~1B shell,
+  continuous decode and bounded full-trajectory throughput.
+- `benchmark_results_griffin_complete/`: raw timing, calibration, correctness,
+  resource and environment JSON loaded by the report.
+- `BENCHMARK_METHODOLOGY.md`: equations, matching rules and evidence limits.
+- `SAMU_CANONICAL_AUDIT.md`: canonical SAMU source audit.
 
-`Measured`, `Verified`, `Derived`, `Paper Fact`, `Proposed`, and `Hypothesis`
-labels separate evidence from interpretation. Hardware DRAM/SFU counters are
-`N/A`: Nsight Compute is installed on the H800 node, but host policy blocks
-performance counters (`ERR_NVGPUCTRPERM`). Logical traffic and static SFU
-counts are not presented as hardware measurements.
-
-Steady-state measurements exclude Triton JIT. SAMU currently specializes four
-control constants per layer, so the 24-layer cold start compiles multiple cubin
-variants. This is tracked as deployment overhead, not hidden inside a speedup.
+Nsight Compute counters are unavailable because the host enforces
+`RmProfilingAdminOnly=1`; DRAM, L2, SFU utilization and achieved occupancy stay
+`null`. Compiler registers, spills and a resource-limit occupancy upper bound
+are reported separately and are never presented as hardware counters. Current
+custom kernels do not include backward, multi-device all-reduce or ZeRO.

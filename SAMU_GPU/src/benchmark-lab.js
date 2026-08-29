@@ -4,7 +4,9 @@ const ns = "http://www.w3.org/2000/svg";
 
 const colors = {
   "SAMU Triton": "var(--state)",
+  "SAMU dense": "var(--state)",
   "RG-LRU Triton": "var(--rglru)",
+  "RG‑LRU‑2": "var(--rglru)",
   "SAMU / RG ratio": "var(--state)",
   "SAMU C8": "#b48927",
   "SAMU C16": "var(--write)",
@@ -73,21 +75,21 @@ function currentView() {
 
   if (experiment === "equal-length") {
     const data = measured(row => row.track === "A_equal_triton" && row.workload === "prefill" && row.backend === "triton_auto" && common(row))
-      .map(row => clonePoint(row, row.model === "samu" ? "SAMU Triton" : "RG-LRU Triton", row.length));
-    return { data, title: "预填充延迟随序列长度的变化", xLabel: "序列长度 L", protocol: "d=128；参数 16,772 对 16,768；状态均为 512 字节", ratioModel: "rglru" };
+      .map(row => clonePoint(row, row.model === "samu" ? "SAMU dense" : "RG‑LRU‑2", row.length));
+    return { data, title: "人工参数匹配轨道：预填充延迟随长度变化", xLabel: "序列长度 L", protocol: "d=128；RG 使用 2 个分块，不是论文默认 16 分块", ratioModel: "rglru" };
   }
   if (experiment === "batch") {
     const data = measured(row => row.track === "A_equal_triton" && row.workload === "prefill" && row.length === 512 && row.backend === "triton_auto" && row.d_model === 128 && row.modes === 64)
-      .map(row => clonePoint(row, row.model === "samu" ? "SAMU Triton" : "RG-LRU Triton", row.batch));
+      .map(row => clonePoint(row, row.model === "samu" ? "SAMU dense" : "RG‑LRU‑2", row.batch));
     return { data, title: "L=512 时，预填充延迟随批量大小的变化", xLabel: "批量大小 B", protocol: "同类内核；相同递推状态字节数", ratioModel: "rglru" };
   }
   if (experiment === "decode") {
     const data = measured(row => row.track === "A_equal_triton" && row.workload === "decode" && row.backend === "triton_fused_decode" && row.d_model === 128 && row.modes === 64)
-      .map(row => clonePoint(row, row.model === "samu" ? "SAMU Triton" : "RG-LRU Triton", row.batch));
+      .map(row => clonePoint(row, row.model === "samu" ? "SAMU dense" : "RG‑LRU‑2", row.batch));
     return { data, title: "融合单步解码随批量大小的变化", xLabel: "解码批量大小 B", protocol: "双方每一步都只启动一次 CUDA 内核", ratioModel: "rglru" };
   }
   const data = measured(row => row.track === "A_equal_triton" && row.workload === "prefill" && row.batch === 1 && row.length === 65536 && row.backend.startsWith("triton_chunk_c"))
-    .map(row => clonePoint(row, row.model === "samu" ? "SAMU Triton" : "RG-LRU Triton", row.chunk_size));
+    .map(row => clonePoint(row, row.model === "samu" ? "SAMU dense" : "RG‑LRU‑2", row.chunk_size));
   return { data, title: "B=1、L=65,536 时的分块长度对比", xLabel: "分块长度 C", protocol: "分别运行 C=8、16、32 的实际内核", ratioModel: "rglru" };
 }
 
@@ -107,7 +109,7 @@ function speedupPoints(data, ratioModel) {
     speedup: group.other.median_ms / group.samu.median_ms,
     samu: group.samu,
     other: group.other,
-    otherLabel: "RG‑LRU Triton"
+    otherLabel: "RG‑LRU‑2"
   }));
 }
 
@@ -173,7 +175,7 @@ function renderChart() {
   });
   svg.append(svgEl("text", { x: (margin.l + W - margin.r) / 2, y: H - 42, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11, "font-family": "IBM Plex Mono" }, view.xLabel));
   const metricNames = { median_ms: "延迟中位数", tokens_per_second: "吞吐", speedup: "速度比" };
-  $("#chart-caption").textContent = `${data.length} 个实测点；纵轴为${logY ? "对数" : "线性"}刻度，指标是${metricNames[metric]}。速度比定义为 RG‑LRU 延迟中位数除以 SAMU 延迟中位数；大于 1 表示 SAMU 更快。`;
+  $("#chart-caption").textContent = `${data.length} 个实测点；纵轴为${logY ? "对数" : "线性"}刻度，指标是${metricNames[metric]}。速度比定义为人工参数匹配 RG‑LRU‑2 延迟中位数除以 SAMU 延迟中位数；大于 1 表示 SAMU 更快。`;
   renderDetail(data[0], metric);
 }
 
@@ -212,7 +214,7 @@ function renderProfile() {
 function renderLab() {
   const panel = $("#lab-panel");
   if (activeTab === "protocol") {
-    panel.innerHTML = `<div class="coverage-grid"><div><span class="context-label">RG‑LRU 官方方程</span><strong>Griffin 公式 1–4</strong><p>r=σ(Wₐx+bₐ)，i=σ(Wₓx+bₓ)，a=a_base^(8r)，h=a·h_prev+√(1−a²)·(i·x)。序列重置位置强制 a=0，并把写入归一化系数设为 1。</p></div><div><span class="context-label">公平配对</span><strong>16,772 对 16,768 个参数</strong><p>d=128；参数仅差 4，递推状态都含 128 个 FP32 标量，即每个样本 512 字节。</p></div><div><span class="context-label">计时方法</span><strong>反向顺序复测</strong><p>先用 BF16 GEMM 稳定 GPU 时钟；每个点再预热并保留全部 CUDA event 样本。完整套件按 SAMU→RG‑LRU 和 RG‑LRU→SAMU 各运行一次，合并原始样本后重算统计量。</p></div></div><p class="fairness-inline">只有同宽度、同参数量、同状态字节数和同实现等级的配对数据用于架构结论；校准样本与最终样本分开。</p>`;
+    panel.innerHTML = `<div class="coverage-grid"><div><span class="context-label">RG‑LRU 官方方程</span><strong>Griffin 公式 1–4</strong><p>r=σ(Wₐx+bₐ)，i=σ(Wₓx+bₓ)，a=a_base^(8r)，h=a·h_prev+√(1−a²)·(i·x)。序列重置位置强制 a=0，并把写入归一化系数设为 1。</p></div><div><span class="context-label">人工参数匹配</span><strong>16,772 对 16,768 个参数</strong><p>d=128；RG 使用 2 个门分块来匹配参数量，不是论文默认的 16 分块。递推状态均为每样本 512 字节。</p></div><div><span class="context-label">计时方法</span><strong>反向顺序复测</strong><p>先用 BF16 GEMM 稳定 GPU 时钟；每个点再预热并保留全部 CUDA event 样本。完整套件按 SAMU→RG‑LRU 和 RG‑LRU→SAMU 各运行一次，合并原始样本后重算统计量。</p></div></div><p class="fairness-inline">本轨道只隔离方程与实现成本；主对手的结构结论必须使用页面上方的官方 RG‑LRU‑16 结果。</p>`;
   } else if (activeTab === "profile") {
     panel.innerHTML = renderProfile();
   } else if (activeTab === "correctness") {
@@ -241,7 +243,6 @@ export async function initBenchmarkLab() {
     rows = (summary.rows || []).filter(row => row.track === "A_equal_triton" && (row.model === "samu" || row.model === "rglru"));
     environment = summary.environment || {};
     audit = summary.equation_audit || {};
-    renderHeadline();
     renderChart();
     renderLab();
     $("#benchmark-controls").addEventListener("change", renderChart);

@@ -3,6 +3,7 @@ import {initArchitecture,initCoreFigure} from "./visualizations/core.js";
 import {initSystemFigure} from "./visualizations/systems.js";
 import {initBenchmarkLab} from "./benchmark-lab.js";
 import {initSystemAnalysis} from "./system-analysis.js";
+import {initCompleteAnalysis} from "./complete-analysis.js";
 import {renderMathWhenReady} from "./math.js";
 
 const content=document.querySelector("#lesson-content"),nav=document.querySelector("#lesson-links");
@@ -14,12 +15,18 @@ function lessonHTML(lesson,i){
 
 content.innerHTML=lessons.map(lessonHTML).join("");
 nav.innerHTML=lessons.map((l,i)=>`<li><a href="#lesson-${i}"><span>${String(i).padStart(2,"0")}</span> ${l.title}</a></li>`).join("");
-renderMathWhenReady(content);
+renderMathWhenReady(document);
 
 initArchitecture();
 document.querySelectorAll("[data-figure]").forEach(root=>{initCoreFigure(root);initSystemFigure(root);});
 initBenchmarkLab();
 initSystemAnalysis();
+initCompleteAnalysis().catch(error=>{
+  console.error("complete H800 analysis unavailable",error);
+  document.querySelector("#training-result").innerHTML="<p><b>训练扫描结果读取失败。</b> 请直接打开原始 JSON 核对。</p>";
+  document.querySelector("#forward-result").innerHTML="<p><b>完整前向结果读取失败。</b> 请直接打开原始 JSON 核对。</p>";
+  document.querySelector("#adaptation-result").innerHTML="<p><b>解码适配结果读取失败。</b> 请直接打开原始 JSON 核对。</p>";
+});
 
 document.addEventListener("click",e=>{
   const answer=e.target.closest("[data-answer]");if(!answer)return;const q=answer.closest(".quiz"),correct=answer.dataset.answer===q.dataset.correct;q.querySelectorAll("[data-answer]").forEach(b=>{b.classList.toggle("primary",b===answer);b.setAttribute("aria-pressed",b===answer);});q.querySelector(".quiz-feedback").innerHTML=`<b>${correct?"正确。":"再想一步。"}</b> ${q.querySelector("template").innerHTML}`;

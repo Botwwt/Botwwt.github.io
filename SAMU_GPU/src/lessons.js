@@ -225,7 +225,7 @@ export const lessons = [
     context: ["38 个公平实测点", "同宽度、参数量与状态", "只比较 SAMU 与 RG‑LRU"],
     lead: "性能曲线必须先说明实现对象、匹配条件和计时边界，才能支持结构结论。",
     body: `${tags(["measured","38 个实测点"],["verified","保留原始 JSON"])}
-      <p id="fairness">公平对照固定 <b>d=128，M=64</b>：SAMU 有 16,772 个参数，RG‑LRU 有 16,768 个参数；双方都使用每个样本 512 字节的 FP32 递推状态、BF16 输入输出，并分别拥有分块预填充和融合单步解码。</p>
+      <p id="fairness">补充的人工参数匹配轨道固定 <b>d=128，M=64</b>：SAMU 有 16,772 个参数，RG‑LRU‑2 有 16,768 个参数；双方都使用每个样本 512 字节的 FP32 递推状态、BF16 输入输出，并分别拥有分块预填充和融合单步解码。RG‑LRU‑2 不是论文默认结构。</p>
       <p>实验覆盖 L=128…65,536、预填充 B=1…64、解码 B=1…64，以及双方 C=8/16/32 三种分块长度，共 38 个公平实测点。</p>
       ${math(String.raw`\operatorname{timing}=\operatorname{median}\!\left(\mathrm{Triton\ driver\ event\ samples}\right),\qquad \mathrm{compile,dispatch,warmup}\notin\mathrm{samples}`, "每个 timed call 前清 L2；保留 p10/p90/p95 与 raw samples。launch、register、spill 来自 profiler/compiler metadata；宿主机权限阻止的硬件 counters 保持 N/A。")}
       <p>下方实验区可切换序列长度、批量大小、单步解码和分块长度，并从每个点追溯到原始计时样本。</p>`
@@ -235,10 +235,12 @@ export const lessons = [
     context: ["当前实测结论", "下一项内核工作", "尚未回答的问题"],
     lead: "当前证据已经足以淘汰几种过强说法，也足以确定下一步工程优先级。",
     body: `${tags(["measured","已经实测"],["hypothesis","仍待验证"])}
-      <p><b>已测结论：</b>H800 双顺序合并结果存在清楚的 crossover。B=1 时，L=128 由 RG‑LRU 快约 1.25×；L=512 与 2048 相差不到 1%；L=8192 与 32768 由 SAMU 快约 1.16×，L=65536 快 1.33×。在 L=512 的批量扫描中，SAMU 到 B=16/64 时扩大为 1.46×/2.18×；但 B=1/4/16/64 的极小 fused decode 均由 RG‑LRU 快约 1.31×–1.40×。</p>
-      <p><b>整模型规模结果：</b>放入共同的约 10.7 亿参数 decoder 外壳后，矩阵乘和其余层占据了大部分时间，递推微内核的差距被稀释。双顺序原始样本合并后，B=16、空前缀的六条连续生成轨迹中，SAMU 延迟低 0.8%–1.3%；4K 前缀后低 2.1%–2.7%。在预先限定的 B≤128 完整轨迹中，SAMU 吞吐为 RG‑LRU 的 1.003×–1.013×。这是一项小而一致的系统收益，不写成数量级提升。</p>
-      <p><b>资源解释：</b>C32 prefill 两边都是 4 launches；SAMU 的静态 exp/sigmoid 计数为 134/token，RG‑LRU 为 1024/token 且另有 256 sqrt。寄存器、spill 与资源占用上界由 H800 编译器元数据给出；真实 SFU、DRAM 和 achieved occupancy 因宿主机计数权限受限而保持 N/A。</p>
+      <p><b>三个实验轨道必须分开：</b>D=128 的 dense SAMU 对 RG‑LRU‑2 是人工参数匹配微基准，不代表论文默认 RG‑LRU‑16。它仍保留用来解释长序列 crossover，但不再承担主结论。主对手改为固定官方代码版本、官方方程和 16 个门分块。</p>
+      <p><b>官方结构解码结果：</b>D=2048、RMSNorm 加一个递推更新时，参数匹配 grouped‑8 在 B=1/4/16 仍输给 RG‑LRU‑16；自然 16 分组的 direct‑control 候选则在 B=1/4/16/64/128 分别达到 1.106×、1.054×、1.032×、1.439×、1.650×。后者改变控制器来源，必须重训，所以只是一项 GPU 架构候选。</p>
+      <p><b>训练扫描结果：</b>在 Griffin Figure 8(a) 同形状的投影后前向阶段，SAMU chunk‑32 比 RG‑LRU‑16 chunk‑32 快 4.91×–5.69×；串行路径只有约 1.08×。这说明主要收益来自共享控制量与并行 chunk 的结合，不能写成所有递推计算天然快五倍。</p>
+      <p><b>进入完整外壳之后：</b>在两边直接共享同一套约 10 亿参数 embedding、24 层 MLP/归一化外壳时，SAMU 的完整前向只保留 1.026×–1.047× 优势；完整解码则由 RG‑LRU 领先 1.023×–1.038×，最佳完整轨迹吞吐高 1.016×–1.020×。这说明目前真正需要优化的是共同外壳与递推层之间的系统融合，而不是继续只看微内核。</p>
+      <p><b>资源解释：</b>D=2048 时，SAMU‑16 direct 的递推投影 MAC 为 262,144/token，RG‑LRU‑16 为 524,288/token；状态均为 8 KiB/序列。两边选择的正式路径均为 RMSNorm + 递推两次启动。真实 SFU、DRAM、L2 和 achieved occupancy 因宿主机计数权限受限而保持 N/A。</p>
       <div class="lesson-grid"><div class="meaning"><strong>继续验证</strong>H800 已完成主测；下一步需要在有性能计数权限的 Hopper 节点补充 DRAM、L2、SFU 与 achieved occupancy，并实现反向传播和训练质量对照。</div><div class="misconception"><strong>尚未验证的假设</strong>共享控制可能形成更好的质量—效率折中；当前实验没有重新训练模型，也没有测量模型质量。</div></div>
-      <p>当前结论的边界很明确：我们验证的是长序列或较大批量 prefill 的优势，不是所有形状都赢；极小 decode 仍需继续优化。训练质量与真实训练好模型的收益也没有被这组随机权重系统实验回答。每条说法都必须能够追溯到公式、代码或测量中的一种。</p>`
+      <p>当前结论的边界很明确：性能候选已经成立，模型质量优势尚未成立；自定义 Triton 还没有 backward，单卡也没有覆盖论文的模型并行和 ZeRO。整模型随机权重代理的连续推理结果在下方单独报告，不与微内核数字混写。</p>`
   }
 ];

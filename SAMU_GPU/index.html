@@ -18,7 +18,7 @@
   <header class="topbar">
     <a class="brand" href="#top" aria-label="SAMU GPU 首页"><span class="brand-mark">S</span><span>SAMU GPU</span></a>
     <nav aria-label="主导航">
-      <a href="#report">研究思路</a><a href="#gpu-explorer">GPU 路径</a><a href="#benchmarks">实测结果</a><a href="#advantage">结构对比</a><a href="#implementation">实现</a><a href="#sources">依据</a>
+      <a href="#summary">结论</a><a href="#training">训练扫描</a><a href="#adaptation">解码适配</a><a href="#section5">整轨推理</a><a href="#report">技术说明</a><a href="#sources">复现</a>
     </nav>
     <button class="theme-toggle" id="theme-toggle" aria-label="切换深浅主题">◐</button>
   </header>
@@ -27,10 +27,10 @@
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
         <p class="eyebrow">NVIDIA H800 PCIe 80GB 上的可复现实验报告</p>
-        <h1 id="hero-title">SAMU 与 RG‑LRU：<br>结构差异如何转化为 GPU 性能</h1>
-        <p class="hero-thesis">SAMU 用每个 token 的两个共享控制量 <span class="var dynamic">c<sub>t</sub></span> 和 <span class="var dynamic">d<sub>t</sub></span>，共同调节一组静态复数模态。本文把它与严格遵循 Griffin 方程和 RecurrentGemma 语义的 RG‑LRU 放在同一实现等级，逐项核对延迟、吞吐、特殊函数、内存流量、寄存器和并发占用。</p>
+        <h1 id="hero-title">SAMU 与 RG‑LRU：<br>从正确方程到可复现的 GPU 结果</h1>
+        <p class="hero-thesis">本报告只比较 RG‑LRU。对手固定为 Griffin 论文方程、RecurrentGemma 官方语义和论文默认的 16 个门分块；SAMU 则利用两个共享控制量 <span class="var dynamic">c<sub>t</sub></span>、<span class="var dynamic">d<sub>t</sub></span> 以及复数模态结构，分别优化训练扫描和单步解码。</p>
         <div class="hero-actions">
-          <a class="button primary" href="#benchmarks">查看实测</a><a class="button" href="#report">阅读分析</a><a class="button" href="#architecture-explorer">查看数据路径</a><a class="text-link" href="#implementation">核对实现 →</a>
+          <a class="button primary" href="#summary">先看结论</a><a class="button" href="#training">训练扫描</a><a class="button" href="#adaptation">解码适配</a><a class="text-link" href="#sources">核对代码与原始数据 →</a>
         </div>
       </div>
       <div class="hero-figure" id="architecture-explorer">
@@ -41,27 +41,56 @@
       </div>
     </section>
 
-    <section class="headline-results" aria-labelledby="headline-title">
+    <section class="headline-results" id="summary" aria-labelledby="headline-title">
       <div class="section-kicker"><span class="evidence measured">H800 实测</span><span id="headline-env">读取测试环境…</span></div>
-      <h2 id="headline-title">先说明目前证据能支持什么</h2>
-      <div class="result-strip" id="headline-results" aria-live="polite"><div class="headline-result skeleton">正在读取预填充结果…</div><div class="headline-result skeleton">正在读取单步解码结果…</div></div>
-      <p class="fairness-inline">主对照固定输入宽度、参数量、递推状态字节数、数据类型、launch 数和计时方法。当前结果只证明内核性能，不证明语言模型质量；完整系统规模的 Griffin Section 5 风格实验单独报告，不与微基准混写。</p>
+      <h2 id="headline-title">当前结论，以及不能越过的证据边界</h2>
+      <div class="result-strip" id="headline-results" aria-live="polite"><div class="headline-result skeleton">正在读取训练扫描结果…</div><div class="headline-result skeleton">正在读取解码适配结果…</div><div class="headline-result skeleton">正在核对正确性与结论边界…</div></div>
+      <p class="fairness-inline">所有速度结论都来自 H800 实测。微内核先独立校准配置，再以前向/反向顺序复测；状态均为每个序列 2048 个 FP32 实标量。SAMU‑16 direct 是需要重新训练的架构候选，因此这里只报告系统速度，不把它写成已经成立的模型质量优势。</p>
     </section>
 
     <section class="architecture-delta" id="advantage" aria-labelledby="advantage-title">
-      <div class="delta-heading"><p class="part-label">结构差异</p><h2 id="advantage-title">两种方法都有优化内核，差别在动态状态转移的计算方式。</h2><p>两边的分块预填充都是 4 次 GPU 内核启动，单步解码都是 1 次。SAMU 仍需生成与状态同宽的写入向量，但只用两个 token 级控制量调节全部模态；RG‑LRU 则为每个通道生成输入门和递推门。</p></div>
+      <div class="delta-heading"><p class="part-label">结构差异</p><h2 id="advantage-title">真正可利用的差异，不是 scan 或 fusion，而是控制量维度和写入投影结构。</h2><p>RG‑LRU‑16 为 2048 个实状态通道分别生成输入门与递推门。SAMU‑16 为 1024 个复数模态生成同样宽度的实写入，但动态 transition 只由两个共享标量控制。两边都使用分块扫描和融合解码；这些通用技术不作为 SAMU 的算法创新。</p></div>
       <div class="pipeline-compare" id="implementation">
-        <div class="pipeline-row rglru-row"><span class="pipeline-name">RG‑LRU Triton</span><span>一次分块矩阵乘法<br><small>同时计算两组动态门</small></span><i>→</i><span>按官方方程计算输入门、递推门、衰减和归一化系数</span><i>→</i><span>分块长度 8/16/32；单步解码全部融合</span></div>
-        <div class="pipeline-row samu-row"><span class="pipeline-name">SAMU Triton</span><span>一次稠密矩阵乘法<br><small>同时计算写入向量和两个控制量</small></span><i>→</i><span>共享控制量 c,d 调节静态谱参数 ν,θ</span><i>→</i><span>分块长度 8/16/32；单步解码全部融合</span></div>
+        <div class="pipeline-row rglru-row"><span class="pipeline-name">官方结构 RG‑LRU‑16</span><span>16 组块对角投影<br><small>每个通道各有两组动态门</small></span><i>→</i><span>两次 sigmoid、两次 exp 与一次 sqrt 均按通道计算</span><i>→</i><span>RMSNorm + 融合递推；每步 2 次启动</span></div>
+        <div class="pipeline-row samu-row"><span class="pipeline-name">SAMU‑16 GPU 候选</span><span>16 组复数写入投影<br><small>每个 token 只保留 c,d 两个控制量</small></span><i>→</i><span>用共享 c,d 重建 1024 个静态谱模态的转移</span><i>→</i><span>RMSNorm/控制提取 + 融合递推；每步 2 次启动</span></div>
       </div>
       <dl class="delta-table">
-        <div><dt>参数与状态</dt><dd><b>16,772 对 16,768</b><span>参数仅差 4；每个样本的 FP32 递推状态都是 512 字节</span></dd></div>
-        <div><dt>特殊函数</dt><dd><b>134 对 1,024</b><span>分块长度 32 时，每个 token 静态统计的 exp/sigmoid 次数；RG‑LRU 另有 256 次平方根</span></dd></div>
-        <div><dt>内核启动</dt><dd><b>预填充 4 次；解码 1 次</b><span>双方完全相同，排除启动次数造成的虚假优势</span></dd></div>
-        <div><dt>寄存器溢出</dt><dd><b>双方均为 0</b><span>代表内核没有把寄存器临时值溢出到更慢的局部内存</span></dd></div>
+        <div><dt>递推层参数（D=2048）</dt><dd><b>264,196 对 530,432</b><span>SAMU‑16 direct 对官方 RG‑LRU‑16；递推状态均为 8,192 字节/序列</span></dd></div>
+        <div><dt>写入/门投影 MAC</dt><dd><b>262,144 对 524,288</b><span>SAMU‑16 的块复数写入投影约为 RG‑LRU 两组门投影的一半</span></dd></div>
+        <div><dt>动态非线性控制</dt><dd><b>2 对 4,096</b><span>SAMU 是两个共享 tanh 控制；RG‑LRU 是每个实状态通道两个 sigmoid 门</span></dd></div>
+        <div><dt>启动与缓存</dt><dd><b>2 次；8 KiB</b><span>两边均为 RMSNorm + 递推两次启动，且 FP32 状态字节数相同</span></dd></div>
       </dl>
-      <p class="delta-caveat"><span class="evidence derived">由结构约束支持的优化</span> SAMU 的相位增量在当前参数化下有严格上界（±0.0772 弧度），因此可用带误差界的低阶多项式计算正弦和余弦，省去通用函数的角度归约。短序列还会在解析安全条件满足时使用有界指数近似；任何条件不满足都会回退到通用指数函数，方程本身不变。</p>
-      <div class="innovation-boundary"><div><span class="evidence derived">我们的工程实现</span><h3>serial、chunk 与 fused decode</h3><p>这些 Triton 内核由本项目实现，但串行递推、仿射分块扫描和 kernel fusion 都是通用方法。贡献在于把它们严谨适配到官方 RG‑LRU，并构造同等级对手；不声称发明 scan 或 fusion。</p></div><div><span class="evidence verified">可主张的结构贡献</span><h3>共享谱坐标与可压缩块转移</h3><p>每个 token 只显式生成 c,d 两个控制量，代替随 M 展开的动态 transition 描述；内核仍需为 M 个模态重建转移。解析界支持了已启用的特殊函数快速路径。块转移 P 还可由共享统计量重建，但 compressed-P 原型目前没有形成速度收益，只能列为后续工作。</p></div></div>
+      <p class="delta-caveat"><span class="evidence derived">由结构约束支持的优化</span> 训练/预填充可对 <span class="var">ρ<sub>j</sub>(c)=exp(−ν<sub>j</sub>exp(c))</span> 使用带解析余项上界的四阶局部多项式；当前参数范围的保守上界为 8.03×10<sup>−10</sup>。它在长序列上有小幅收益，但单步解码反而约慢 4%，所以分派器只在长序列路径启用。</p>
+      <div class="innovation-boundary"><div><span class="evidence derived">通用工程，不算算法发明</span><h3>serial、chunk 与 fused decode</h3><p>串行递推、仿射分块扫描和 kernel fusion 都是已有的 GPU 工程方法。我们的工作是为 SAMU 和官方 RG‑LRU 各自实现、校准并公平复测它们，而不是声称发明 scan 或 fusion。</p></div><div><span class="evidence proposed">SAMU 专属候选，需重训</span><h3>16 组复数写入 + 直接共享控制</h3><p>写入投影按 16 组布局，与 RG‑LRU 的论文默认分片对齐；两个控制量直接取自归一化后的两个通道，去掉额外控制器归约。这使 D=2048 的递推投影参数和 MAC 约减半，但改变了模型参数化，必须通过重新训练和质量实验后才能成为论文主张。</p></div></div>
+    </section>
+
+    <section class="wide-section evidence-section" id="training" aria-labelledby="training-title">
+      <div class="wide-heading"><div><p class="part-label">对应 Griffin：Training Recurrent Models Efficiently on Device</p><h2 id="training-title">训练侧先测递推扫描本身，再明确尚未覆盖的部分</h2></div><p>复刻论文 Figure 8(a) 的形状轴：B=8、1024 个实状态标量、序列长度 2K–16K。硬件改为单张 H800，计时范围是投影后的前向 gate/scan 阶段，不把它冒充完整训练 step。</p></div>
+      <div class="method-grid">
+        <div><h3>形状匹配</h3><p>批量 8、状态宽度 1024，序列长度 2048、4096、8192、16384；与论文附录的关键扫描实验轴一致。</p></div>
+        <div><h3>同等级实现</h3><p>两边都测串行 Triton 和 chunk‑32 Triton；另外保留 BF16/FP32 materialized associative reference，用来说明实现策略的差异。</p></div>
+        <div><h3>输入语义不同但透明</h3><p>SAMU 每 token 消费 1024 个写入实标量和 2 个共享控制量；RG‑LRU 消费 1024 个输入值和已经投影好的 2048 个门值。</p></div>
+        <div><h3>尚未测量</h3><p>当前内核没有 backward；单卡也不能重现论文的模型并行 all‑reduce 与 ZeRO。网页把这些列为缺口，不用前向扫描结果代替。</p></div>
+      </div>
+      <div class="analysis-summary" id="training-result"><p>正在读取 H800 训练扫描结果…</p></div>
+      <div class="system-chart-grid">
+        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">H800 · B=8 · state=1024</span><h3>投影后 scan/gate 延迟</h3></div><span class="protocol">双顺序合并</span></div><svg id="training-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU 与 RG-LRU 训练扫描延迟"></svg><figcaption>只计递推的前向 gate/scan 阶段，用来隔离两种状态方程的成本。</figcaption></figure>
+        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">约 10 亿参数 · 同一外壳</span><h3>完整前向/预填充延迟</h3></div><span class="protocol">每顺序 5 次</span></div><svg id="full-forward-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU 与 RG-LRU 共享约十亿参数外壳的完整前向延迟"></svg><figcaption>包含 embedding、24 层递推、MLP、残差与归一化；不包含 backward。</figcaption></figure>
+      </div>
+      <div class="analysis-summary forward-summary" id="forward-result"><p>正在读取 H800 完整前向结果…</p></div>
+    </section>
+
+    <section class="wide-section adaptation-section" id="adaptation" aria-labelledby="adaptation-title">
+      <div class="wide-heading"><div><p class="part-label">SAMU 专属 GPU 适配</p><h2 id="adaptation-title">先把结构优势变成更少的投影，再看是否真的降低解码延迟</h2></div><p>这一组固定 D=2048，计时范围是 RMSNorm 加一个递推更新。官方 RG‑LRU 使用 16 个门分块；SAMU 同时报告参数匹配的 grouped‑8、自然分片的 grouped‑16，以及需要重训的 direct‑control 候选。</p></div>
+      <div class="formula-pair">
+        <div><span class="context-label">RG‑LRU‑16：两组实门投影</span><div class="math-display" data-katex>N_{\mathrm{MAC}}^{\mathrm{RG16}}=2\times16\left(\frac{D}{16}\right)^2=\frac{D^2}{8}</div></div>
+        <div><span class="context-label">SAMU‑16：一组复数写入投影</span><div class="math-display" data-katex>N_{\mathrm{MAC}}^{\mathrm{SAMU16}}=16\left(\frac{D}{16}\right)^2=\frac{D^2}{16}</div></div>
+      </div>
+      <div class="analysis-summary" id="adaptation-result"><p>正在读取 H800 解码适配结果…</p></div>
+      <div class="system-chart-grid">
+        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">D=2048 · FP32 state</span><h3>RMSNorm + 单步递推延迟</h3></div><span class="protocol">先校准、后双顺序复测</span></div><svg id="adaptation-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU GPU 候选与官方 RG-LRU-16 解码延迟"></svg><figcaption>direct‑control 在全部已测批量上更快，但它是需要重新训练的架构候选。</figcaption></figure>
+        <div class="candidate-table-wrap"><h3>三个 SAMU 轨道不能混写</h3><div id="candidate-table"></div><p class="fairness-inline">grouped‑8 只回答“参数量几乎相同会怎样”；grouped‑16 回答“对齐论文 16 组硬件布局会怎样”；direct‑control 再进一步改变控制器来源。论文表格必须分别命名。</p></div>
+      </div>
     </section>
 
     <div class="course-shell" id="report">
@@ -71,36 +100,49 @@
     </div>
 
     <section class="wide-section benchmark-section" id="benchmarks" aria-labelledby="bench-title">
-      <div class="wide-heading"><div><p class="part-label">实验结果</p><h2 id="bench-title">同等级 Triton 内核：SAMU 对 RG‑LRU</h2></div><p>共 38 个公平对照实测点。每个延迟点保留 CUDA event 原始样本；同时记录启动次数、寄存器、溢出、推导的占用率、静态特殊函数次数和逻辑内存流量下界。</p></div>
+      <div class="wide-heading"><div><p class="part-label">补充微基准 · 人工参数匹配轨道</p><h2 id="bench-title">SAMU dense 对 RG‑LRU‑2：只用于隔离方程成本</h2></div><p>这里的 RG‑LRU‑2 只有两个门分块，用来让 D=128 时的参数量与 dense SAMU 几乎相同；它不是 Griffin 论文默认的 16 分块。38 个点保留 CUDA event 原始样本、启动次数、编译器资源和逻辑流量下界。</p></div>
       <div class="benchmark-controls" id="benchmark-controls"><label>实验<select id="filter-experiment"><option value="equal-length">预填充：序列长度</option><option value="batch">预填充：批量大小</option><option value="decode">单步解码：批量大小</option><option value="chunks">分块长度：8/16/32</option></select></label><label>指标<select id="filter-metric"><option value="median_ms">延迟中位数</option><option value="tokens_per_second">每秒处理 token 数</option><option value="speedup">两者速度比</option></select></label></div>
       <div class="benchmark-grid"><figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">H800 实测</span><h3 id="chart-title">预填充延迟随序列长度的变化</h3></div><span id="chart-protocol" class="protocol">同宽度、同参数量、同状态大小</span></div><svg id="benchmark-chart" viewBox="0 0 960 520" role="img" aria-label="SAMU 与 RG-LRU 的实测折线图"></svg><figcaption id="chart-caption">正在读取公平对照数据…</figcaption></figure><aside class="benchmark-detail" id="benchmark-detail"><p class="aside-title">选中数据点</p><p>点击曲线上的点，可查看实现路径、P10/P95、原始计时样本、状态大小和参数量。</p></aside></div>
       <div class="lab-tabs" role="tablist" aria-label="实验附加信息"><button class="active" data-lab-tab="protocol">测试方法</button><button data-lab-tab="profile">计算与资源</button><button data-lab-tab="correctness">正确性</button><button data-lab-tab="environment">运行环境</button><button data-lab-tab="raw">原始数据</button></div><div class="lab-panel" id="lab-panel"></div>
     </section>
 
     <section class="wide-section section5-section" id="section5" aria-labelledby="section5-title">
-      <div class="wide-heading"><div><p class="part-label">整模型规模分析</p><h2 id="section5-title">按 Griffin 第 5 节的方法检查连续解码</h2></div><p>这部分把微型内核扩展到约 10.7 亿参数的共同解码器外壳。外壳、参数精度、词表、采样方式和状态字节数相同，只替换 SAMU 与 RG‑LRU 递推算子。</p></div>
+      <div class="wide-heading"><div><p class="part-label">对应 Griffin：Inference Speed</p><h2 id="section5-title">约 10 亿参数随机权重代理的连续推理</h2></div><p>共同外壳固定为 D=2048、24 层、MLP 扩展 3、词表 32,000、BF16 参数与 FP32 递推缓存。两边直接引用同一套外壳张量，只替换官方 RG‑LRU‑16 与 SAMU‑16 direct 递推层；这是系统性能代理，不是训练好模型的质量对照。</p></div>
       <div class="method-grid">
         <div><h3>延迟</h3><p>固定批量 B=16，从空前缀和 4096-token 前缀开始，连续生成 128、256、512、1024、2048 和 4096 个 token。前缀处理时间不计入解码延迟。</p></div>
-        <div><h3>B≤128 的完整轨迹吞吐</h3><p>先在 B=1–128 内搜索候选批量，再对前三个候选分别完整生成 512、1024、2048 和 4096 个 token。每个长度只在这些完整轨迹中选择最高吞吐；更大批量另列为短轨迹压力测试，不混入本结论。</p></div>
-        <div><h3>共同外壳</h3><p>宽度 2048、24 层、MLP 扩展倍数 3、词表 32,000。RG‑LRU 使用两个分块头，使两组门投影的参数量与 SAMU 的复数写入投影相同；这是一组参数匹配的方程实验，不冒充 RecurrentGemma 的整模型预设。随机权重只用于测系统执行，不用于比较语言模型质量。</p></div>
-        <div><h3>结论边界</h3><p>SAMU 与 RG‑LRU 都使用固定大小递推状态，因此都没有随前缀增长的 KV cache。这里检验的是递推实现差异，不复述论文中递推相对注意力的缓存优势。</p></div>
+        <div><h3>受限批量的完整轨迹吞吐</h3><p>先在 B=1、4、16、32、64、96、128、192、256 上运行 32-step 探针；取两种模型各自前两名批量的并集，再完整生成 512、1024、2048 和 4096 token。</p></div>
+        <div><h3>官方 RG‑LRU 结构</h3><p>从固定 commit 的 RecurrentGemma 创建 RG‑LRU，使用论文默认 16 个门分块。Triton 输出逐值对照官方 PyTorch：当前正确性审计已通过。</p></div>
+        <div><h3>结论边界</h3><p>两个模型都是固定大小递推状态，都没有随前缀增长的 KV cache。SAMU direct 需要重训；随机权重仅保证系统路径可执行，不说明困惑度或下游质量。</p></div>
       </div>
       <div class="system-result" id="system-result"><p>正在读取 H800 完整实验结果…</p></div>
       <div class="system-chart-grid">
-        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">连续解码</span><h3>批量 16 的生成延迟</h3></div><span class="protocol">空前缀与 4K 前缀</span></div><svg id="section5-latency-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU 与 RG-LRU 连续解码延迟图"></svg><figcaption>每条曲线来自同一次连续生成轨迹的累计 CUDA event 时间。</figcaption></figure>
-        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">B=1–128 候选搜索</span><h3>B≤128 的完整轨迹吞吐</h3></div><span class="protocol">完整生成 512–4096 token</span></div><svg id="section5-throughput-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU 与 RG-LRU 在 B≤128 范围内的完整轨迹吞吐图"></svg><figcaption>每个生成长度分别从完成整条轨迹的候选中选择最高吞吐；不是不受范围限制的“单卡最大值”。</figcaption></figure>
+        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">连续解码</span><h3>批量 16 的生成延迟</h3></div><span class="protocol">空前缀与 4K 前缀</span></div><svg id="section5-latency-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU 与 RG-LRU 连续解码延迟图"></svg><figcaption>每个点先取单个顺序内两条完整轨迹的中位数，再对 AB/BA 两个顺序等权合并。</figcaption></figure>
+        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">B=1–256 探针后复测</span><h3>完整轨迹最佳吞吐</h3></div><span class="protocol">完整生成 512–4096 token</span></div><svg id="section5-throughput-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU 与 RG-LRU 完整轨迹吞吐图"></svg><figcaption>每个生成长度只在完成整条轨迹的候选批量中选择最高吞吐，并同时显示获胜批量。</figcaption></figure>
       </div>
       <div class="formula section5-formula"><div class="math-display" data-katex>t_{\mathrm{step}}\approx\frac{\text{参数字节数}+B\times\text{每个序列的状态字节数}}{\text{有效显存带宽}}</div><small>这是 Griffin 公式 (5) 在两种递推模型之间的使用方式。两边状态大小相同，因此主要差别应来自参数读取是否充分复用、递推控制计算和 GPU 内核效率。</small></div>
-      <p class="source-note"><span class="evidence derived">范围说明</span>这是随机权重的系统代理，不是训练好的 1B 语言模型，也不报告准确率或困惑度。它复刻论文的测量轴和规模，而不是复刻论文的 TPU 数字。</p>
+      <p class="source-note"><span class="evidence derived">范围说明</span>我们复刻 Griffin 的实验问题、控制变量和轨迹长度，不复制论文的 TPU 数字。H800 与 TPU‑v3 的带宽、计算单元和软件栈不同；本节只允许在同一张 H800、同一外壳内比较两条递推路径。</p>
     </section>
 
     <section class="wide-section sources-section" id="sources" aria-labelledby="sources-title">
       <div class="wide-heading"><div><p class="part-label">依据与复现</p><h2 id="sources-title">每条方程、代码路径和原始计时都可以追溯</h2></div><p>RG‑LRU 同时对照 Griffin 论文公式和 RecurrentGemma 官方 PyTorch 语义。无法取得的硬件计数器明确标为“未测”，不会用理论估算替代实测。</p></div>
-      <div class="source-columns"><div><h3>版本与数据</h3><ul class="source-list"><li><a href="SAMU_CANONICAL_AUDIT.md">SAMU 方程与代码审计</a></li><li><a href="BENCHMARK_METHODOLOGY.md">公平测试方法</a></li><li><a href="benchmark/triton_samu.py">SAMU Triton 内核</a></li><li><a href="benchmark/triton_rglru.py">官方方程 RG‑LRU Triton 内核</a></li><li><a href="benchmark/run_equal_kernel_benchmarks.py">公平对照运行脚本</a></li><li><a href="benchmark/profile_equal_kernels.py">微内核资源分析脚本</a></li><li><a href="benchmark/profile_system_temporal.py">系统递推路径资源分析脚本</a></li><li><a href="benchmark/run_griffin_section5.py">完整轨迹实验脚本</a></li><li><a href="benchmark/run_system_saturation.py">大批量短轨迹压力测试</a></li><li><a href="benchmark_results_equal_kernel/correctness.json">方程与正确性审计</a></li><li><a href="benchmark_results_equal_kernel/profiles.json">启动、寄存器与占用率</a></li><li><a href="benchmark_results_equal_kernel/summary.csv">微内核汇总 CSV</a></li><li><a href="benchmark_results_equal_kernel/summary.json">微内核汇总 JSON</a></li><li><a href="benchmark_results_griffin_section5/summary.json">系统双顺序合并结果</a></li><li><a href="benchmark_results_griffin_section5/order_ab.json">系统顺序 A 原始结果</a></li><li><a href="benchmark_results_griffin_section5/order_ba.json">系统顺序 B 原始结果</a></li><li><a href="benchmark_results_griffin_section5/stress_ab.json">压力测试顺序 A</a></li><li><a href="benchmark_results_griffin_section5/stress_ba.json">压力测试顺序 B</a></li><li><a href="benchmark_results_griffin_section5/temporal_profiles.json">系统递推路径 profiler</a></li><li><a href="benchmark_results_griffin_section5/dispatch_calibration.json">H800 分派校准原始结果</a></li><li><a href="https://arxiv.org/abs/2402.19427">Griffin 论文与 RG‑LRU 方程</a></li><li><a href="https://github.com/google-deepmind/recurrentgemma/tree/2efa84dac0e68e63547a27a18fa943c98f1c312e">RecurrentGemma 官方固定版本</a></li></ul></div><div><h3>一条命令复现</h3><p class="code-label">SAMU 与 RG‑LRU 同等级内核</p><pre><code>cd benchmark
-python run_equal_kernel_benchmarks.py \
-  --output ../benchmark_results_equal_kernel \
-  --rglru-source /path/to/recurrentgemma</code></pre><p>计时使用 Triton driver CUDA events；每个样本前清空 L2，并保留全部原始时间。首次编译、参数打包、形状分派和准备工作不计入样本。资源分析见 <code>profile_equal_kernels.py</code>。</p></div></div>
-      <div class="source-note"><span class="evidence derived">范围说明</span> 当前新内核只覆盖推理，没有反向传播结果。H800 节点安装了 Nsight Compute，但宿主机设置 <code>RmProfilingAdminOnly=1</code> 且容器没有性能计数权限，因此真实 DRAM 带宽与特殊函数单元利用率仍标为“未测”；网页不会用理论估算冒充硬件计数。</div>
+      <div class="source-columns"><div><h3>本轮新增代码与原始结果</h3><ul class="source-list"><li><a href="benchmark/triton_samu_grouped.py">SAMU grouped‑16 / direct Triton 实现</a></li><li><a href="benchmark/run_samu_gpu_adaptation.py">D=2048 解码适配与资源审计</a></li><li><a href="benchmark/run_training_on_device.py">Griffin 训练扫描实验轴</a></li><li><a href="benchmark/run_griffin_candidate_inference.py">1B 代理完整推理轨迹</a></li><li><a href="benchmark/run_griffin_full_forward_proxy.py">1B 代理完整前向补充实验</a></li><li><a href="benchmark_results_griffin_complete/samu_gpu_adaptation.json">解码适配全部校准与原始样本</a></li><li><a href="benchmark_results_griffin_complete/training_on_device.json">训练扫描全部原始样本</a></li><li><a href="benchmark_results_griffin_complete/griffin_full_forward_proxy.json">1B 代理完整前向全部样本</a></li><li><a href="benchmark_results_griffin_complete/grouped_samu_ablation.json">参数匹配 grouped‑8 消融</a></li><li><a href="benchmark_results_griffin_complete/griffin_candidate_inference.json">精确共享外壳的 1B 连续推理结果</a></li><li><a href="benchmark_results_griffin_complete/griffin_candidate_inference_separate_shell_audit.json">首轮独立分配外壳审计（不作主结果）</a></li><li><a href="SAMU_CANONICAL_AUDIT.md">SAMU 方程与代码审计</a></li><li><a href="BENCHMARK_METHODOLOGY.md">公平测试方法</a></li><li><a href="benchmark/triton_rglru.py">官方方程 RG‑LRU Triton 内核</a></li><li><a href="https://arxiv.org/abs/2402.19427">Griffin 论文与 RG‑LRU 方程</a></li><li><a href="https://github.com/google-deepmind/recurrentgemma/tree/2efa84dac0e68e63547a27a18fa943c98f1c312e">RecurrentGemma 官方固定版本</a></li></ul></div><div><h3>复现顺序</h3><p class="code-label">在支持 CUDA/Triton 的 NVIDIA GPU 上</p><pre><code>cd benchmark
+python run_samu_gpu_adaptation.py \
+  --output ../benchmark_results_griffin_complete/samu_gpu_adaptation.json \
+  --rglru-source /path/to/recurrentgemma
+
+python run_training_on_device.py \
+  --output ../benchmark_results_griffin_complete/training_on_device.json \
+  --rglru-source /path/to/recurrentgemma
+
+python run_griffin_full_forward_proxy.py \
+  --output ../benchmark_results_griffin_complete/griffin_full_forward_proxy.json \
+  --rglru-source /path/to/recurrentgemma --repeats 5
+
+python run_griffin_candidate_inference.py \
+  --output ../benchmark_results_griffin_complete/griffin_candidate_inference.json \
+  --rglru-source /path/to/recurrentgemma \
+  --latency-repeats 2 --throughput-repeats 2</code></pre><p>校准样本与正式样本分开，正式结果采用相反运行顺序复测并保留原始 CUDA event 样本。参数打包、首次编译和形状分派不计入稳态延迟。</p></div></div>
+      <div class="source-note"><span class="evidence derived">未完成项</span> 当前自定义 Triton 路径只覆盖前向与推理，没有 backward 或完整训练 step。单张 H800 不能测论文的多设备 all‑reduce/ZeRO。宿主机还设置了 <code>RmProfilingAdminOnly=1</code>，因此 NCU 的 DRAM、L2、SFU 与 achieved occupancy 计数明确保留为“未测”；网页只展示编译器寄存器、spill 和资源上限推导。逐项覆盖情况见 <a href="GRIFFIN_PROTOCOL_STATUS.md">Griffin 实验覆盖表</a>。</div>
     </section>
   </main>
   <footer><p>SAMU GPU · 方程可核对、代码可运行、结论可证伪。</p><a href="#top">返回顶部 ↑</a></footer>

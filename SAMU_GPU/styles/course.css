@@ -12,15 +12,14 @@
 .headline-results { max-width: 1280px; margin: 0 auto; padding: 5.5rem clamp(1.2rem, 4vw, 4rem) 6.5rem; }
 .section-kicker { display: flex; align-items: center; gap: .7rem; color: var(--muted); font: .75rem var(--mono); }
 .headline-results h2 { max-width: 700px; margin: .8rem 0 2rem; }
-.result-strip { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); }
+.result-strip { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); }
 .headline-result { min-height: 145px; padding: 1.35rem 1.4rem; border-right: 1px solid var(--line); }
 .headline-result:last-child { border-right: 0; }
 .headline-result h3 { margin: 0 0 .65rem; font-size: 1rem; letter-spacing: -.015em; }
 .headline-result p { margin: 0; max-width: 560px; font-size: .86rem; line-height: 1.7; color: var(--muted); }
 .headline-result.winner-samu b { color: var(--state); }
 .headline-result.winner-other b { color: var(--rglru); }
-.skeleton { color: var(--muted); animation: breathe 1.5s infinite alternate; }
-@keyframes breathe { to { opacity: .45; } }
+.skeleton { color: var(--muted); }
 .fairness-inline { margin: 1rem 0 0; max-width: 850px; color: var(--muted); font-size: .8rem; }
 
 .architecture-delta { padding: 6rem clamp(1.2rem, 5vw, 6rem); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--state) 3%, var(--paper)); }
@@ -196,6 +195,30 @@
 .metric-audit { margin-top: 1.7rem; }
 
 .section5-section { background: color-mix(in srgb, var(--state) 2.5%, var(--paper)); }
+.evidence-section { background: var(--paper); }
+.adaptation-section { background: color-mix(in srgb, var(--write) 2.5%, var(--paper)); }
+.analysis-summary { max-width: 1350px; margin: 0 auto 2rem; padding: 1.2rem 1.3rem; border-left: 3px solid var(--state); background: var(--panel); }
+.forward-summary { margin-top: 1.4rem; }
+.analysis-summary > p { margin: 0; }
+.summary-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.summary-grid > div { padding: 1rem 1.1rem; background: var(--panel); }
+.summary-grid h3 { margin: 0 0 .45rem; font-size: .9rem; }
+.summary-grid p { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.65; }
+.summary-grid strong { color: var(--state); font: 600 1.18rem/1.3 var(--mono); }
+.single-chart { max-width: 1350px; margin: 0 auto; }
+.single-chart .chart-panel { padding: 1rem; border: 1px solid var(--line); background: var(--panel); }
+.single-chart svg { display: block; width: 100%; min-height: 390px; }
+.formula-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1px; max-width: 1350px; margin: 0 auto 2rem; border: 1px solid var(--line); background: var(--line); }
+.formula-pair > div { min-width: 0; padding: 1rem 1.2rem; background: var(--panel); }
+.formula-pair .math-display { margin: .65rem 0 0; overflow-x: auto; }
+.candidate-table-wrap { min-width: 0; padding: 1rem 1.2rem; border: 1px solid var(--line); background: var(--panel); }
+.candidate-table-wrap h3 { margin: 0 0 1rem; font-size: 1rem; }
+.candidate-table { width: 100%; border-collapse: collapse; font-size: .72rem; line-height: 1.45; }
+.candidate-table th, .candidate-table td { padding: .55rem .45rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.candidate-table th { color: var(--muted); font: 600 .64rem var(--mono); }
+.candidate-table td:nth-child(n+2) { font-family: var(--mono); white-space: nowrap; }
+.candidate-table .wins { color: var(--state); font-weight: 600; }
+.candidate-table .needs-training { color: var(--write); }
 .method-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 1px; max-width: 1350px; margin: 0 auto 2rem; background: var(--line); border: 1px solid var(--line); }
 .method-grid > div { min-width: 0; padding: 1.1rem; background: var(--panel); }
 .method-grid h3 { margin: 0 0 .55rem; font-size: .95rem; letter-spacing: -.01em; }
@@ -239,7 +262,7 @@
   .lesson-nav { display: none; }
   .course-body { max-width: 720px; margin: 0 auto; }
   .breakout { margin-inline: 0; width: 100%; }
-  .lesson-grid, .compare-three, .transition-view, .coverage-grid, .profiler-grid, .environment-grid, .provenance-grid, .method-grid, .system-facts, .system-chart-grid, .innovation-boundary { grid-template-columns: 1fr; }
+  .lesson-grid, .compare-three, .transition-view, .coverage-grid, .profiler-grid, .environment-grid, .provenance-grid, .method-grid, .system-facts, .system-chart-grid, .innovation-boundary, .summary-grid, .formula-pair { grid-template-columns: 1fr; }
   .warp-layout, .time-mode { grid-template-columns: 1fr; }
   .lane-detail, .tile-stats { border-left: 0; border-top: 1px solid var(--line); padding: 1rem 0 0; }
   .chart-panel { border-right: 0; padding-right: 0; }
