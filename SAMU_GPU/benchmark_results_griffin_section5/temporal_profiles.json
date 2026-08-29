@@ -1,0 +1,414 @@
+{
+  "counter_permission": {
+    "available": false,
+    "collection_error_observed": "ERR_NVGPUCTRPERM",
+    "container_capabilities": "Current: cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap=ep\nBounding set =cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap\nAmbient set =\nCurrent IAB: !cap_dac_read_search,!cap_linux_immutable,!cap_net_broadcast,!cap_net_admin,!cap_ipc_lock,!cap_ipc_owner,!cap_sys_module,!cap_sys_rawio,!cap_sys_ptrace,!cap_sys_pacct,!cap_sys_admin,!cap_sys_boot,!cap_sys_nice,!cap_sys_resource,!cap_sys_time,!cap_sys_tty_config,!cap_lease,!cap_audit_control,!cap_mac_override,!cap_mac_admin,!cap_syslog,!cap_wake_alarm,!cap_block_suspend,!cap_audit_read,!cap_perfmon,!cap_bpf,!cap_checkpoint_restore\nSecurebits: 00/0x0/1'b0\n secure-noroot: no (unlocked)\n secure-no-suid-fixup: no (unlocked)\n secure-keep-caps: no (unlocked)\n secure-no-ambient-raise: no (unlocked)\nuid=0(root) euid=0(root)\ngid=0(root)\ngroups=0(root)\nGuessed mode: UNCERTAIN (0)",
+    "host_RmProfilingAdminOnly": "1",
+    "ncu_version": "NVIDIA (R) Nsight Compute Command Line Profiler\nCopyright (c) 2018-2025 NVIDIA Corporation\nVersion 2025.3.1.0 (build 36398880) (public-release)",
+    "policy": "hardware DRAM/L2/SFU/achieved-occupancy fields remain null"
+  },
+  "device_limits": {
+    "max_blocks_per_sm": 32,
+    "max_threads_per_sm": 2048,
+    "max_warps_per_sm": 64,
+    "registers_per_sm": 65536,
+    "shared_memory_per_sm": 233472
+  },
+  "generated_utc": "2026-08-29T09:44:58Z",
+  "gpu": "NVIDIA H800 PCIe",
+  "profiles": [
+    {
+      "cuda_kernel_launch_count": 2,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 9.0,
+          "flops_reported": 0,
+          "name": "std::enable_if<!(false), void>::type internal::gemvx::kernel<int, int, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, false, true, false, false, 7, false, cublasGemvParams<cublasGemvTensorStridedBatched<__nv_bfloat16 const>, cublasGemvTensorStridedBatched<__nv_bfloat16 const>, cublasGemvTensorStridedBatched<__nv_bfloat16>, float> >(cublasGemvParams<cublasGemvTensorStridedBatched<__nv_bfloat16 const>, cublasGemvTensorStridedBatched<__nv_bfloat16 const>, cublasGemvTensorStridedBatched<__nv_bfloat16>, float>)",
+          "self_cuda_share": 0.9,
+          "self_cuda_time_us": 9.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 1.0,
+          "flops_reported": 0,
+          "name": "_decode_projected_kernel",
+          "self_cuda_share": 0.1,
+          "self_cuda_time_us": 1.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute 2025.3.1 is installed, but the host kernel sets RmProfilingAdminOnly=1 and this container lacks CAP_SYS_ADMIN (ERR_NVGPUCTRPERM); no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "samu_split_decode_D2048_B1",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 10.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 16,
+          "derived_resource_limits": {
+            "blocks_by_registers_unrounded": 19,
+            "blocks_by_shared_memory": 32,
+            "blocks_by_threads": 16,
+            "hardware_max_blocks": 32
+          },
+          "hash": "21c6a2887fe8a316369f0f3d05566bcb073ae187dedf788b82dc53a6f9c880d2",
+          "name": "_decode_projected_kernel",
+          "occupancy_method": "resource-limit upper bound from cudaDeviceGetAttribute and Triton compiler metadata; register allocation granularity and scheduler/barrier limits are not available without Nsight counters",
+          "registers_per_thread": 26,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        }
+      ]
+    },
+    {
+      "cuda_kernel_launch_count": 2,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 16.0,
+          "flops_reported": 0,
+          "name": "void gemv2N_kernel<int, int, __nv_bfloat16, __nv_bfloat16, __nv_bfloat16, float, 128, 4, 4, 4, 1, false, cublasGemvParams<cublasGemvTensorStridedBatched<__nv_bfloat16 const>, cublasGemvTensorStridedBatched<__nv_bfloat16 const>, cublasGemvTensorStridedBatched<__nv_bfloat16>, float> >(cublasGemvParams<cublasGemvTensorStridedBatched<__nv_bfloat16 const>, cublasGemvTensorStridedBatched<__nv_bfloat16 const>, cublasGemvTensorStridedBatched<__nv_bfloat16>, float>)",
+          "self_cuda_share": 0.9411764705882353,
+          "self_cuda_time_us": 16.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 1.0,
+          "flops_reported": 0,
+          "name": "_serial_scan_kernel",
+          "self_cuda_share": 0.058823529411764705,
+          "self_cuda_time_us": 1.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute 2025.3.1 is installed, but the host kernel sets RmProfilingAdminOnly=1 and this container lacks CAP_SYS_ADMIN (ERR_NVGPUCTRPERM); no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "rglru_split_decode_D2048_B1",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 17.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 8,
+          "derived_resource_limits": {
+            "blocks_by_registers_unrounded": 8,
+            "blocks_by_shared_memory": 32,
+            "blocks_by_threads": 8,
+            "hardware_max_blocks": 32
+          },
+          "hash": "f8ae3c702b9944817d3112d042f9923d4c8d814e8d306f9fa53bfafa572f06ca",
+          "name": "_serial_scan_kernel",
+          "occupancy_method": "resource-limit upper bound from cudaDeviceGetAttribute and Triton compiler metadata; register allocation granularity and scheduler/barrier limits are not available without Nsight counters",
+          "registers_per_thread": 31,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        }
+      ]
+    },
+    {
+      "cuda_kernel_launch_count": 3,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 7.0,
+          "flops_reported": 0,
+          "name": "void cutlass::Kernel<cutlass_80_tensorop_s16816gemm_bf16_128x64_64x6_nn_align8>(cutlass_80_tensorop_s16816gemm_bf16_128x64_64x6_nn_align8::Params)",
+          "self_cuda_share": 0.7,
+          "self_cuda_time_us": 7.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "void splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16, true, false, false>(cublasSplitKParams<float>, float const*, __nv_bfloat16 const*, __nv_bfloat16*, float const*, float const*, __nv_bfloat16 const*, float const*, __nv_bfloat16*, void*, long, float*, int*)",
+          "self_cuda_share": 0.2,
+          "self_cuda_time_us": 2.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 1.0,
+          "flops_reported": 0,
+          "name": "_decode_projected_kernel",
+          "self_cuda_share": 0.1,
+          "self_cuda_time_us": 1.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute 2025.3.1 is installed, but the host kernel sets RmProfilingAdminOnly=1 and this container lacks CAP_SYS_ADMIN (ERR_NVGPUCTRPERM); no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "samu_split_decode_D2048_B16",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 10.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 16,
+          "derived_resource_limits": {
+            "blocks_by_registers_unrounded": 19,
+            "blocks_by_shared_memory": 32,
+            "blocks_by_threads": 16,
+            "hardware_max_blocks": 32
+          },
+          "hash": "21c6a2887fe8a316369f0f3d05566bcb073ae187dedf788b82dc53a6f9c880d2",
+          "name": "_decode_projected_kernel",
+          "occupancy_method": "resource-limit upper bound from cudaDeviceGetAttribute and Triton compiler metadata; register allocation granularity and scheduler/barrier limits are not available without Nsight counters",
+          "registers_per_thread": 26,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        }
+      ]
+    },
+    {
+      "cuda_kernel_launch_count": 2,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 7.0,
+          "flops_reported": 0,
+          "name": "void cutlass::Kernel<cutlass_80_tensorop_bf16_s16816gemm_bf16_64x64_64x6_nn_align8>(cutlass_80_tensorop_bf16_s16816gemm_bf16_64x64_64x6_nn_align8::Params)",
+          "self_cuda_share": 0.875,
+          "self_cuda_time_us": 7.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 1.0,
+          "flops_reported": 0,
+          "name": "_serial_scan_kernel",
+          "self_cuda_share": 0.125,
+          "self_cuda_time_us": 1.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute 2025.3.1 is installed, but the host kernel sets RmProfilingAdminOnly=1 and this container lacks CAP_SYS_ADMIN (ERR_NVGPUCTRPERM); no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "rglru_split_decode_D2048_B16",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 8.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 8,
+          "derived_resource_limits": {
+            "blocks_by_registers_unrounded": 8,
+            "blocks_by_shared_memory": 32,
+            "blocks_by_threads": 8,
+            "hardware_max_blocks": 32
+          },
+          "hash": "f8ae3c702b9944817d3112d042f9923d4c8d814e8d306f9fa53bfafa572f06ca",
+          "name": "_serial_scan_kernel",
+          "occupancy_method": "resource-limit upper bound from cudaDeviceGetAttribute and Triton compiler metadata; register allocation granularity and scheduler/barrier limits are not available without Nsight counters",
+          "registers_per_thread": 31,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 8,
+          "derived_resource_limits": {
+            "blocks_by_registers_unrounded": 8,
+            "blocks_by_shared_memory": 32,
+            "blocks_by_threads": 8,
+            "hardware_max_blocks": 32
+          },
+          "hash": "7c627b15f343717cb008878a2e44376eabf3b9fe37a36f40fcf895a2627b046c",
+          "name": "_serial_scan_kernel",
+          "occupancy_method": "resource-limit upper bound from cudaDeviceGetAttribute and Triton compiler metadata; register allocation granularity and scheduler/barrier limits are not available without Nsight counters",
+          "registers_per_thread": 31,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        }
+      ]
+    },
+    {
+      "cuda_kernel_launch_count": 2,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 11.0,
+          "flops_reported": 0,
+          "name": "void cutlass::Kernel<cutlass_80_tensorop_bf16_s16816gemm_bf16_64x64_64x6_nn_align8>(cutlass_80_tensorop_bf16_s16816gemm_bf16_64x64_64x6_nn_align8::Params)",
+          "self_cuda_share": 0.8461538461538461,
+          "self_cuda_time_us": 11.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "_decode_projected_kernel",
+          "self_cuda_share": 0.15384615384615385,
+          "self_cuda_time_us": 2.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute 2025.3.1 is installed, but the host kernel sets RmProfilingAdminOnly=1 and this container lacks CAP_SYS_ADMIN (ERR_NVGPUCTRPERM); no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "samu_split_decode_D2048_B128",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 13.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 16,
+          "derived_resource_limits": {
+            "blocks_by_registers_unrounded": 19,
+            "blocks_by_shared_memory": 32,
+            "blocks_by_threads": 16,
+            "hardware_max_blocks": 32
+          },
+          "hash": "21c6a2887fe8a316369f0f3d05566bcb073ae187dedf788b82dc53a6f9c880d2",
+          "name": "_decode_projected_kernel",
+          "occupancy_method": "resource-limit upper bound from cudaDeviceGetAttribute and Triton compiler metadata; register allocation granularity and scheduler/barrier limits are not available without Nsight counters",
+          "registers_per_thread": 26,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 16,
+          "derived_resource_limits": {
+            "blocks_by_registers_unrounded": 18,
+            "blocks_by_shared_memory": 32,
+            "blocks_by_threads": 16,
+            "hardware_max_blocks": 32
+          },
+          "hash": "fef1db9e8af58ad14ca6d9962aff98db48a76a136a845a4cd45e89822f4ec205",
+          "name": "_decode_projected_kernel",
+          "occupancy_method": "resource-limit upper bound from cudaDeviceGetAttribute and Triton compiler metadata; register allocation granularity and scheduler/barrier limits are not available without Nsight counters",
+          "registers_per_thread": 28,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        }
+      ]
+    },
+    {
+      "cuda_kernel_launch_count": 2,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 9.0,
+          "flops_reported": 0,
+          "name": "void cutlass::Kernel<cutlass_80_tensorop_bf16_s16816gemm_bf16_128x64_64x4_nn_align8>(cutlass_80_tensorop_bf16_s16816gemm_bf16_128x64_64x4_nn_align8::Params)",
+          "self_cuda_share": 0.8181818181818182,
+          "self_cuda_time_us": 9.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "_serial_scan_kernel",
+          "self_cuda_share": 0.18181818181818182,
+          "self_cuda_time_us": 2.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute 2025.3.1 is installed, but the host kernel sets RmProfilingAdminOnly=1 and this container lacks CAP_SYS_ADMIN (ERR_NVGPUCTRPERM); no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "rglru_split_decode_D2048_B128",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 11.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 8,
+          "derived_resource_limits": {
+            "blocks_by_registers_unrounded": 8,
+            "blocks_by_shared_memory": 32,
+            "blocks_by_threads": 8,
+            "hardware_max_blocks": 32
+          },
+          "hash": "f8ae3c702b9944817d3112d042f9923d4c8d814e8d306f9fa53bfafa572f06ca",
+          "name": "_serial_scan_kernel",
+          "occupancy_method": "resource-limit upper bound from cudaDeviceGetAttribute and Triton compiler metadata; register allocation granularity and scheduler/barrier limits are not available without Nsight counters",
+          "registers_per_thread": 31,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 8,
+          "derived_resource_limits": {
+            "blocks_by_registers_unrounded": 8,
+            "blocks_by_shared_memory": 32,
+            "blocks_by_threads": 8,
+            "hardware_max_blocks": 32
+          },
+          "hash": "7c627b15f343717cb008878a2e44376eabf3b9fe37a36f40fcf895a2627b046c",
+          "name": "_serial_scan_kernel",
+          "occupancy_method": "resource-limit upper bound from cudaDeviceGetAttribute and Triton compiler metadata; register allocation granularity and scheduler/barrier limits are not available without Nsight counters",
+          "registers_per_thread": 31,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        }
+      ]
+    }
+  ],
+  "schema_version": 1,
+  "state_bytes_per_sequence": 8192,
+  "temporal_projection_parameters": {
+    "rglru": 4200448,
+    "samu": 4227072
+  },
+  "width": 2048
+}

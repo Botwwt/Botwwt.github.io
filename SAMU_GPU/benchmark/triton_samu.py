@@ -3,7 +3,9 @@
 The prefill path performs one padded BF16 projection followed by either a
 state-stationary serial kernel or a three-kernel chunk summary/prefix/replay
 pipeline. The decode path fuses projection, bounded control, transition, and
-state update in one launch. Accumulated complex state is FP32.
+state update in one launch. A two-launch split decode is also provided for
+full-model widths where the projection should remain a Tensor-Core GEMM.
+Accumulated complex state is FP32.
 """
 
 from __future__ import annotations
@@ -320,6 +322,43 @@ def _decode_kernel(u, wr_ptr, wi_ptr, phase_dir, radial_dir, state_r, state_i,
     tl.store(out_i + batch * modes + m, ny, mask=mmask)
 
 
+@triton.jit
+def _decode_projected_kernel(projected, nu_ptr, ct_ptr, st_ptr, gamma_ptr,
+                             state_r, state_i, out, last_r, last_i,
+                             modes: tl.constexpr, packed_width: tl.constexpr,
+                             phase_bias: tl.constexpr, radial_bias: tl.constexpr,
+                             phase_scale: tl.constexpr, radial_scale: tl.constexpr,
+                             USE_BOUNDED_POLY: tl.constexpr,
+                             BLOCK_M: tl.constexpr):
+    """Pointwise half of split decode after one packed BF16 GEMM."""
+
+    block = tl.program_id(0)
+    batch = tl.program_id(1)
+    m = block * BLOCK_M + tl.arange(0, BLOCK_M)
+    mask = m < modes
+    row = batch * packed_width
+    raw_phase = tl.load(projected + row + 2 * modes)
+    raw_radial = tl.load(projected + row + 2 * modes + 1)
+    c, d = _control(raw_phase, raw_radial, phase_bias, radial_bias,
+                    phase_scale, radial_scale)
+    nu = tl.load(nu_ptr + m, mask=mask, other=0.0)
+    ct = tl.load(ct_ptr + m, mask=mask, other=1.0)
+    st = tl.load(st_ptr + m, mask=mask, other=0.0)
+    gamma = tl.load(gamma_ptr + m, mask=mask, other=0.0)
+    ar, ai, _ = _transition(nu, ct, st, c, d, USE_BOUNDED_POLY)
+    x = tl.load(state_r + batch * modes + m, mask=mask, other=0.0)
+    y = tl.load(state_i + batch * modes + m, mask=mask, other=0.0)
+    wr = tl.load(projected + row + 2 * m, mask=mask, other=0.0).to(tl.float32) * gamma
+    wi = tl.load(projected + row + 2 * m + 1, mask=mask, other=0.0).to(tl.float32) * gamma
+    nx = ar * x - ai * y + wr
+    ny = ai * x + ar * y + wi
+    output = (batch * modes + m) * 2
+    tl.store(out + output, nx, mask=mask)
+    tl.store(out + output + 1, ny, mask=mask)
+    tl.store(last_r + batch * modes + m, nx, mask=mask)
+    tl.store(last_i + batch * modes + m, ny, mask=mask)
+
+
 def _launch_meta(packed: PackedSamu, bounded_poly: bool | None = None):
     use_bounded_poly = packed.use_bounded_poly if bounded_poly is None else bounded_poly
     if use_bounded_poly and not packed.bounded_poly_safe:
@@ -333,6 +372,7 @@ def _launch_meta(packed: PackedSamu, bounded_poly: bool | None = None):
 
 def samu_triton_serial(u: torch.Tensor, p: SamuParameters,
                        packed: PackedSamu | None = None, *,
+                       num_warps: int | None = None,
                        return_cache: bool = False):
     packed = packed or pack_samu_parameters(p, u.dtype)
     batch, length, _ = u.shape; modes = p.nu.numel()
@@ -341,11 +381,12 @@ def samu_triton_serial(u: torch.Tensor, p: SamuParameters,
     last_r = torch.empty(batch, modes, device=u.device, dtype=torch.float32) if return_cache else packed.nu
     last_i = torch.empty(batch, modes, device=u.device, dtype=torch.float32) if return_cache else packed.nu
     block = min(128, triton.next_power_of_2(modes))
+    launch_warps = num_warps or (4 if block >= 64 else 2)
     _serial_prefill_kernel[(triton.cdiv(modes, block), batch)](
         projected, packed.nu, packed.cos_theta, packed.sin_theta, packed.gamma,
         out, last_r, last_i, length, modes=modes,
         packed_width=packed.padded_width, RETURN_CACHE=return_cache, BLOCK_M=block,
-        num_warps=4 if block >= 64 else 2, **_launch_meta(packed),
+        num_warps=launch_warps, **_launch_meta(packed),
     )
     return (out, (last_r, last_i)) if return_cache else out
 
@@ -394,20 +435,21 @@ def samu_triton_auto(u: torch.Tensor, p: SamuParameters,
                      packed: PackedSamu | None = None, *,
                      compressed_p: bool = False,
                      return_cache: bool = False):
-    """Latency-oriented RTX 3090 dispatch policy for the canonical M=64 path.
+    """Length-aware default dispatch for the canonical M=64 path.
 
-    The thresholds are deliberately simple and are recorded in benchmark rows;
-    they are not claimed to transfer to other GPUs or shapes.
+    Architecture-specific calibration and the independent final timings are
+    recorded separately; callers may explicitly select the calibrated kernels.
     """
     length = u.shape[1]
     if length <= 256:
         return samu_triton_chunked(
-            u, p, 8, packed, num_warps=2, compressed_p=compressed_p,
+            u, p, 8, packed, num_warps=4, compressed_p=compressed_p,
             bounded_poly=packed.bounded_poly_safe if length <= 128 else False,
             return_cache=return_cache,
         )
     return samu_triton_chunked(
         u, p, 16 if length <= 512 else 32, packed,
+        num_warps=2,
         compressed_p=compressed_p,
         return_cache=return_cache,
     )
@@ -420,11 +462,10 @@ def samu_triton_decode(u: torch.Tensor, state: tuple[torch.Tensor, torch.Tensor]
     batch, d_model = u.shape; modes = p.nu.numel()
     out_r, out_i = torch.empty_like(state[0]), torch.empty_like(state[1])
     block_d = triton.next_power_of_2(d_model)
-    block_m = block_m or min(32, triton.next_power_of_2(modes))
+    if block_m is None:
+        block_m = 64 if batch > 16 else min(32, triton.next_power_of_2(modes))
     if num_warps is None:
-        # RTX 3090 M=64 sweep: small/large batches prefer fewer warps, while
-        # B=16 benefits from extra issue-level parallelism.
-        num_warps = 2 if batch == 1 or batch > 16 else 8 if batch > 4 else 4
+        num_warps = 8
     _decode_kernel[(triton.cdiv(modes, block_m), batch)](
         u, p.wr, p.wi, p.phase_direction, p.radial_direction, state[0], state[1],
         packed.nu, packed.cos_theta, packed.sin_theta, packed.gamma, out_r, out_i,
@@ -432,6 +473,37 @@ def samu_triton_decode(u: torch.Tensor, state: tuple[torch.Tensor, torch.Tensor]
         num_warps=num_warps, **_launch_meta(packed),
     )
     return out_r, out_i
+
+
+def samu_triton_decode_split(u: torch.Tensor, state: tuple[torch.Tensor, torch.Tensor],
+                             packed: PackedSamu, *, block_m: int | None = None,
+                             num_warps: int | None = None):
+    """Two-launch decode: packed Tensor-Core GEMM then pointwise recurrence.
+
+    Projection and recurrence are both inside the measured call.  This path
+    computes the same packed-BF16 inference equation as prefill without placing
+    a full-width matrix-vector product in every recurrence program.
+    """
+
+    if u.ndim != 2:
+        raise ValueError("split decode expects [B, D]")
+    batch, _ = u.shape
+    modes = packed.nu.numel()
+    if state[0].shape != (batch, modes) or state[1].shape != (batch, modes):
+        raise ValueError("split decode state shape mismatch")
+    projected = u @ packed.weight
+    out = torch.empty(batch, modes, 2, device=u.device, dtype=u.dtype)
+    last_r = torch.empty_like(state[0], dtype=torch.float32)
+    last_i = torch.empty_like(state[1], dtype=torch.float32)
+    block_m = block_m or (64 if batch <= 16 else min(128, triton.next_power_of_2(modes)))
+    num_warps = num_warps or 4
+    _decode_projected_kernel[(triton.cdiv(modes, block_m), batch)](
+        projected, packed.nu, packed.cos_theta, packed.sin_theta, packed.gamma,
+        state[0], state[1], out, last_r, last_i,
+        modes=modes, packed_width=packed.padded_width, BLOCK_M=block_m,
+        num_warps=num_warps, **_launch_meta(packed),
+    )
+    return out.reshape(batch, 2 * modes), (last_r, last_i)
 
 
 def samu_packed_reference(u: torch.Tensor, p: SamuParameters,

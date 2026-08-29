@@ -5,10 +5,7 @@ const ns = "http://www.w3.org/2000/svg";
 const colors = {
   "SAMU Triton": "var(--state)",
   "RG-LRU Triton": "var(--rglru)",
-  "Official RG-LRU": "var(--motion)",
-  "Official Mamba-3": "var(--dynamic)",
   "SAMU / RG ratio": "var(--state)",
-  "SAMU / Mamba ratio": "var(--dynamic)",
   "SAMU C8": "#b48927",
   "SAMU C16": "var(--write)",
   "SAMU C32": "var(--state)",
@@ -50,14 +47,13 @@ function pairedPoint(workload, length, batch = 1) {
 }
 
 function ratioCard(label, samu, other, otherLabel, caveat = "") {
-  if (!samu || !other) return `<div class="headline-result"><span class="metric-label">${esc(label)}</span><strong class="metric">N/A</strong><p>缺少匹配的实测点。</p></div>`;
+  if (!samu || !other) return `<div class="headline-result"><h3>${esc(label)}</h3><p>缺少匹配的实测点。</p></div>`;
   const ratio = other.median_ms / samu.median_ms;
   const tied = Math.abs(other.median_ms - samu.median_ms) < 1e-12;
   const samuWins = ratio >= 1;
   return `<div class="headline-result ${tied ? "" : samuWins ? "winner-samu" : "winner-other"}">
-    <span class="metric-label">${esc(label)}</span>
-    <strong class="metric">${tied ? "TIE" : `${fmt(samuWins ? ratio : 1 / ratio, 2)}×`}</strong>
-    <p>${tied ? "事件分辨率内持平" : samuWins ? "SAMU 更快" : `${esc(otherLabel)} 更快`}<br>SAMU ${fmt(samu.median_ms, 4)} ms · ${esc(otherLabel)} ${fmt(other.median_ms, 4)} ms${caveat ? `<br><small>${esc(caveat)}</small>` : ""}</p>
+    <h3>${esc(label)}</h3>
+    <p><b>${tied ? "在计时分辨率内持平" : samuWins ? `SAMU 快 ${fmt(ratio, 2)} 倍` : `${esc(otherLabel)} 快 ${fmt(1 / ratio, 2)} 倍`}</b>。SAMU 为 ${fmt(samu.median_ms, 4)} 毫秒，${esc(otherLabel)} 为 ${fmt(other.median_ms, 4)} 毫秒。${caveat ? `<br><small>${esc(caveat)}</small>` : ""}</p>
   </div>`;
 }
 
@@ -65,12 +61,9 @@ function renderHeadline() {
   $("#headline-env").textContent = `${environment.gpu || "GPU unknown"} · CUDA ${environment.torch_cuda || "?"} · Triton ${environment.triton || "?"}`;
   const long = pairedPoint("prefill", 65536);
   const decode = pairedPoint("decode", 1);
-  const samuLong = long.samu;
-  const mambaLong = one(row => row.track === "B_official" && row.model === "mamba3" && row.workload === "prefill" && row.batch === 1 && row.length === 65536);
   $("#headline-results").innerHTML = [
-    ratioCard("Equal Triton · L=65,536", long.samu, long.rglru, "RG-LRU"),
-    ratioCard("Equal Triton · decode B=1", decode.samu, decode.rglru, "RG-LRU"),
-    ratioCard("Official Mamba-3 · L=65,536", samuLong, mambaLong, "Mamba-3", "同宽参考；参数/state 不匹配")
+    ratioCard("长序列预填充（B=1，L=65,536）", long.samu, long.rglru, "RG‑LRU"),
+    ratioCard("单 token 解码（B=1）", decode.samu, decode.rglru, "RG‑LRU", "这个结果只代表 d=128 的一启动微内核；它明确提醒我们，SAMU 还没有在所有形状上占优。")
   ].join("");
 }
 
@@ -81,28 +74,21 @@ function currentView() {
   if (experiment === "equal-length") {
     const data = measured(row => row.track === "A_equal_triton" && row.workload === "prefill" && row.backend === "triton_auto" && common(row))
       .map(row => clonePoint(row, row.model === "samu" ? "SAMU Triton" : "RG-LRU Triton", row.length));
-    return { data, title: "Equal Triton prefill · length sweep", xLabel: "sequence length L", protocol: "d=128 · 16,772 vs 16,768 params · 512 B state", ratioModel: "rglru" };
-  }
-  if (experiment === "official-length") {
-    const samu = measured(row => row.track === "A_equal_triton" && row.model === "samu" && row.workload === "prefill" && row.backend === "triton_auto" && common(row))
-      .map(row => clonePoint(row, "SAMU Triton", row.length));
-    const official = measured(row => row.track === "B_official" && row.workload === "prefill" && common(row))
-      .map(row => clonePoint(row, row.model === "mamba3" ? "Official Mamba-3" : "Official RG-LRU", row.length));
-    return { data: [...samu, ...official], title: "Official implementation context · length sweep", xLabel: "sequence length L", protocol: "same width only · Mamba params/state are not matched", ratioModel: "mamba3" };
+    return { data, title: "预填充延迟随序列长度的变化", xLabel: "序列长度 L", protocol: "d=128；参数 16,772 对 16,768；状态均为 512 字节", ratioModel: "rglru" };
   }
   if (experiment === "batch") {
     const data = measured(row => row.track === "A_equal_triton" && row.workload === "prefill" && row.length === 512 && row.backend === "triton_auto" && row.d_model === 128 && row.modes === 64)
       .map(row => clonePoint(row, row.model === "samu" ? "SAMU Triton" : "RG-LRU Triton", row.batch));
-    return { data, title: "Equal Triton prefill · batch scaling at L=512", xLabel: "batch B", protocol: "same kernel class · same recurrent-state bytes", ratioModel: "rglru" };
+    return { data, title: "L=512 时，预填充延迟随批量大小的变化", xLabel: "批量大小 B", protocol: "同类内核；相同递推状态字节数", ratioModel: "rglru" };
   }
   if (experiment === "decode") {
     const data = measured(row => row.track === "A_equal_triton" && row.workload === "decode" && row.backend === "triton_fused_decode" && row.d_model === 128 && row.modes === 64)
       .map(row => clonePoint(row, row.model === "samu" ? "SAMU Triton" : "RG-LRU Triton", row.batch));
-    return { data, title: "Equal Triton fused decode · batch scaling", xLabel: "decode batch B", protocol: "one CUDA launch on both sides", ratioModel: "rglru" };
+    return { data, title: "融合单步解码随批量大小的变化", xLabel: "解码批量大小 B", protocol: "双方每一步都只启动一次 CUDA 内核", ratioModel: "rglru" };
   }
   const data = measured(row => row.track === "A_equal_triton" && row.workload === "prefill" && row.batch === 1 && row.length === 65536 && row.backend.startsWith("triton_chunk_c"))
     .map(row => clonePoint(row, row.model === "samu" ? "SAMU Triton" : "RG-LRU Triton", row.chunk_size));
-  return { data, title: "Chunk-size sweep · B1 L=65,536", xLabel: "chunk size C", protocol: "explicit C8 / C16 / C32 paths", ratioModel: "rglru" };
+  return { data, title: "B=1、L=65,536 时的分块长度对比", xLabel: "分块长度 C", protocol: "分别运行 C=8、16、32 的实际内核", ratioModel: "rglru" };
 }
 
 function speedupPoints(data, ratioModel) {
@@ -116,12 +102,12 @@ function speedupPoints(data, ratioModel) {
   return [...grouped.entries()].filter(([, group]) => group.samu && group.other).map(([x, group]) => ({
     id: `ratio-${ratioModel}-${x}`,
     status: "derived",
-    _series: ratioModel === "mamba3" ? "SAMU / Mamba ratio" : "SAMU / RG ratio",
+    _series: "SAMU / RG ratio",
     _x: Number(x),
     speedup: group.other.median_ms / group.samu.median_ms,
     samu: group.samu,
     other: group.other,
-    otherLabel: ratioModel === "mamba3" ? "Official Mamba-3" : "RG-LRU Triton"
+    otherLabel: "RG‑LRU Triton"
   }));
 }
 
@@ -143,7 +129,7 @@ function renderChart() {
   $("#chart-protocol").textContent = view.protocol;
   svg.replaceChildren();
   if (!data.length) {
-    svg.append(svgEl("text", { x: 480, y: 250, "text-anchor": "middle", fill: "var(--muted)" }, "No matching measured points"));
+    svg.append(svgEl("text", { x: 480, y: 250, "text-anchor": "middle", fill: "var(--muted)" }, "没有匹配的实测点"));
     $("#chart-caption").textContent = "该组合没有可比实测点。";
     return;
   }
@@ -186,7 +172,8 @@ function renderChart() {
     svg.append(svgEl("text", { x: legendX + 28, y: H - 14, fill: "var(--muted)", "font-size": 10, "font-family": "IBM Plex Mono" }, name));
   });
   svg.append(svgEl("text", { x: (margin.l + W - margin.r) / 2, y: H - 42, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11, "font-family": "IBM Plex Mono" }, view.xLabel));
-  $("#chart-caption").textContent = `${data.length} 个点 · ${metric} · ${logY ? "log" : "linear"} y-axis。速度比定义为对手 median / SAMU median；大于 1 表示 SAMU 更快。`;
+  const metricNames = { median_ms: "延迟中位数", tokens_per_second: "吞吐", speedup: "速度比" };
+  $("#chart-caption").textContent = `${data.length} 个实测点；纵轴为${logY ? "对数" : "线性"}刻度，指标是${metricNames[metric]}。速度比定义为 RG‑LRU 延迟中位数除以 SAMU 延迟中位数；大于 1 表示 SAMU 更快。`;
   renderDetail(data[0], metric);
 }
 
@@ -194,50 +181,48 @@ function renderDetail(row, metric) {
   if (row.status === "derived") {
     const tied = Math.abs(row.speedup - 1) < 1e-12;
     const winner = row.speedup >= 1 ? "SAMU" : row.otherLabel;
-    $("#benchmark-detail").innerHTML = `<p class="aside-title">Pairwise ratio</p><span class="evidence derived">Derived</span><strong class="big">${metricLabel(row.speedup, "speedup")}</strong><p>${tied ? "事件分辨率内持平" : `${esc(winner)} 更快`}；比值为 ${esc(row.otherLabel)} median / SAMU median。</p><dl><dt>SAMU</dt><dd>${fmt(row.samu.median_ms, 4)} ms</dd><dt>${esc(row.otherLabel)}</dt><dd>${fmt(row.other.median_ms, 4)} ms</dd></dl>`;
+    $("#benchmark-detail").innerHTML = `<p class="aside-title">两者速度比</p><span class="evidence derived">由延迟计算</span><strong class="big">${metricLabel(row.speedup, "speedup")}</strong><p>${tied ? "在事件分辨率内持平" : `${esc(winner)} 更快`}；计算方法是 RG‑LRU 延迟中位数除以 SAMU 延迟中位数。</p><dl><dt>SAMU</dt><dd>${fmt(row.samu.median_ms, 4)} ms</dd><dt>${esc(row.otherLabel)}</dt><dd>${fmt(row.other.median_ms, 4)} ms</dd></dl>`;
     return;
   }
   const sfu = row.sfu_static_counts || {};
   const raw = row.raw_samples_ms || [];
-  $("#benchmark-detail").innerHTML = `<p class="aside-title">Selected point</p><span class="evidence measured">Measured</span><strong class="big">${metricLabel(metricValue(row, metric), metric)}</strong><p>${esc(row._series)}</p><dl>
-    <dt>track</dt><dd>${esc(row.track)}</dd><dt>shape</dt><dd>B${row.batch} · L${row.length} · d${row.d_model}</dd>
-    <dt>backend</dt><dd>${esc(row.backend)}</dd><dt>parameters</dt><dd>${fmt(row.parameter_count, 0)}</dd><dt>FP32 state / B</dt><dd>${fmt(row.state_bytes_per_batch, 0)} B</dd>
-    <dt>median</dt><dd>${fmt(row.median_ms, 4)} ms</dd><dt>P10 / P95</dt><dd>${fmt(row.p10_ms, 4)} / ${fmt(row.p95_ms, 4)}</dd>
-    <dt>logical lower bound</dt><dd>${fmt(row.logical_bytes_lower_bound / 1048576, 2)} MiB</dd><dt>logical effective rate</dt><dd>${fmt(row.logical_effective_gbps, 2)} GB/s*</dd>
-    <dt>static exp/sigmoid</dt><dd>${fmt(sfu.exp_or_sigmoid_per_token, 0)} / token</dd><dt>static sqrt</dt><dd>${fmt(sfu.sqrt_per_token, 0)} / token</dd><dt>expected launches</dt><dd>${fmt(row.expected_cuda_launches, 0)}</dd>
-  </dl><p class="code-label">raw CUDA-event samples (ms)</p><p class="mono raw-samples">${raw.map(value => fmt(value, 4)).join(" · ")}</p><a href="${DATA_ROOT}/raw/${encodeURIComponent(row.id)}.json">Open raw JSON →</a><p class="fairness-inline">*逻辑字节 / latency，不是硬件 DRAM counter。</p>`;
+  $("#benchmark-detail").innerHTML = `<p class="aside-title">选中数据点</p><span class="evidence measured">实测</span><strong class="big">${metricLabel(metricValue(row, metric), metric)}</strong><p>${esc(row._series)}</p><dl>
+    <dt>实验轨道</dt><dd>公平 Triton 对照</dd><dt>张量形状</dt><dd>B${row.batch} · L${row.length} · d${row.d_model}</dd>
+    <dt>实现路径</dt><dd>${esc(row.backend)}</dd><dt>参数量</dt><dd>${fmt(row.parameter_count, 0)}</dd><dt>每个样本的 FP32 状态</dt><dd>${fmt(row.state_bytes_per_batch, 0)} B</dd>
+    <dt>延迟中位数</dt><dd>${fmt(row.median_ms, 4)} ms</dd><dt>P10 / P95</dt><dd>${fmt(row.p10_ms, 4)} / ${fmt(row.p95_ms, 4)}</dd>
+    <dt>逻辑流量下界</dt><dd>${fmt(row.logical_bytes_lower_bound / 1048576, 2)} MiB</dd><dt>逻辑有效速率</dt><dd>${fmt(row.logical_effective_gbps, 2)} GB/s*</dd>
+    <dt>每 token 的 exp/sigmoid</dt><dd>${fmt(sfu.exp_or_sigmoid_per_token, 0)}</dd><dt>每 token 的平方根</dt><dd>${fmt(sfu.sqrt_per_token, 0)}</dd><dt>预计内核启动数</dt><dd>${fmt(row.expected_cuda_launches, 0)}</dd>
+  </dl><p class="code-label">原始 CUDA event 样本（毫秒）</p><p class="mono raw-samples">${raw.map(value => fmt(value, 4)).join(" · ")}</p><a href="${DATA_ROOT}/raw/${encodeURIComponent(row.id)}.json">打开原始 JSON →</a><p class="fairness-inline">* 逻辑字节数除以延迟；它不是硬件 DRAM 计数器测得的带宽。</p>`;
 }
 
 function compiledKernelSummary(profile) {
-  if (profile.name.startsWith("mamba3_")) return `N/A* (${profile.triton_compiled_kernels?.length || 0} cached candidates)`;
-  return (profile.triton_compiled_kernels || []).map(kernel => `${kernel.name.replace(/^_/, "")}: ${kernel.registers_per_thread}r · ${fmt(kernel.derived_occupancy * 100, 1)}% occ · ${kernel.spills_per_thread}s`).join("<br>") || "N/A";
+  return (profile.triton_compiled_kernels || []).map(kernel => `${kernel.name.replace(/^_/, "")}: ${kernel.registers_per_thread} 个寄存器/线程 · ${fmt(kernel.derived_occupancy * 100, 1)}% 推导占用率 · ${kernel.spills_per_thread} 个溢出/线程`).join("<br>") || "未测";
 }
 
 function renderProfile() {
-  const profiles = profileData.profiles || [];
+  const profiles = (profileData.profiles || []).filter(profile => /^(samu|rglru)_/.test(profile.name));
   const equalRows = measured(row => row.track === "A_equal_triton" && row.workload === "prefill" && row.batch === 1 && row.length === 2048 && row.backend === "triton_auto");
   const samu = equalRows.find(row => row.model === "samu");
   const rg = equalRows.find(row => row.model === "rglru");
-  return `<div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>Operation</th><th>actual CUDA launches</th><th>kernel sum</th><th>register / occupancy / spill</th></tr></thead><tbody>${profiles.map(profile => `<tr><td>${esc(profile.name)}</td><td>${profile.cuda_kernel_launch_count}</td><td>${fmt(profile.self_cuda_total_us, 0)} μs</td><td class="mono">${compiledKernelSummary(profile)}</td></tr>`).join("")}</tbody></table></div>
-    <div class="coverage-grid metric-audit"><div><span class="context-label">Static SFU work · C32 L2048</span><strong>${fmt(samu?.sfu_static_counts?.exp_or_sigmoid_per_token, 0)} vs ${fmt(rg?.sfu_static_counts?.exp_or_sigmoid_per_token, 0)}</strong><p>SAMU vs RG-LRU exp/sigmoid per token；RG-LRU 另有 ${fmt(rg?.sfu_static_counts?.sqrt_per_token, 0)} sqrt。是源码静态计数，不是 SFU utilization。</p></div><div><span class="context-label">Logical effective rate</span><strong>${fmt(samu?.logical_effective_gbps, 2)} vs ${fmt(rg?.logical_effective_gbps, 2)} GB/s</strong><p>逻辑流量下界除以 latency；不等于实测 HBM/DRAM 带宽。</p></div><div><span class="context-label">Hardware counters</span><strong>N/A</strong><p>镜像无 Nsight Compute；DRAM bytes、带宽、SFU/SM utilization 保持 null，不用推算值冒充实测。</p></div></div>
-    <p class="fairness-inline">Occupancy 是根据 compiler metadata 与 RTX 3090 SM 资源上限推导的估计值，忽略寄存器分配粒度和 scheduler 限制。Mamba 的 cache 同时存在 37 个 autotune candidates，torch.profiler 不能把实际事件唯一关联到某个候选，因此 register/occupancy 明确标 N/A*。</p>`;
+  return `<div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>操作</th><th>实际 CUDA 启动数</th><th>内核时间合计</th><th>寄存器、占用率与溢出</th></tr></thead><tbody>${profiles.map(profile => `<tr><td>${esc(profile.name)}</td><td>${profile.cuda_kernel_launch_count}</td><td>${fmt(profile.self_cuda_total_us, 0)} μs</td><td class="mono">${compiledKernelSummary(profile)}</td></tr>`).join("")}</tbody></table></div>
+    <div class="coverage-grid metric-audit"><div><span class="context-label">特殊函数静态计数（C=32，L=2048）</span><strong>${fmt(samu?.sfu_static_counts?.exp_or_sigmoid_per_token, 0)} 对 ${fmt(rg?.sfu_static_counts?.exp_or_sigmoid_per_token, 0)}</strong><p>左边是 SAMU，右边是 RG‑LRU 的每 token exp/sigmoid 次数；RG‑LRU 另有 ${fmt(rg?.sfu_static_counts?.sqrt_per_token, 0)} 次平方根。它来自源码静态计数，不是特殊函数单元的硬件利用率。</p></div><div><span class="context-label">逻辑有效速率</span><strong>${fmt(samu?.logical_effective_gbps, 2)} 对 ${fmt(rg?.logical_effective_gbps, 2)} GB/s</strong><p>逻辑流量下界除以延迟，用于检查数量级；不等于实测 HBM/DRAM 带宽。</p></div><div><span class="context-label">硬件计数器</span><strong>权限阻止</strong><p>H800 节点已安装 Nsight Compute，但宿主机只允许管理员读取性能计数器；DRAM 字节数、实际带宽和特殊函数单元利用率保持空值。</p></div></div>
+    <p class="fairness-inline">“占用率”表示一个 SM 上可同时驻留的活跃 warp 比例。这里根据编译器元数据和 H800 查询到的寄存器、共享内存与线程上限推导，尚未计入分配粒度、调度器和 barrier 限制，因此只用于解释资源上界，不当作硬件实测。</p>`;
 }
 
 function renderLab() {
   const panel = $("#lab-panel");
   if (activeTab === "protocol") {
-    panel.innerHTML = `<div class="coverage-grid"><div><span class="context-label">Official RG-LRU equations</span><strong>Eq. 1–4</strong><p>r=σ(Wₐx+bₐ), i=σ(Wₓx+bₓ), a=a_base^(8r), h=a·h_prev+√(1−a²)·(i·x)。reset 位置强制 a=0、write multiplier=1。</p></div><div><span class="context-label">Equal track</span><strong>16,772 vs 16,768</strong><p>d=128；参数只差 4，recurrent state 均为 128 FP32 scalars = 512 B / batch。</p></div><div><span class="context-label">Timing</span><strong>Triton driver events</strong><p>每个 timed call 前清 L2；compile、packing、shape dispatch 排除，raw event samples 全部保留。</p></div></div><p class="fairness-inline">Track A 才用于 SAMU↔RG-LRU 架构结论。Track B 的官方 Mamba-3 是同宽 best-native 背景线：118,920 参数、66,816 B native cache，并不与 SAMU 参数或 state 匹配。</p>`;
+    panel.innerHTML = `<div class="coverage-grid"><div><span class="context-label">RG‑LRU 官方方程</span><strong>Griffin 公式 1–4</strong><p>r=σ(Wₐx+bₐ)，i=σ(Wₓx+bₓ)，a=a_base^(8r)，h=a·h_prev+√(1−a²)·(i·x)。序列重置位置强制 a=0，并把写入归一化系数设为 1。</p></div><div><span class="context-label">公平配对</span><strong>16,772 对 16,768 个参数</strong><p>d=128；参数仅差 4，递推状态都含 128 个 FP32 标量，即每个样本 512 字节。</p></div><div><span class="context-label">计时方法</span><strong>反向顺序复测</strong><p>先用 BF16 GEMM 稳定 GPU 时钟；每个点再预热并保留全部 CUDA event 样本。完整套件按 SAMU→RG‑LRU 和 RG‑LRU→SAMU 各运行一次，合并原始样本后重算统计量。</p></div></div><p class="fairness-inline">只有同宽度、同参数量、同状态字节数和同实现等级的配对数据用于架构结论；校准样本与最终样本分开。</p>`;
   } else if (activeTab === "profile") {
     panel.innerHTML = renderProfile();
   } else if (activeTab === "correctness") {
     panel.innerHTML = `<div class="coverage-grid"><div><span class="context-label">RG-LRU serial</span><strong>${fmt(audit.rglru_serial_max_abs, 8)}</strong><p>BF16 output max abs；FP32 cache max abs ${fmt(audit.rglru_serial_cache_max_abs, 9)}。</p></div><div><span class="context-label">RG-LRU C16</span><strong>${fmt(audit.rglru_chunk16_max_abs, 7)}</strong><p>与固定 commit 官方实现逐值对照；cache max abs ${fmt(audit.rglru_chunk16_cache_max_abs, 9)}。</p></div><div><span class="context-label">RG-LRU fused decode</span><strong>${fmt(audit.rglru_adversarial_decode_max_abs, 8)}</strong><p>对抗尺度 sweep 的 output max abs；cache max abs ${fmt(audit.rglru_adversarial_decode_cache_max_abs, 9)}。</p></div></div><p class="fairness-inline">SAMU auto-short output max abs ${fmt(audit.samu_auto_short_max_abs, 8)}，cache ${fmt(audit.samu_auto_short_cache_max_abs, 9)}；|d|≤${fmt(audit.samu_phase_delta_bound_rad, 8)} rad 内 sin/cos polynomial max abs 为 ${fmt(audit.samu_sin_polynomial_max_abs, 10)} / ${fmt(audit.samu_cos_polynomial_max_abs, 10)}。</p>`;
   } else if (activeTab === "environment") {
-    const fields = { GPU: environment.gpu, "Board / driver": environment.driver_and_board, "Compute capability": environment.compute_capability, "SM count": environment.sm_count, "CUDA runtime": environment.torch_cuda, PyTorch: environment.torch, Triton: environment.triton, Python: environment.python, "RecurrentGemma commit": environment.source_commits?.recurrentgemma, "Mamba commit": environment.source_commits?.mamba, Timestamp: environment.timestamp_utc };
+    const fields = { GPU: environment.gpu, "显卡与驱动": environment.driver_and_board, "计算能力": environment.compute_capability, "SM 数量": environment.sm_count, "CUDA 运行时": environment.torch_cuda, PyTorch: environment.torch, Triton: environment.triton, Python: environment.python, "RecurrentGemma 固定版本": environment.source_commits?.recurrentgemma, "测试时间": environment.timestamp_utc };
     panel.innerHTML = `<dl class="environment-grid">${Object.entries(fields).map(([key, value]) => `<div><dt>${esc(key)}</dt><dd>${esc(value)}</dd></div>`).join("")}</dl>`;
   } else {
     const measuredCount = rows.filter(row => row.status === "measured").length;
-    const unsupportedCount = rows.filter(row => row.status === "unsupported").length;
-    panel.innerHTML = `<p><b>Source of truth:</b> ${rows.length} rows · ${measuredCount} measured · ${unsupportedCount} unsupported · ${rows.length - measuredCount - unsupportedCount} failed。聚合文件不补数、不平滑、不外推。</p><p><a class="button" href="${DATA_ROOT}/summary.json">Open summary.json</a> <a class="button" href="${DATA_ROOT}/summary.csv">Download summary.csv</a> <a class="button" href="${DATA_ROOT}/profiles.json">Open profiles.json</a> <a class="button" href="${DATA_ROOT}/run_manifest.json">Run manifest</a></p>`;
+    panel.innerHTML = `<p><b>页面使用的原始依据：</b>${rows.length} 行公平对照，其中 ${measuredCount} 行实测。聚合文件不补数、不平滑、不外推。</p><p><a class="button" href="${DATA_ROOT}/summary.json">打开汇总 JSON</a> <a class="button" href="${DATA_ROOT}/summary.csv">下载汇总 CSV</a> <a class="button" href="${DATA_ROOT}/profiles.json">打开资源数据</a> <a class="button" href="${DATA_ROOT}/run_manifest.json">查看运行清单</a></p>`;
   }
 }
 
@@ -253,7 +238,7 @@ export async function initBenchmarkLab() {
         return response.json();
       })
     ]);
-    rows = summary.rows || [];
+    rows = (summary.rows || []).filter(row => row.track === "A_equal_triton" && (row.model === "samu" || row.model === "rglru"));
     environment = summary.environment || {};
     audit = summary.equation_audit || {};
     renderHeadline();
@@ -268,7 +253,7 @@ export async function initBenchmarkLab() {
       renderLab();
     });
   } catch (error) {
-    $("#headline-results").innerHTML = `<div class="headline-result"><strong>Benchmark data unavailable</strong><p>${esc(error.message)}。请通过 HTTP server 打开页面。</p></div>`;
-    $("#chart-caption").textContent = `Load error: ${error.message}`;
+    $("#headline-results").innerHTML = `<div class="headline-result"><strong>无法读取实验数据</strong><p>${esc(error.message)}。请通过 HTTP 服务器打开页面。</p></div>`;
+    $("#chart-caption").textContent = `读取失败：${error.message}`;
   }
 }

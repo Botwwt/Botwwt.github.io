@@ -2,7 +2,7 @@
 
 Audit date: 2026-08-29 (Asia/Shanghai)
 
-This file is the factual boundary for the interactive course and benchmark harness. It distinguishes the current repository implementation from proposed GPU kernels.
+This file is the factual boundary for the interactive research report and benchmark harness. It distinguishes the current repository implementation from proposed GPU kernels.
 
 ## Source identity
 
@@ -32,7 +32,7 @@ transition[j,t] = exp(-nu[j] * exp(eta[group(j),t]))
 
 where `nu = exp(nu_log)` and `theta = exp(theta_log)` are trainable, mode-local base spectral parameters. `groups=1` is canonical coherent SAMU; larger group counts are a nested extension up to one controller group per mode.
 
-The course uses `c_t := eta_t` and `d_t := delta_t` for the single-group (`G=1`) case. These are equivalent GPU coordinates, not unconstrained controller outputs.
+The report uses `c_t := eta_t` and `d_t := delta_t` for the single-group (`G=1`) case. These are equivalent GPU coordinates, not unconstrained controller outputs.
 
 ## 2. Controller construction
 
@@ -59,14 +59,14 @@ gamma[j] = sqrt(1 - exp(-2 * nu[j])) + 1e-8
 
 `gamma` uses the base retention, not the token-varying effective retention. Within one fixed parameter version / forward, the write matrix is time-independent and input-independent; it is not an eternal constant because `wx1`, `wx2`, and `nu` are trainable.
 
-The audited formal-task PyTorch wrapper differs: `gamma_log` is initialized from the base radius but is then an independent trainable parameter. It is not guaranteed to remain equal to canonical `gamma(nu)` after optimization. The course presents JAX canonical math and labels formal-wrapper measurements separately.
+The audited formal-task PyTorch wrapper differs: `gamma_log` is initialized from the base radius but is then an independent trainable parameter. It is not guaranteed to remain equal to canonical `gamma(nu)` after optimization. The report presents JAX canonical math and labels formal-wrapper measurements separately.
 
 ## 4. PPO versus supervised inputs
 
 - PPO `ObservationControlledRealTimeActorCritic`: `write_x_t = shared_repr` from the observation MLP, while `selector_x_t = raw observation`. They are deliberately separate.
 - Supervised / H64 grouped sweeps: the raw task input is used directly by the recurrent model and therefore serves the write and selector roles in that experimental wrapper.
 
-The course must not claim that PPO uses the same tensor for both paths.
+The report must not claim that PPO uses the same tensor for both paths.
 
 ## 5. State dimensions and convention
 
@@ -125,7 +125,7 @@ The website engineering branch now contains audited inference experiments in `be
 - one packed BF16 projection followed by FP32 serial recurrence;
 - chunk summary, exclusive prefix, and local replay kernels with C8/C16/C32 variants;
 - one-launch decode that fuses write/controller dot products, coherent-control reconstruction, transition, and state update;
-- an RTX 3090 dispatch policy selected from measured crossover points.
+- an H800-specific dispatch policy selected in a separate calibration sweep.
 
 These are custom research kernels, not a claim of framework-integrated production readiness. The following remain proposals or missing evidence:
 
@@ -134,8 +134,12 @@ These are custom research kernels, not a claim of framework-integrated productio
 - configurable time × mode tiling with profiler-validated occupancy;
 - persistent multi-step decode;
 - prefill GEMM/recurrence fusion;
-- Nsight Compute counters for SFU, registers, occupancy, DRAM and L2;
-- a same-maturity custom RG-LRU kernel comparison;
+- hardware performance counters for SFU, achieved occupancy, DRAM and L2
+  (the H800 host currently blocks them with `ERR_NVGPUCTRPERM`);
 - model-quality evidence for the coherent-control constraint.
 
-The measured claim supported here is narrower: on the recorded RTX 3090 shapes, the SAMU Triton inference path has lower CUDA-event latency than the pinned official-source PyTorch RG-LRU path. Backend, framework, equal-state protocol, and the absence of a production RG-LRU kernel remain visible beside that result.
+The measured claim supported here is shape-dependent: against a same-maturity
+official-equation Triton RG-LRU kernel on H800, SAMU gains most on long or
+high-batch prefill, while RG-LRU is faster on the smallest one-token decode
+microkernels. The pinned official-source PyTorch layer remains the numerical
+reference, not the performance opponent.

@@ -1,9 +1,8 @@
-"""Equal-maturity SAMU / RG-LRU Triton benchmarks plus official baselines.
+"""Equal-maturity SAMU / official-equation RG-LRU Triton benchmarks.
 
-Track A compares custom inference kernels with equal width, parameter count, and
-FP32 recurrent-state bytes.  Track B reports pinned official RecurrentGemma and
-state-spaces Mamba-3 implementations without pretending their state geometry or
-parameter counts are matched.
+The comparison matches width, parameter count, FP32 recurrent-state bytes,
+precision, launch class, and timing method.  RG-LRU equations and numerical
+semantics are validated against a pinned RecurrentGemma source checkout.
 """
 
 from __future__ import annotations
@@ -26,7 +25,7 @@ from typing import Any, Callable
 import torch
 import triton
 
-from kernels import load_official_mamba3, load_official_rglru, make_samu_parameters
+from kernels import load_official_rglru, make_samu_parameters
 from triton_rglru import (
     pack_rglru,
     rglru_triton_auto,
@@ -45,9 +44,7 @@ from triton_samu import (
 
 
 RGLRU_COMMIT = "2efa84dac0e68e63547a27a18fa943c98f1c312e"
-MAMBA_COMMIT = "e9594ce1c732d97440f0332fdc43170a2294dbfa"
 EQUAL_PROTOCOL = "equal_d_model+parameters_within_4+equal_fp32_state_bytes"
-MAMBA_PROTOCOL = "same_d_model+official_best_native_not_state_or_parameter_matched"
 
 
 def atomic_json(path: Path, value: Any) -> None:
@@ -94,7 +91,6 @@ def environment() -> dict[str, Any]:
             "samu_triton": digest(benchmark_dir / "triton_samu.py"),
             "rglru_triton": digest(benchmark_dir / "triton_rglru.py"),
             "recurrentgemma": RGLRU_COMMIT,
-            "mamba": MAMBA_COMMIT,
         },
     }
 
@@ -145,6 +141,34 @@ def measure(operation: Callable[[], Any], *, warmup_ms: int, rep_ms: int,
     }, compile_seconds
 
 
+def stabilize_gpu(seconds: float = 2.0) -> dict[str, Any]:
+    """Bring clocks to steady state before latency sampling."""
+
+    a = torch.randn(4096, 4096, device="cuda", dtype=torch.bfloat16)
+    out = torch.empty_like(a)
+    started = time.perf_counter()
+    launches = 0
+    while time.perf_counter() - started < seconds:
+        for _ in range(16):
+            torch.mm(a, a, out=out)
+            launches += 1
+        torch.cuda.synchronize()
+    elapsed = time.perf_counter() - started
+    del a, out
+    torch.cuda.empty_cache()
+    return {
+        "method": "repeated 4096x4096 BF16 GEMM followed by synchronization",
+        "requested_seconds": seconds,
+        "elapsed_seconds": elapsed,
+        "launches": launches,
+        "post_warmup_clock_power": command_output([
+            "nvidia-smi",
+            "--query-gpu=temperature.gpu,power.draw,clocks.sm,clocks.mem",
+            "--format=csv,noheader",
+        ]),
+    }
+
+
 def base_config(track: str, model: str, backend: str, workload: str,
                 batch: int, length: int, **extra) -> dict[str, Any]:
     value = {
@@ -158,7 +182,7 @@ def base_config(track: str, model: str, backend: str, workload: str,
         "d_model": 128,
         "modes": 64,
         "chunk_size": None,
-        "matching_protocol": EQUAL_PROTOCOL if track == "A_equal_triton" else MAMBA_PROTOCOL,
+        "matching_protocol": EQUAL_PROTOCOL,
     }
     value.update(extra)
     return value
@@ -169,9 +193,6 @@ def configs() -> list[dict[str, Any]]:
     for length in (128, 512, 2048, 8192, 32768, 65536):
         result.append(base_config("A_equal_triton", "samu", "triton_auto", "prefill", 1, length))
         result.append(base_config("A_equal_triton", "rglru", "triton_auto", "prefill", 1, length))
-        result.append(base_config("B_official", "mamba3", "official_siso_triton", "prefill", 1, length))
-        result.append(base_config("B_official", "rglru", "official_pytorch_source", "prefill", 1, length,
-                                  matching_protocol=EQUAL_PROTOCOL))
     for length in (2048, 65536):
         for chunk in (8, 16, 32):
             result.append(base_config("A_equal_triton", "samu", f"triton_chunk_c{chunk}", "prefill", 1, length, chunk_size=chunk))
@@ -182,9 +203,6 @@ def configs() -> list[dict[str, Any]]:
     for batch in (1, 4, 16, 64):
         result.append(base_config("A_equal_triton", "samu", "triton_fused_decode", "decode", batch, 1))
         result.append(base_config("A_equal_triton", "rglru", "triton_fused_decode", "decode", batch, 1))
-        result.append(base_config("B_official", "rglru", "official_pytorch_source", "decode", batch, 1,
-                                  matching_protocol=EQUAL_PROTOCOL))
-        result.append(base_config("B_official", "mamba3", "official_cute_step", "decode", batch, 1))
     return result
 
 
@@ -202,8 +220,6 @@ def logical_metrics(config: dict[str, Any]) -> tuple[int | None, dict[str, Any] 
     excluded.
     """
     b, l, d, m = config["batch"], config["length"], config["d_model"], config["modes"]
-    if config["model"] == "mamba3":
-        return None, None
     if config["workload"] == "decode":
         if config["model"] == "samu":
             bytes_ = b * (2 * d * 2 + 2 * d * m * 2 + 4 * d * 4 + 4 * m * 4)
@@ -241,17 +257,7 @@ def logical_metrics(config: dict[str, Any]) -> tuple[int | None, dict[str, Any] 
     }
 
 
-def tensor_bytes(value: Any) -> int:
-    if torch.is_tensor(value):
-        return value.numel() * value.element_size()
-    if isinstance(value, (tuple, list)):
-        return sum(tensor_bytes(item) for item in value)
-    if isinstance(value, dict):
-        return sum(tensor_bytes(item) for item in value.values())
-    return 0
-
-
-def make_case(config: dict[str, Any], rglru_root: Path, mamba_root: Path):
+def make_case(config: dict[str, Any], rglru_root: Path):
     torch.manual_seed(1729)
     b, l, d, m = config["batch"], config["length"], config["d_model"], config["modes"]
     if config["model"] == "samu":
@@ -261,17 +267,20 @@ def make_case(config: dict[str, Any], rglru_root: Path, mamba_root: Path):
         if config["workload"] == "decode":
             token = torch.randn(b, d, device="cuda", dtype=torch.bfloat16)
             state = (torch.randn(b, m, device="cuda"), torch.randn(b, m, device="cuda"))
-            decode_warps = 2 if b == 1 or b > 16 else 8 if b > 4 else 4
+            decode_warps = 8
+            decode_block = 64 if b > 16 else 32
             operation = lambda: samu_triton_decode(
-                token, state, params, packed, block_m=32, num_warps=decode_warps
+                token, state, params, packed,
+                block_m=decode_block, num_warps=decode_warps
             )
             launches = 1
         else:
             x = torch.randn(b, l, d, device="cuda", dtype=torch.bfloat16)
             if config["backend"] == "triton_auto":
                 chunk = 8 if l <= 256 else 16 if l <= 512 else 32
+                auto_warps = 4 if l <= 256 else 2
                 operation = lambda: samu_triton_chunked(
-                    x, params, chunk, packed, num_warps=2,
+                    x, params, chunk, packed, num_warps=auto_warps,
                     bounded_poly=packed.bounded_poly_safe if l <= 128 else False,
                     return_cache=True,
                 )
@@ -321,11 +330,18 @@ def make_case(config: dict[str, Any], rglru_root: Path, mamba_root: Path):
             positions = torch.arange(l, device="cuda").unsqueeze(0).expand(b, -1)
             if config["backend"] == "triton_auto":
                 chunk = 8 if l <= 256 else 16 if l <= 1024 else 32
-                operation = lambda: rglru_triton_chunked(x, positions, packed, chunk)
+                auto_warps = 4 if l <= 2048 else 2
+                operation = lambda: rglru_triton_chunked(
+                    x, positions, packed, chunk, num_warps=auto_warps
+                )
             elif config["backend"] == "triton_serial":
                 operation = lambda: rglru_triton_serial(x, positions, packed)
             else:
-                operation = lambda: rglru_triton_chunked(x, positions, packed, int(config["chunk_size"]))
+                explicit_warps = 4 if l <= 2048 else 2
+                operation = lambda: rglru_triton_chunked(
+                    x, positions, packed, int(config["chunk_size"]),
+                    num_warps=explicit_warps,
+                )
             launches = 4 if config["backend"] != "triton_serial" else 2
         return operation, {
             "parameter_count": parameter_count, "state_bytes_per_batch": d * 4,
@@ -335,26 +351,7 @@ def make_case(config: dict[str, Any], rglru_root: Path, mamba_root: Path):
             "precision_policy": "official eager-BF16 pointwise rounding; FP32 recurrent state/cache",
             "expected_cuda_launches": launches,
         }
-    Mamba3 = load_official_mamba3(mamba_root)
-    model = Mamba3(d_model=d, d_state=m, headdim=64, chunk_size=64,
-                   is_mimo=False, dtype=torch.bfloat16, device="cuda").eval()
-    if config["workload"] == "decode":
-        raise RuntimeError("official Mamba-3 CuTeDSL step kernel is unavailable on this RTX 3090 environment")
-    x = torch.randn(b, l, d, device="cuda", dtype=torch.bfloat16)
-    cache_bytes = None
-    try:
-        cache_bytes = tensor_bytes(model.allocate_inference_cache(1, 1, device="cuda", dtype=torch.bfloat16))
-    except Exception:
-        pass
-    return lambda: model(x), {
-        "parameter_count": sum(p.numel() for p in model.parameters()),
-        "state_bytes_per_batch": cache_bytes,
-        "implementation_class": "official_state_spaces_mamba3_siso_triton",
-        "source_commit": MAMBA_COMMIT,
-        "precision_policy": "official Mamba-3 BF16 SISO Triton path",
-        "expected_cuda_launches": None,
-        "fairness_note": "Same d_model only; native Mamba-3 state and parameter geometry are not matched to SAMU/RG-LRU.",
-    }
+    raise ValueError(f"unknown model: {config['model']}")
 
 
 def correctness(rglru_root: Path) -> dict[str, Any]:
@@ -409,8 +406,9 @@ def correctness(rglru_root: Path) -> dict[str, Any]:
     d6 = d4 * d2
     cos_poly = 1 - .5 * d2 + d4 / 24 - d6 / 720
     sin_poly = sample_d * (1 - d2 / 6 + d4 / 120 - d6 / 5040)
-    return {
+    audit = {
         "rglru_reference": "official recurrentgemma.torch.layers.RGLRU at pinned commit",
+        "rglru_reference_commit": RGLRU_COMMIT,
         "rglru_reset_cases": ["nonzero first position with nonzero h0", "mid-sequence reset t=5", "mid-sequence reset t=77", "decode reset/non-reset"],
         "rglru_serial_max_abs": float((serial - official).abs().max()),
         "rglru_serial_mean_abs": float((serial - official).abs().float().mean()),
@@ -438,6 +436,37 @@ def correctness(rglru_root: Path) -> dict[str, Any]:
         "samu_sin_polynomial_max_abs": float((sin_poly - torch.sin(sample_d)).abs().max()),
         "samu_cos_polynomial_max_abs": float((cos_poly - torch.cos(sample_d)).abs().max()),
     }
+    limits = {
+        "rglru_serial_max_abs": 2e-3,
+        "rglru_serial_cache_max_abs": 5e-5,
+        "rglru_chunk16_max_abs": 2e-3,
+        "rglru_chunk16_cache_max_abs": 5e-5,
+        "rglru_decode_max_abs": 2e-3,
+        "rglru_decode_cache_max_abs": 5e-5,
+        "rglru_adversarial_decode_max_abs": 2e-3,
+        "rglru_adversarial_decode_cache_max_abs": 5e-5,
+        "samu_serial_max_abs": 1e-2,
+        "samu_serial_cache_max_abs": 1e-4,
+        "samu_chunk16_max_abs": 1e-2,
+        "samu_chunk16_cache_max_abs": 1e-4,
+        "samu_auto_short_max_abs": 1e-2,
+        "samu_auto_short_cache_max_abs": 1e-4,
+        "samu_bounded_vs_exact_output_max_abs": 1e-2,
+        "samu_bounded_vs_exact_cache_max_abs": 1e-4,
+        "samu_sin_polynomial_max_abs": 1e-6,
+        "samu_cos_polynomial_max_abs": 1e-6,
+    }
+    failures = {
+        name: {"measured": audit[name], "limit": limit}
+        for name, limit in limits.items()
+        if audit[name] > limit
+    }
+    audit["acceptance_limits"] = limits
+    audit["passed"] = not failures
+    audit["failures"] = failures
+    if failures:
+        raise RuntimeError(f"correctness acceptance failed: {json.dumps(failures, sort_keys=True)}")
+    return audit
 
 
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -456,10 +485,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=Path("../benchmark_results_equal_kernel"))
     parser.add_argument("--rglru-source", type=Path, required=True)
-    parser.add_argument("--mamba-source", type=Path, required=True)
     parser.add_argument("--resume", action="store_true")
-    parser.add_argument("--only-model", choices=("samu", "rglru", "mamba3"))
+    parser.add_argument("--only-model", choices=("samu", "rglru"))
     parser.add_argument("--only-custom-triton", action="store_true")
+    parser.add_argument(
+        "--model-order", choices=("samu,rglru", "rglru,samu"),
+        default="samu,rglru",
+        help="reverse this in a second run and pool raw samples to counterbalance order",
+    )
     args = parser.parse_args()
     output = args.output.resolve()
     raw = output / "raw"
@@ -470,12 +503,22 @@ def main() -> None:
     audit = correctness(args.rglru_source)
     atomic_json(output / "correctness.json", audit)
     print("correctness", json.dumps(audit), flush=True)
+    stabilization = stabilize_gpu()
+    print("stabilization", json.dumps(stabilization), flush=True)
     selected = [config for config in configs()
                 if (args.only_model is None or config["model"] == args.only_model)
                 and (not args.only_custom_triton or (
                     config["model"] in ("samu", "rglru")
                     and config["backend"] != "official_pytorch_source"
                 ))]
+    if args.only_model is None and args.model_order == "rglru,samu":
+        reordered = []
+        for offset in range(0, len(selected), 2):
+            pair = selected[offset:offset + 2]
+            if len(pair) == 2 and {row["model"] for row in pair} == {"samu", "rglru"}:
+                pair.sort(key=lambda row: 0 if row["model"] == "rglru" else 1)
+            reordered.extend(pair)
+        selected = reordered
     for index, config in enumerate(selected, 1):
         identifier = row_id(config)
         path = raw / f"{identifier}.json"
@@ -485,15 +528,13 @@ def main() -> None:
         print(f"[{index}/{len(selected)}] run {identifier}", flush=True)
         logical_bytes, sfu = logical_metrics(config)
         try:
-            operation, metadata = make_case(config, args.rglru_source, args.mamba_source)
+            operation, metadata = make_case(config, args.rglru_source)
             is_decode = config["workload"] == "decode"
-            if config["backend"] == "official_pytorch_source":
-                warmup_ms = 2
-            elif config["model"] == "mamba3":
-                warmup_ms = 3
-            else:
-                warmup_ms = 5
-            rep_ms = 25
+            # Short 5 ms warmups left the first H800 cases in a lower power
+            # state and measurably changed their ranking.  The final run uses
+            # sustained per-case warmup after the global clock stabilization.
+            warmup_ms = 100
+            rep_ms = 200
             inner = 1
             timing, compile_seconds = measure(operation, warmup_ms=warmup_ms, rep_ms=rep_ms,
                                                inner=inner)
@@ -505,12 +546,15 @@ def main() -> None:
                 "logical_bytes_lower_bound": logical_bytes,
                 "logical_effective_gbps": (logical_bytes / timing["median_ms"] / 1e6) if logical_bytes else None,
                 "sfu_static_counts": sfu,
-                "hardware_counter_scope": "N/A: Nsight Compute unavailable; logical traffic and source-derived SFU counts only",
+                "hardware_counter_scope": (
+                    "Nsight Compute 2025.3.1 installed, but host kernel has "
+                    "RmProfilingAdminOnly=1 and the container lacks CAP_SYS_ADMIN "
+                    "(ERR_NVGPUCTRPERM); logical traffic and source-derived SFU counts only"
+                ),
             }
         except Exception as error:
-            unsupported = config["model"] == "mamba3" and config["workload"] == "decode"
             row = {
-                "id": identifier, "status": "unsupported" if unsupported else "failed",
+                "id": identifier, "status": "failed",
                 **config, "logical_bytes_lower_bound": logical_bytes,
                 "sfu_static_counts": sfu,
                 "error": f"{type(error).__name__}: {error}",
@@ -518,15 +562,18 @@ def main() -> None:
         atomic_json(path, row)
         print(json.dumps({key: row.get(key) for key in ("model", "backend", "workload", "batch", "length", "status", "median_ms", "error")}), flush=True)
         torch.cuda.empty_cache()
-    rows = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(raw.glob("*.json"))]
+    selected_ids = {row_id(config) for config in configs()}
+    rows = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(raw.glob("*.json"))
+            if path.stem in selected_ids]
     rows.sort(key=lambda row: (row.get("workload", ""), row.get("batch", 0), row.get("length", 0), row.get("track", ""), row.get("model", ""), row.get("backend", "")))
     summary = {
         "schema_version": 2,
         "generated_from_raw": True,
-        "title": "Equal-kernel SAMU vs official-equation RG-LRU, with official Mamba-3 context",
+        "title": "Equal-kernel SAMU vs official-equation RG-LRU",
+        "model_order": args.model_order,
+        "gpu_stabilization": stabilization,
         "tracks": {
             "A_equal_triton": "SAMU and RG-LRU custom Triton inference paths; d_model=128, 16,772 vs 16,768 parameters, 512-byte FP32 state per batch element.",
-            "B_official": "Pinned official public implementations. Mamba-3 is same-width best-native and is not parameter/state matched.",
         },
         "equation_audit": audit,
         "environment": env,
@@ -540,7 +587,6 @@ def main() -> None:
         "expected_full_config_count": len(configs()),
         "result_row_count": len(rows),
         "measured": sum(row.get("status") == "measured" for row in rows),
-        "unsupported": sum(row.get("status") == "unsupported" for row in rows),
         "failed": sum(row.get("status") == "failed" for row in rows),
         "status": "complete",
     })

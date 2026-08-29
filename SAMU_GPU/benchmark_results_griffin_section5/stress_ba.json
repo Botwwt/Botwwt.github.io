@@ -1,0 +1,244 @@
+{
+  "configuration": {
+    "batch_candidates": [
+      4096,
+      2048,
+      1024,
+      512,
+      256,
+      128
+    ],
+    "depth": 24,
+    "expansion": 3,
+    "model_order": "rglru,samu",
+    "output": "../stress_ba.json",
+    "probe_steps": 8,
+    "repeats": 3,
+    "rglru_source": "/root/autodl-tmp/official-src/recurrentgemma-pinned",
+    "seed": 1729,
+    "vocab": 32000,
+    "width": 2048
+  },
+  "correctness": {
+    "acceptance_limits": {
+      "rglru_split_decode_cache_max_abs": 5e-05,
+      "rglru_split_decode_output_max_abs": 0.002,
+      "samu_split_decode_cache_max_abs": 0.0001,
+      "samu_split_decode_output_max_abs": 0.01
+    },
+    "audit_width": 2048,
+    "failures": {},
+    "passed": true,
+    "rglru_cases": [
+      "document reset",
+      "ordinary position 1",
+      "ordinary position 7"
+    ],
+    "rglru_reference": "unmodified recurrentgemma.torch.layers.RGLRU",
+    "rglru_reference_commit": "2efa84dac0e68e63547a27a18fa943c98f1c312e",
+    "rglru_split_decode_cache_max_abs": 2.384185791015625e-07,
+    "rglru_split_decode_output_max_abs": 0.0,
+    "samu_split_decode_cache_max_abs": 4.76837158203125e-07,
+    "samu_split_decode_output_max_abs": 0.0
+  },
+  "environment": {
+    "compute_capability": "9.0",
+    "driver_and_board": "NVIDIA H800 PCIe, 595.71.05, 81559 MiB, 350.00 W",
+    "gpu": "NVIDIA H800 PCIe",
+    "gpu_total_memory_bytes": 85019590656,
+    "hostname": "autodl-container-ebc6489f38-eb33db1f",
+    "python": "3.10.8",
+    "sm_count": 114,
+    "source_commits": {
+      "recurrentgemma": "2efa84dac0e68e63547a27a18fa943c98f1c312e"
+    },
+    "timestamp_utc": "2026-08-29T09:44:49Z",
+    "torch": "2.1.2+cu118",
+    "torch_cuda": "11.8",
+    "triton": "3.5.0"
+  },
+  "gpu_stabilization": {
+    "elapsed_seconds": 2.0047580749960616,
+    "launches": 5856,
+    "method": "repeated 4096x4096 BF16 GEMM followed by synchronization",
+    "post_warmup_clock_power": "74, 336.52 W, 1515 MHz, 1593 MHz",
+    "requested_seconds": 2.0
+  },
+  "schema_version": 1,
+  "scope": "large-batch short-probe saturation stress; not a full-trajectory throughput result",
+  "status": "complete",
+  "throughput_batch_search": {
+    "rglru": [
+      {
+        "batch": 4096,
+        "latency_ms": 320.2508544921875,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 4958228480,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          320.2174987792969,
+          320.2508544921875,
+          335.76678466796875
+        ],
+        "status": "measured",
+        "tokens_per_second": 102319.78944118437
+      },
+      {
+        "batch": 2048,
+        "latency_ms": 164.42416381835938,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 3568865280,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          164.42416381835938,
+          164.54380798339844,
+          164.0384979248047
+        ],
+        "status": "measured",
+        "tokens_per_second": 99644.72142975
+      },
+      {
+        "batch": 1024,
+        "latency_ms": 97.27938842773438,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 2874183680,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          97.26486206054688,
+          97.27938842773438,
+          97.96495819091797
+        ],
+        "status": "measured",
+        "tokens_per_second": 84211.0557272424
+      },
+      {
+        "batch": 512,
+        "latency_ms": 65.31542205810547,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 2527629312,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          65.31542205810547,
+          68.1622085571289,
+          63.75328063964844
+        ],
+        "status": "measured",
+        "tokens_per_second": 62711.06992704026
+      },
+      {
+        "batch": 256,
+        "latency_ms": 64.16883087158203,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 2353172480,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          64.16390228271484,
+          67.404541015625,
+          64.16883087158203
+        ],
+        "status": "measured",
+        "tokens_per_second": 31915.806664742937
+      },
+      {
+        "batch": 128,
+        "latency_ms": 63.48463821411133,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 2266337280,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          63.64921569824219,
+          63.48463821411133,
+          62.3645133972168
+        ],
+        "status": "measured",
+        "tokens_per_second": 16129.886360010569
+      }
+    ],
+    "samu": [
+      {
+        "batch": 4096,
+        "latency_ms": 317.9214782714844,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 5162545152,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          316.49737548828125,
+          317.9214782714844,
+          335.38421630859375
+        ],
+        "status": "measured",
+        "tokens_per_second": 103069.47545084779
+      },
+      {
+        "batch": 2048,
+        "latency_ms": 163.85398864746094,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 3773190144,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          164.76077270507812,
+          163.85398864746094,
+          163.78924560546875
+        ],
+        "status": "measured",
+        "tokens_per_second": 99991.46273607593
+      },
+      {
+        "batch": 1024,
+        "latency_ms": 98.5245132446289,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 3078541312,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          98.5245132446289,
+          98.13215637207031,
+          99.38716888427734
+        ],
+        "status": "measured",
+        "tokens_per_second": 83146.82032135378
+      },
+      {
+        "batch": 512,
+        "latency_ms": 63.53532791137695,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 2731986944,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          63.55904006958008,
+          63.446048736572266,
+          63.53532791137695
+        ],
+        "status": "measured",
+        "tokens_per_second": 64468.07051524715
+      },
+      {
+        "batch": 256,
+        "latency_ms": 64.36310577392578,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 2557882368,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          64.36310577392578,
+          63.66819381713867,
+          64.53632354736328
+        ],
+        "status": "measured",
+        "tokens_per_second": 31819.47134735173
+      },
+      {
+        "batch": 128,
+        "latency_ms": 62.936702728271484,
+        "measurement_class": "short_saturation_probe_not_full_trajectory",
+        "peak_allocated_bytes": 2470858752,
+        "probe_steps": 8,
+        "raw_latency_ms": [
+          62.131744384765625,
+          62.936702728271484,
+          68.36441802978516
+        ],
+        "status": "measured",
+        "tokens_per_second": 16270.31534240217
+      }
+    ]
+  }
+}

@@ -230,26 +230,6 @@ def samu_decode(u: torch.Tensor, state: tuple[torch.Tensor, torch.Tensor], p: Sa
     return x, y
 
 
-def load_official_mamba3(source_root: Path):
-    """Load the official module without importing the optional LM package surface."""
-    source_root = source_root.resolve()
-    package = types.ModuleType("mamba_ssm")
-    package.__path__ = [str(source_root / "mamba_ssm")]
-    sys.modules["mamba_ssm"] = package
-    from mamba_ssm.modules.mamba3 import Mamba3
-    return Mamba3
-
-
-def load_official_mamba2(source_root: Path):
-    """Load the official Mamba-2 module from the pinned state-spaces source."""
-    source_root = source_root.resolve()
-    package = types.ModuleType("mamba_ssm")
-    package.__path__ = [str(source_root / "mamba_ssm")]
-    sys.modules["mamba_ssm"] = package
-    from mamba_ssm.modules.mamba2 import Mamba2
-    return Mamba2
-
-
 def load_official_rglru(source_root: Path):
     """Load the official PyTorch RG-LRU without importing optional JAX extras."""
     source_root = source_root.resolve()

@@ -271,7 +271,8 @@ def _validate_inputs(x: torch.Tensor, segment_pos: torch.Tensor,
 
 
 def rglru_triton_serial(x: torch.Tensor, segment_pos: torch.Tensor,
-                        packed: PackedRGLRU, cache: torch.Tensor | None = None):
+                        packed: PackedRGLRU, cache: torch.Tensor | None = None,
+                        *, num_warps: int | None = None):
     _validate_inputs(x, segment_pos, packed)
     batch, length, _ = x.shape
     projected = _project_gates(x, packed)
@@ -279,18 +280,20 @@ def rglru_triton_serial(x: torch.Tensor, segment_pos: torch.Tensor,
     last_h = torch.empty(batch, packed.width, device=x.device, dtype=torch.float32)
     block = triton.next_power_of_2(packed.head_dim)
     placeholder = cache if cache is not None else last_h
+    launch_warps = num_warps or (8 if block >= 256 else 4 if block >= 64 else 2)
     _serial_scan_kernel[(packed.num_heads, batch)](
         x, projected, packed.gate_bias, packed.softplus_a, segment_pos,
         placeholder, out, last_h, length, batch * length,
         WIDTH=packed.width, HEAD_DIM=packed.head_dim, HAS_H0=cache is not None,
-        BLOCK=block, num_warps=4 if block >= 64 else 2,
+        BLOCK=block, num_warps=launch_warps,
     )
     return out, last_h
 
 
 def rglru_triton_chunked(x: torch.Tensor, segment_pos: torch.Tensor,
                          packed: PackedRGLRU, chunk_size: int,
-                         cache: torch.Tensor | None = None):
+                         cache: torch.Tensor | None = None, *,
+                         num_warps: int | None = None):
     _validate_inputs(x, segment_pos, packed)
     batch, length, _ = x.shape
     chunks = triton.cdiv(length, chunk_size)
@@ -302,7 +305,7 @@ def rglru_triton_chunked(x: torch.Tensor, segment_pos: torch.Tensor,
     out = torch.empty_like(x)
     last_h = torch.empty(batch, packed.width, device=x.device, dtype=torch.float32)
     block = triton.next_power_of_2(packed.head_dim)
-    warps = 4 if block >= 64 else 2
+    warps = num_warps or (4 if block >= 64 else 2)
     grid = (packed.num_heads, batch * chunks)
     common = dict(length=length, rows=batch * length, chunks=chunks,
                   WIDTH=packed.width, HEAD_DIM=packed.head_dim,
@@ -326,18 +329,26 @@ def rglru_triton_chunked(x: torch.Tensor, segment_pos: torch.Tensor,
 
 def rglru_triton_auto(x: torch.Tensor, segment_pos: torch.Tensor,
                       packed: PackedRGLRU, cache: torch.Tensor | None = None):
-    """RTX 3090 latency dispatch selected by the recorded chunk sweep."""
+    """Length-aware default; architecture-specific sweeps are recorded separately."""
 
     length = x.shape[1]
     if length <= 256:
-        return rglru_triton_chunked(x, segment_pos, packed, 8, cache)
+        return rglru_triton_chunked(
+            x, segment_pos, packed, 8, cache, num_warps=4
+        )
     if length <= 1024:
-        return rglru_triton_chunked(x, segment_pos, packed, 16, cache)
-    return rglru_triton_chunked(x, segment_pos, packed, 32, cache)
+        return rglru_triton_chunked(
+            x, segment_pos, packed, 16, cache, num_warps=4
+        )
+    return rglru_triton_chunked(
+        x, segment_pos, packed, 32, cache,
+        num_warps=4 if length <= 2048 else 2,
+    )
 
 
 def rglru_triton_decode(x: torch.Tensor, segment_pos: torch.Tensor,
-                        packed: PackedRGLRU, cache: torch.Tensor):
+                        packed: PackedRGLRU, cache: torch.Tensor, *,
+                        num_warps: int = 2):
     """One-token fused RG-LRU update.
 
     ``x`` may be [B, D] or [B, 1, D]; ``segment_pos`` may be [B] or [B, 1].
@@ -363,6 +374,7 @@ def rglru_triton_decode(x: torch.Tensor, segment_pos: torch.Tensor,
     _decode_kernel[(packed.num_heads, batch)](
         x, packed.gate_weight, packed.gate_bias, packed.softplus_a,
         segment_pos, cache, out, last_h, WIDTH=packed.width,
-        HEAD_DIM=packed.head_dim, BLOCK_I=block, BLOCK_O=block, num_warps=4,
+        HEAD_DIM=packed.head_dim, BLOCK_I=block, BLOCK_O=block,
+        num_warps=num_warps,
     )
     return out[:, None], last_h

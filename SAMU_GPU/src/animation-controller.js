@@ -58,7 +58,7 @@ export function roundedRect(ctx,x,y,w,h,r=7) {
   ctx.beginPath(); ctx.roundRect(x,y,w,h,r); return ctx;
 }
 
-export function bindTransport(root, controller, labels = {play:"Play", pause:"Pause"}) {
+export function bindTransport(root, controller, labels = {play:"播放", pause:"暂停"}) {
   if (!root) return;
   const toggle = root.querySelector('[data-action="toggle"], [data-step-action="toggle"], [data-scan-action="toggle"]');
   const update = () => { if (toggle) toggle.textContent = controller.playing ? labels.pause : labels.play; };
@@ -85,7 +85,7 @@ export function activateWhenVisible(root, controller) {
     const visible = entries.some(entry => entry.isIntersecting && entry.intersectionRatio > .12);
     controller.playing = visible;
     const toggle = root.querySelector('[data-action="toggle"], [data-step-action="toggle"], [data-scan-action="toggle"]');
-    if (toggle) toggle.textContent = visible ? "Pause" : "Play";
+    if (toggle) toggle.textContent = visible ? "暂停" : "播放";
   }, {threshold:[0,.12,.5]});
   observer.observe(root);
 }

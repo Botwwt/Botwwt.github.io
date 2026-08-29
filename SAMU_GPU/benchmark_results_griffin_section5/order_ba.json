@@ -1,0 +1,1151 @@
+{
+  "configuration": {
+    "batch_candidates": [
+      1,
+      4,
+      16,
+      32,
+      64,
+      96,
+      128
+    ],
+    "decode_lengths": [
+      128,
+      256,
+      512,
+      1024,
+      2048,
+      4096
+    ],
+    "depth": 24,
+    "expansion": 3,
+    "latency_batch": 16,
+    "latency_repeats": 3,
+    "model_order": "rglru,samu",
+    "models": "both",
+    "output": "../system_ba.json",
+    "probe_steps": 32,
+    "prompt_lengths": [
+      4096,
+      0
+    ],
+    "rglru_source": "/root/autodl-tmp/official-src/recurrentgemma-pinned",
+    "seed": 1729,
+    "throughput_finalists": 3,
+    "throughput_lengths": [
+      512,
+      1024,
+      2048,
+      4096
+    ],
+    "throughput_repeats": 2,
+    "vocab": 32000,
+    "width": 2048
+  },
+  "correctness": {
+    "acceptance_limits": {
+      "rglru_split_decode_cache_max_abs": 5e-05,
+      "rglru_split_decode_output_max_abs": 0.002,
+      "samu_split_decode_cache_max_abs": 0.0001,
+      "samu_split_decode_output_max_abs": 0.01
+    },
+    "audit_width": 2048,
+    "failures": {},
+    "passed": true,
+    "rglru_cases": [
+      "document reset",
+      "ordinary position 1",
+      "ordinary position 7"
+    ],
+    "rglru_reference": "unmodified recurrentgemma.torch.layers.RGLRU",
+    "rglru_reference_commit": "2efa84dac0e68e63547a27a18fa943c98f1c312e",
+    "rglru_split_decode_cache_max_abs": 2.384185791015625e-07,
+    "rglru_split_decode_output_max_abs": 0.0,
+    "samu_split_decode_cache_max_abs": 4.76837158203125e-07,
+    "samu_split_decode_output_max_abs": 0.0
+  },
+  "environment": {
+    "compute_capability": "9.0",
+    "driver_and_board": "NVIDIA H800 PCIe, 595.71.05, 81559 MiB, 350.00 W",
+    "gpu": "NVIDIA H800 PCIe",
+    "gpu_total_memory_bytes": 85019590656,
+    "hostname": "autodl-container-ebc6489f38-eb33db1f",
+    "python": "3.10.8",
+    "sm_count": 114,
+    "source_commits": {
+      "recurrentgemma": "2efa84dac0e68e63547a27a18fa943c98f1c312e"
+    },
+    "timestamp_utc": "2026-08-29T09:31:50Z",
+    "torch": "2.1.2+cu118",
+    "torch_cuda": "11.8",
+    "triton": "3.5.0"
+  },
+  "fairness": {
+    "changed_only": "SAMU recurrence versus official-equation RG-LRU recurrence",
+    "important_boundary": "Both methods are recurrent, so neither has a sequence-growing KV cache; prompt-length invariance is expected and tested.",
+    "rglru_head_choice": "two block-diagonal heads exactly match SAMU temporal learned-parameter count and BF16 projection multiply-add count (four scalar parameters apart per layer); this is not a RecurrentGemma model preset",
+    "shared": "decoder shell, width, depth, MLP expansion, vocabulary, BF16 parameter policy, FP32 state bytes, prompts, sampler, timing, and GPU"
+  },
+  "gpu_stabilization": {
+    "elapsed_seconds": 2.002553579979576,
+    "launches": 5872,
+    "method": "repeated 4096x4096 BF16 GEMM followed by synchronization",
+    "post_warmup_clock_power": "69, 325.06 W, 1710 MHz, 1593 MHz",
+    "requested_seconds": 2.0
+  },
+  "models": {
+    "rglru": {
+      "decode_logical_operators_per_layer": 2,
+      "dynamic_control_values_per_token": 4096,
+      "parameter_bytes_bf16": 2144833536,
+      "parameter_count": 1072416768,
+      "rglru_num_heads": 2,
+      "state_bytes_per_sequence": 196608,
+      "temporal_backend": "two-head packed BF16 block GEMM + official-equation RG-LRU Triton recurrence"
+    },
+    "samu": {
+      "decode_logical_operators_per_layer": 2,
+      "dynamic_control_values_per_token": 2,
+      "parameter_bytes_bf16": 2144833728,
+      "parameter_count": 1072416864,
+      "rglru_num_heads": null,
+      "state_bytes_per_sequence": 196608,
+      "temporal_backend": "packed BF16 GEMM + SAMU Triton recurrence"
+    }
+  },
+  "paper_protocol": {
+    "decode_lengths": [
+      128,
+      256,
+      512,
+      1024,
+      2048,
+      4096
+    ],
+    "decode_time_model": "(parameter bytes + batch * recurrent-cache bytes) / effective memory bandwidth",
+    "latency_batch": 16,
+    "prompt_lengths": [
+      4096,
+      0
+    ],
+    "source": "Griffin arXiv:2402.19427v1 Section 5",
+    "throughput_lengths": [
+      512,
+      1024,
+      2048,
+      4096
+    ]
+  },
+  "rows": [
+    {
+      "batch": 16,
+      "decode_length": 128,
+      "median_ms": 991.4354858398438,
+      "model": "rglru",
+      "p10_ms": 989.7098022460939,
+      "p95_ms": 996.3353881835938,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 917.3125,
+      "raw_samples_ms": [
+        996.8798217773438,
+        991.4354858398438,
+        989.2783813476562
+      ],
+      "tokens_per_second": 2065.6916453470917,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 256,
+      "median_ms": 1983.1585693359375,
+      "model": "rglru",
+      "p10_ms": 1980.9026123046876,
+      "p95_ms": 1990.0847900390625,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 917.3125,
+      "raw_samples_ms": [
+        1990.8543701171875,
+        1983.1585693359375,
+        1980.338623046875
+      ],
+      "tokens_per_second": 2065.3920787441366,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 512,
+      "median_ms": 3965.775634765625,
+      "model": "rglru",
+      "p10_ms": 3964.849072265625,
+      "p95_ms": 3975.285400390625,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 917.3125,
+      "raw_samples_ms": [
+        3976.342041015625,
+        3964.617431640625,
+        3965.775634765625
+      ],
+      "tokens_per_second": 2065.674096180719,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 1024,
+      "median_ms": 7946.64453125,
+      "model": "rglru",
+      "p10_ms": 7940.655078125,
+      "p95_ms": 7948.840478515624,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 917.3125,
+      "raw_samples_ms": [
+        7949.08447265625,
+        7939.15771484375,
+        7946.64453125
+      ],
+      "tokens_per_second": 2061.7507094435005,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 2048,
+      "median_ms": 15872.1533203125,
+      "model": "rglru",
+      "p10_ms": 15868.8884765625,
+      "p95_ms": 15889.02392578125,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 917.3125,
+      "raw_samples_ms": [
+        15890.8984375,
+        15868.072265625,
+        15872.1533203125
+      ],
+      "tokens_per_second": 2064.496186416302,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 4096,
+      "median_ms": 31731.76171875,
+      "model": "rglru",
+      "p10_ms": 31728.257031250003,
+      "p95_ms": 31913.285742187498,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 917.3125,
+      "raw_samples_ms": [
+        31933.455078125,
+        31731.76171875,
+        31727.380859375
+      ],
+      "tokens_per_second": 2065.31237001176,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 128,
+      "median_ms": 991.6401977539062,
+      "model": "rglru",
+      "p10_ms": 989.8053833007813,
+      "p95_ms": 1003.618096923828,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        989.3466796875,
+        991.6401977539062,
+        1004.948974609375
+      ],
+      "tokens_per_second": 2065.2652087307265,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 256,
+      "median_ms": 1988.7633056640625,
+      "model": "rglru",
+      "p10_ms": 1981.0534423828126,
+      "p95_ms": 2011.0528076171877,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        1988.7633056640625,
+        1979.1259765625,
+        2013.5294189453125
+      ],
+      "tokens_per_second": 2059.5713870697728,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 512,
+      "median_ms": 3968.445068359375,
+      "model": "rglru",
+      "p10_ms": 3956.834521484375,
+      "p95_ms": 3991.78486328125,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        3968.445068359375,
+        3953.931884765625,
+        3994.378173828125
+      ],
+      "tokens_per_second": 2064.2845897793204,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 1024,
+      "median_ms": 7924.40234375,
+      "model": "rglru",
+      "p10_ms": 7911.3203125,
+      "p95_ms": 7942.197119140625,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        7924.40234375,
+        7908.0498046875,
+        7944.17431640625
+      ],
+      "tokens_per_second": 2067.537624830737,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 2048,
+      "median_ms": 15836.1416015625,
+      "model": "rglru",
+      "p10_ms": 15829.801757812502,
+      "p95_ms": 15871.493847656251,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        15836.1416015625,
+        15828.216796875,
+        15875.421875
+      ],
+      "tokens_per_second": 2069.1908941232814,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 4096,
+      "median_ms": 31708.4453125,
+      "model": "rglru",
+      "p10_ms": 31657.640625000004,
+      "p95_ms": 31819.5302734375,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        31644.939453125,
+        31831.873046875,
+        31708.4453125
+      ],
+      "tokens_per_second": 2066.8310714737127,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 64,
+      "decode_length": 512,
+      "median_ms": 3396.5888671875,
+      "model": "rglru",
+      "p10_ms": 3395.7669921875,
+      "p95_ms": 3397.5134765625,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        3397.6162109375,
+        3395.5615234375
+      ],
+      "tokens_per_second": 9647.325973582756,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 64,
+      "decode_length": 1024,
+      "median_ms": 6789.857177734375,
+      "model": "rglru",
+      "p10_ms": 6788.873779296875,
+      "p95_ms": 6790.9635009765625,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        6791.08642578125,
+        6788.6279296875
+      ],
+      "tokens_per_second": 9652.043965653475,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 64,
+      "decode_length": 2048,
+      "median_ms": 13574.5927734375,
+      "model": "rglru",
+      "p10_ms": 13571.9458984375,
+      "p95_ms": 13577.5705078125,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        13577.9013671875,
+        13571.2841796875
+      ],
+      "tokens_per_second": 9655.685602331965,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 64,
+      "decode_length": 4096,
+      "median_ms": 27167.328125,
+      "model": "rglru",
+      "p10_ms": 27156.125,
+      "p95_ms": 27179.931640625,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        27153.32421875,
+        27181.33203125
+      ],
+      "tokens_per_second": 9649.237451465426,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 96,
+      "decode_length": 512,
+      "median_ms": 3916.29345703125,
+      "model": "rglru",
+      "p10_ms": 3909.06025390625,
+      "p95_ms": 3924.430810546875,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        3907.251953125,
+        3925.3349609375
+      ],
+      "tokens_per_second": 12550.642728714134,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 96,
+      "decode_length": 1024,
+      "median_ms": 7856.50537109375,
+      "model": "rglru",
+      "p10_ms": 7843.18974609375,
+      "p95_ms": 7871.48544921875,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        7873.14990234375,
+        7839.86083984375
+      ],
+      "tokens_per_second": 12512.433372945627,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 96,
+      "decode_length": 2048,
+      "median_ms": 15710.8203125,
+      "model": "rglru",
+      "p10_ms": 15670.8984375,
+      "p95_ms": 15755.732421875,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        15760.72265625,
+        15660.91796875
+      ],
+      "tokens_per_second": 12514.177878005057,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 96,
+      "decode_length": 4096,
+      "median_ms": 31350.697265625,
+      "model": "rglru",
+      "p10_ms": 31331.084765625,
+      "p95_ms": 31372.761328124998,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        31375.212890625,
+        31326.181640625
+      ],
+      "tokens_per_second": 12542.49615784936,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 512,
+      "median_ms": 3983.2867431640625,
+      "model": "rglru",
+      "p10_ms": 3972.074926757813,
+      "p95_ms": 3995.9000366210935,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        3997.301513671875,
+        3969.27197265625
+      ],
+      "tokens_per_second": 16452.74473711187,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 1024,
+      "median_ms": 7948.634033203125,
+      "model": "rglru",
+      "p10_ms": 7938.679541015625,
+      "p95_ms": 7959.832836914063,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        7961.0771484375,
+        7936.19091796875
+      ],
+      "tokens_per_second": 16489.877311307144,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 2048,
+      "median_ms": 15885.56982421875,
+      "model": "rglru",
+      "p10_ms": 15872.58349609375,
+      "p95_ms": 15900.179443359375,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        15901.802734375,
+        15869.3369140625
+      ],
+      "tokens_per_second": 16502.020569658238,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 4096,
+      "median_ms": 31876.7578125,
+      "model": "rglru",
+      "p10_ms": 31777.6390625,
+      "p95_ms": 31988.26640625,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        31752.859375,
+        32000.65625
+      ],
+      "tokens_per_second": 16447.343957747427,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 512,
+      "median_ms": 3983.2867431640625,
+      "model": "rglru",
+      "p10_ms": 3972.074926757813,
+      "p95_ms": 3995.9000366210935,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        3997.301513671875,
+        3969.27197265625
+      ],
+      "tokens_per_second": 16452.74473711187,
+      "workload": "maximum_throughput"
+    },
+    {
+      "batch": 128,
+      "decode_length": 1024,
+      "median_ms": 7948.634033203125,
+      "model": "rglru",
+      "p10_ms": 7938.679541015625,
+      "p95_ms": 7959.832836914063,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        7961.0771484375,
+        7936.19091796875
+      ],
+      "tokens_per_second": 16489.877311307144,
+      "workload": "maximum_throughput"
+    },
+    {
+      "batch": 128,
+      "decode_length": 2048,
+      "median_ms": 15885.56982421875,
+      "model": "rglru",
+      "p10_ms": 15872.58349609375,
+      "p95_ms": 15900.179443359375,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        15901.802734375,
+        15869.3369140625
+      ],
+      "tokens_per_second": 16502.020569658238,
+      "workload": "maximum_throughput"
+    },
+    {
+      "batch": 128,
+      "decode_length": 4096,
+      "median_ms": 31876.7578125,
+      "model": "rglru",
+      "p10_ms": 31777.6390625,
+      "p95_ms": 31988.26640625,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        31752.859375,
+        32000.65625
+      ],
+      "tokens_per_second": 16447.343957747427,
+      "workload": "maximum_throughput"
+    },
+    {
+      "batch": 16,
+      "decode_length": 128,
+      "median_ms": 975.3528442382812,
+      "model": "samu",
+      "p10_ms": 975.2911743164063,
+      "p95_ms": 977.5802673339844,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 590.445068359375,
+      "raw_samples_ms": [
+        977.8277587890625,
+        975.3528442382812,
+        975.2757568359375
+      ],
+      "tokens_per_second": 2099.7529377170385,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 256,
+      "median_ms": 1951.0609130859375,
+      "model": "samu",
+      "p10_ms": 1950.6568115234377,
+      "p95_ms": 1982.053125,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 590.445068359375,
+      "raw_samples_ms": [
+        1985.4967041015625,
+        1950.5557861328125,
+        1951.0609130859375
+      ],
+      "tokens_per_second": 2099.370641135685,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 512,
+      "median_ms": 3901.039794921875,
+      "model": "samu",
+      "p10_ms": 3900.7728027343755,
+      "p95_ms": 3960.2152343750004,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 590.445068359375,
+      "raw_samples_ms": [
+        3966.790283203125,
+        3901.039794921875,
+        3900.7060546875
+      ],
+      "tokens_per_second": 2099.9529434854326,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 1024,
+      "median_ms": 7804.39404296875,
+      "model": "samu",
+      "p10_ms": 7801.72646484375,
+      "p95_ms": 7864.150439453126,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 590.445068359375,
+      "raw_samples_ms": [
+        7870.7900390625,
+        7801.0595703125,
+        7804.39404296875
+      ],
+      "tokens_per_second": 2099.3301862763983,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 2048,
+      "median_ms": 15618.7431640625,
+      "model": "samu",
+      "p10_ms": 15613.4595703125,
+      "p95_ms": 15720.878222656249,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 590.445068359375,
+      "raw_samples_ms": [
+        15732.2265625,
+        15612.138671875,
+        15618.7431640625
+      ],
+      "tokens_per_second": 2097.9921147174373,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 4096,
+      "median_ms": 31238.169921875,
+      "model": "samu",
+      "p10_ms": 31224.690234375,
+      "p95_ms": 31396.91796875,
+      "prompt_length": 4096,
+      "prompt_prefill_ms_excluded_from_decode": 590.445068359375,
+      "raw_samples_ms": [
+        31414.556640625,
+        31221.3203125,
+        31238.169921875
+      ],
+      "tokens_per_second": 2097.946203759761,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 128,
+      "median_ms": 978.6549072265625,
+      "model": "samu",
+      "p10_ms": 977.8086181640625,
+      "p95_ms": 979.3627563476563,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        979.44140625,
+        977.5970458984375,
+        978.6549072265625
+      ],
+      "tokens_per_second": 2092.668196804821,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 256,
+      "median_ms": 1957.8548583984375,
+      "model": "samu",
+      "p10_ms": 1956.1314208984377,
+      "p95_ms": 1958.9700805664063,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        1959.093994140625,
+        1955.7005615234375,
+        1957.8548583984375
+      ],
+      "tokens_per_second": 2092.085622399306,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 512,
+      "median_ms": 3916.582275390625,
+      "model": "samu",
+      "p10_ms": 3912.8045410156255,
+      "p95_ms": 3917.7778076171876,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        3917.91064453125,
+        3911.860107421875,
+        3916.582275390625
+      ],
+      "tokens_per_second": 2091.6195356021112,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 1024,
+      "median_ms": 7836.98974609375,
+      "model": "samu",
+      "p10_ms": 7829.26826171875,
+      "p95_ms": 7837.373828125,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        7836.98974609375,
+        7827.337890625,
+        7837.41650390625
+      ],
+      "tokens_per_second": 2090.5986266176246,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 2048,
+      "median_ms": 15648.55859375,
+      "model": "samu",
+      "p10_ms": 15645.868750000001,
+      "p95_ms": 15654.11943359375,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        15648.55859375,
+        15645.1962890625,
+        15654.7373046875
+      ],
+      "tokens_per_second": 2093.9947793714027,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 16,
+      "decode_length": 4096,
+      "median_ms": 31277.18359375,
+      "model": "samu",
+      "p10_ms": 31267.11796875,
+      "p95_ms": 31289.46015625,
+      "prompt_length": 0,
+      "prompt_prefill_ms_excluded_from_decode": 0.0,
+      "raw_samples_ms": [
+        31264.6015625,
+        31277.18359375,
+        31290.82421875
+      ],
+      "tokens_per_second": 2095.329325403065,
+      "workload": "continuous_decode_latency"
+    },
+    {
+      "batch": 64,
+      "decode_length": 512,
+      "median_ms": 3428.23193359375,
+      "model": "samu",
+      "p10_ms": 3425.44814453125,
+      "p95_ms": 3431.3636962890623,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        3424.752197265625,
+        3431.711669921875
+      ],
+      "tokens_per_second": 9558.279788161804,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 64,
+      "decode_length": 1024,
+      "median_ms": 6858.206298828125,
+      "model": "samu",
+      "p10_ms": 6846.567431640626,
+      "p95_ms": 6871.300024414062,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        6843.65771484375,
+        6872.7548828125
+      ],
+      "tokens_per_second": 9555.851361776367,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 64,
+      "decode_length": 2048,
+      "median_ms": 13710.7841796875,
+      "model": "samu",
+      "p10_ms": 13696.7654296875,
+      "p95_ms": 13726.5552734375,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        13693.2607421875,
+        13728.3076171875
+      ],
+      "tokens_per_second": 9559.774137075465,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 64,
+      "decode_length": 4096,
+      "median_ms": 27415.6865234375,
+      "model": "samu",
+      "p10_ms": 27396.1904296875,
+      "p95_ms": 27437.61962890625,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        27391.31640625,
+        27440.056640625
+      ],
+      "tokens_per_second": 9561.825117014478,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 96,
+      "decode_length": 512,
+      "median_ms": 4077.6807861328125,
+      "model": "samu",
+      "p10_ms": 4060.4746337890624,
+      "p95_ms": 4097.037707519531,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        4099.1884765625,
+        4056.173095703125
+      ],
+      "tokens_per_second": 12053.91068549403,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 96,
+      "decode_length": 1024,
+      "median_ms": 8111.502197265625,
+      "model": "samu",
+      "p10_ms": 8095.654736328125,
+      "p95_ms": 8129.330590820313,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        8131.3115234375,
+        8091.69287109375
+      ],
+      "tokens_per_second": 12119.086897755897,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 96,
+      "decode_length": 2048,
+      "median_ms": 16183.18896484375,
+      "model": "samu",
+      "p10_ms": 16175.432324218751,
+      "p95_ms": 16191.915185546875,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        16192.884765625,
+        16173.4931640625
+      ],
+      "tokens_per_second": 12148.903434737733,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 96,
+      "decode_length": 4096,
+      "median_ms": 32382.8857421875,
+      "model": "samu",
+      "p10_ms": 32352.814648437503,
+      "p95_ms": 32416.715722656252,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        32345.296875,
+        32420.474609375
+      ],
+      "tokens_per_second": 12142.710292422438,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 512,
+      "median_ms": 3951.2666015625,
+      "model": "samu",
+      "p10_ms": 3940.2912109375,
+      "p95_ms": 3963.613916015625,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        3964.98583984375,
+        3937.54736328125
+      ],
+      "tokens_per_second": 16586.073937426612,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 1024,
+      "median_ms": 7928.592041015625,
+      "model": "samu",
+      "p10_ms": 7921.021142578125,
+      "p95_ms": 7937.109301757812,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        7919.12841796875,
+        7938.0556640625
+      ],
+      "tokens_per_second": 16531.560625385657,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 2048,
+      "median_ms": 15808.40869140625,
+      "model": "samu",
+      "p10_ms": 15794.012207031252,
+      "p95_ms": 15824.604736328125,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        15826.404296875,
+        15790.4130859375
+      ],
+      "tokens_per_second": 16582.567234772116,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 4096,
+      "median_ms": 31595.2607421875,
+      "model": "samu",
+      "p10_ms": 31543.1630859375,
+      "p95_ms": 31653.87060546875,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        31660.3828125,
+        31530.138671875
+      ],
+      "tokens_per_second": 16593.881097488324,
+      "workload": "maximum_throughput_candidate"
+    },
+    {
+      "batch": 128,
+      "decode_length": 512,
+      "median_ms": 3951.2666015625,
+      "model": "samu",
+      "p10_ms": 3940.2912109375,
+      "p95_ms": 3963.613916015625,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        3964.98583984375,
+        3937.54736328125
+      ],
+      "tokens_per_second": 16586.073937426612,
+      "workload": "maximum_throughput"
+    },
+    {
+      "batch": 128,
+      "decode_length": 1024,
+      "median_ms": 7928.592041015625,
+      "model": "samu",
+      "p10_ms": 7921.021142578125,
+      "p95_ms": 7937.109301757812,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        7919.12841796875,
+        7938.0556640625
+      ],
+      "tokens_per_second": 16531.560625385657,
+      "workload": "maximum_throughput"
+    },
+    {
+      "batch": 128,
+      "decode_length": 2048,
+      "median_ms": 15808.40869140625,
+      "model": "samu",
+      "p10_ms": 15794.012207031252,
+      "p95_ms": 15824.604736328125,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        15826.404296875,
+        15790.4130859375
+      ],
+      "tokens_per_second": 16582.567234772116,
+      "workload": "maximum_throughput"
+    },
+    {
+      "batch": 128,
+      "decode_length": 4096,
+      "median_ms": 31595.2607421875,
+      "model": "samu",
+      "p10_ms": 31543.1630859375,
+      "p95_ms": 31653.87060546875,
+      "prompt_length": 0,
+      "raw_samples_ms": [
+        31660.3828125,
+        31530.138671875
+      ],
+      "tokens_per_second": 16593.881097488324,
+      "workload": "maximum_throughput"
+    }
+  ],
+  "schema_version": 1,
+  "scope": "random-weight 1B-scale inference systems proxy; not a trained checkpoint or quality comparison",
+  "status": "complete",
+  "throughput_batch_search": {
+    "rglru": [
+      {
+        "batch": 1,
+        "latency_ms": 207.2676544189453,
+        "peak_allocated_bytes": 2180116480,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 154.3897434923403
+      },
+      {
+        "batch": 4,
+        "latency_ms": 238.3291473388672,
+        "peak_allocated_bytes": 2182152192,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 537.0723699942744
+      },
+      {
+        "batch": 16,
+        "latency_ms": 248.82473754882812,
+        "peak_allocated_bytes": 2190292992,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 2057.6732243092497
+      },
+      {
+        "batch": 32,
+        "latency_ms": 210.94569396972656,
+        "peak_allocated_bytes": 2201147904,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 4854.329949711878
+      },
+      {
+        "batch": 64,
+        "latency_ms": 211.6473846435547,
+        "peak_allocated_bytes": 2222955520,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 9676.472040744246
+      },
+      {
+        "batch": 96,
+        "latency_ms": 242.3507843017578,
+        "peak_allocated_bytes": 2244567552,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 12675.840966848145
+      },
+      {
+        "batch": 128,
+        "latency_ms": 249.72409057617188,
+        "peak_allocated_bytes": 2266277376,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 16402.10197802531
+      }
+    ],
+    "samu": [
+      {
+        "batch": 1,
+        "latency_ms": 203.99221801757812,
+        "peak_allocated_bytes": 2384433152,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 156.8687291651613
+      },
+      {
+        "batch": 4,
+        "latency_ms": 233.9607696533203,
+        "peak_allocated_bytes": 2386468864,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 547.1002689453816
+      },
+      {
+        "batch": 16,
+        "latency_ms": 244.41827392578125,
+        "peak_allocated_bytes": 2394609664,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 2094.7697231323677
+      },
+      {
+        "batch": 32,
+        "latency_ms": 215.15711975097656,
+        "peak_allocated_bytes": 2405464576,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 4759.312641780948
+      },
+      {
+        "batch": 64,
+        "latency_ms": 214.0479736328125,
+        "peak_allocated_bytes": 2427198464,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 9567.948554903076
+      },
+      {
+        "batch": 96,
+        "latency_ms": 253.95993041992188,
+        "peak_allocated_bytes": 2448884224,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 12096.396446953102
+      },
+      {
+        "batch": 128,
+        "latency_ms": 247.989501953125,
+        "peak_allocated_bytes": 2470798848,
+        "probe_steps": 32,
+        "status": "measured",
+        "tokens_per_second": 16516.82820337381
+      }
+    ]
+  },
+  "title": "Griffin Section 5 inspired SAMU vs RG-LRU systems analysis"
+}

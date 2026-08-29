@@ -1,12 +1,14 @@
-"""Profile representative SAMU, RG-LRU, and official Mamba-3 inference paths."""
+"""Profile representative SAMU and official-equation RG-LRU inference paths."""
 
 from __future__ import annotations
 
 import argparse
+import ctypes
+import ctypes.util
 import json
 import math
 import os
-import sys
+import subprocess
 import time
 from pathlib import Path
 
@@ -14,7 +16,7 @@ import torch
 from torch.profiler import ProfilerActivity, profile
 from triton.runtime.jit import JITFunction
 
-from kernels import load_official_mamba3, load_official_rglru, make_samu_parameters
+from kernels import load_official_rglru, make_samu_parameters
 import triton_rglru as rg
 import triton_samu as samu
 
@@ -30,12 +32,73 @@ def synchronize(value) -> None:
     torch.cuda.synchronize()
 
 
-def compiled_kernels(functions: list[JITFunction], props) -> list[dict]:
+def cuda_device_attribute(attribute: int, fallback: int) -> int:
+    """Read a numeric CUDA device limit without relying on Torch's short repr."""
+
+    candidates = [ctypes.util.find_library("cudart"), "libcudart.so.12",
+                  "libcudart.so.11.0", "libcudart.so"]
+    for candidate in candidates:
+        if not candidate:
+            continue
+        try:
+            runtime = ctypes.CDLL(candidate)
+            value = ctypes.c_int()
+            if runtime.cudaDeviceGetAttribute(ctypes.byref(value), attribute, 0) == 0:
+                return value.value
+        except OSError:
+            continue
+    return fallback
+
+
+def device_limits(props) -> dict[str, int]:
+    # cudaDevAttrMaxSharedMemoryPerMultiprocessor=81,
+    # cudaDevAttrMaxRegistersPerMultiprocessor=82,
+    # cudaDevAttrMaxBlocksPerMultiprocessor=106.
+    return {
+        "max_threads_per_sm": props.max_threads_per_multi_processor,
+        "max_warps_per_sm": props.max_threads_per_multi_processor // 32,
+        "registers_per_sm": cuda_device_attribute(82, 65536),
+        "shared_memory_per_sm": cuda_device_attribute(81, 102400),
+        "max_blocks_per_sm": cuda_device_attribute(106, 16),
+    }
+
+
+def command_output(command: list[str]) -> str | None:
+    try:
+        return subprocess.check_output(
+            command, stderr=subprocess.STDOUT, text=True, timeout=15
+        ).strip()
+    except Exception as error:
+        return f"unavailable: {type(error).__name__}: {error}"
+
+
+def counter_permission_evidence() -> dict[str, object]:
+    params = Path("/proc/driver/nvidia/params")
+    admin_only = None
+    if params.exists():
+        for line in params.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith("RmProfilingAdminOnly:"):
+                admin_only = line.split(":", 1)[1].strip()
+                break
+    return {
+        "available": False,
+        "ncu_version": command_output([
+            "/opt/nvidia/nsight-compute/2025.3.1/ncu", "--version"
+        ]),
+        "host_RmProfilingAdminOnly": admin_only,
+        "container_capabilities": command_output(["capsh", "--print"]),
+        "collection_error_observed": "ERR_NVGPUCTRPERM",
+        "policy": "hardware DRAM/L2/SFU/achieved-occupancy fields remain null",
+    }
+
+
+def compiled_kernels(functions: list[JITFunction], limits: dict[str, int]) -> list[dict]:
     result, seen = [], set()
-    max_threads = props.max_threads_per_multi_processor
+    max_threads = limits["max_threads_per_sm"]
     max_warps = max_threads // 32
-    regs_per_sm = getattr(props, "regs_per_multiprocessor", 65536)
-    shared_per_sm = getattr(props, "shared_memory_per_multiprocessor", 102400)
+    regs_per_sm = limits["registers_per_sm"]
+    shared_per_sm = limits["shared_memory_per_sm"]
+    max_blocks = limits["max_blocks_per_sm"]
     for function in functions:
         for device_cache in function.device_caches.values():
             compiled = device_cache[0]
@@ -49,9 +112,15 @@ def compiled_kernels(functions: list[JITFunction], props) -> list[dict]:
                 shared = kernel.metadata.shared
                 by_threads = max_threads // threads
                 by_registers = regs_per_sm // max(registers * threads, 1)
-                by_shared = shared_per_sm // shared if shared else 16
-                resident_blocks = min(16, by_threads, by_registers, by_shared)
+                by_shared = shared_per_sm // shared if shared else max_blocks
+                resident_blocks = min(max_blocks, by_threads, by_registers, by_shared)
                 occupancy = resident_blocks * warps / max_warps
+                resource_limits = {
+                    "blocks_by_threads": by_threads,
+                    "blocks_by_registers_unrounded": by_registers,
+                    "blocks_by_shared_memory": by_shared,
+                    "hardware_max_blocks": max_blocks,
+                }
                 result.append({
                     "name": kernel.name,
                     "hash": kernel.hash,
@@ -62,31 +131,18 @@ def compiled_kernels(functions: list[JITFunction], props) -> list[dict]:
                     "threads_per_block": threads,
                     "derived_resident_blocks_per_sm": resident_blocks,
                     "derived_occupancy": occupancy,
-                    "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+                    "derived_resource_limits": resource_limits,
+                    "occupancy_method": (
+                        "resource-limit upper bound from cudaDeviceGetAttribute and "
+                        "Triton compiler metadata; register allocation granularity and "
+                        "scheduler/barrier limits are not available without Nsight counters"
+                    ),
                 })
     return result
 
 
-def mamba_jit_functions() -> list[JITFunction]:
-    result, seen = [], set()
-    for module_name, module in list(sys.modules.items()):
-        if not module_name.startswith("mamba_ssm") or module is None:
-            continue
-        for value in vars(module).values():
-            current = value
-            for _ in range(3):
-                if isinstance(current, JITFunction):
-                    if id(current) not in seen:
-                        seen.add(id(current))
-                        result.append(current)
-                    break
-                current = getattr(current, "fn", None)
-                if current is None:
-                    break
-    return result
-
-
-def profile_operation(name: str, operation, triton_functions: list[JITFunction], props) -> dict:
+def profile_operation(name: str, operation, triton_functions: list[JITFunction],
+                      limits: dict[str, int]) -> dict:
     for _ in range(3):
         synchronize(operation())
     with profile(
@@ -130,14 +186,18 @@ def profile_operation(name: str, operation, triton_functions: list[JITFunction],
             1 for event in raw_cuda_events if event.name.startswith("Memcpy")
         ),
         "events": events,
-        "triton_compiled_kernels": compiled_kernels(triton_functions, props),
+        "triton_compiled_kernels": compiled_kernels(triton_functions, limits),
         "hardware_counters": {
             "dram_bytes": None,
             "dram_bandwidth": None,
             "l2_bytes": None,
             "sfu_utilization": None,
             "sm_utilization": None,
-            "reason": "Nsight Compute is not installed in the benchmark image; no hardware counter is fabricated.",
+            "reason": (
+                "Nsight Compute 2025.3.1 is installed, but the host kernel sets "
+                "RmProfilingAdminOnly=1 and this container lacks CAP_SYS_ADMIN "
+                "(ERR_NVGPUCTRPERM); no hardware counter is fabricated."
+            ),
         },
     }
 
@@ -146,11 +206,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--rglru-source", type=Path, required=True)
-    parser.add_argument("--mamba-source", type=Path, required=True)
     args = parser.parse_args()
     torch.set_grad_enabled(False)
     torch.manual_seed(1729)
     props = torch.cuda.get_device_properties(0)
+    limits = device_limits(props)
     b, l, d, modes = 1, 2048, 128, 64
 
     samu_params = make_samu_parameters(d, modes, "cuda", torch.bfloat16)
@@ -174,30 +234,22 @@ def main() -> None:
     rg_state = torch.randn(b, d, device="cuda")
     rg_decode = lambda: rg.rglru_triton_decode(rg_token, rg_position, packed_rg, rg_state)
 
-    Mamba3 = load_official_mamba3(args.mamba_source)
-    mamba_model = Mamba3(d_model=d, d_state=modes, headdim=64, chunk_size=64,
-                         is_mimo=False, dtype=torch.bfloat16, device="cuda").eval()
-    mamba_x = torch.randn(b, l, d, device="cuda", dtype=torch.bfloat16)
-    mamba_prefill = lambda: mamba_model(mamba_x)
-
     profiles = []
     profiles.append(profile_operation("samu_c32_prefill_B1_L2048", samu_prefill, [
         samu._chunk_summary_kernel, samu._chunk_prefix_kernel, samu._chunk_replay_kernel,
-    ], props))
+    ], limits))
     profiles.append(profile_operation("rglru_c32_prefill_B1_L2048", rg_prefill, [
         rg._chunk_summary_kernel, rg._chunk_prefix_kernel, rg._chunk_replay_kernel,
-    ], props))
-    profiles.append(profile_operation("samu_fused_decode_B1", samu_decode, [samu._decode_kernel], props))
-    profiles.append(profile_operation("rglru_fused_decode_B1", rg_decode, [rg._decode_kernel], props))
-    # Warm once so all official Mamba Triton kernels exist before discovery.
-    synchronize(mamba_prefill())
-    profiles.append(profile_operation("mamba3_official_prefill_B1_L2048", mamba_prefill,
-                                      mamba_jit_functions(), props))
+    ], limits))
+    profiles.append(profile_operation("samu_fused_decode_B1", samu_decode, [samu._decode_kernel], limits))
+    profiles.append(profile_operation("rglru_fused_decode_B1", rg_decode, [rg._decode_kernel], limits))
     atomic_json(args.output, {
         "schema_version": 2,
         "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "gpu": props.name,
-        "warning": "Launch timings/counts and Triton compiler register/spill/shared metadata are measured. Occupancy is derived. Hardware bandwidth/SFU counters are unavailable and remain null.",
+        "device_limits": limits,
+        "counter_permission": counter_permission_evidence(),
+        "warning": "Launch timings/counts and Triton compiler register/spill/shared metadata are measured. Occupancy is a resource upper bound. Hardware bandwidth/SFU counters are permission-blocked and remain null.",
         "profiles": profiles,
     })
 
