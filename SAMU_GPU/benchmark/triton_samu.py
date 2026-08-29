@@ -21,7 +21,8 @@ from kernels import SamuParameters
 @dataclass
 class PackedSamu:
     weight: torch.Tensor
-    selector_bias: torch.Tensor
+    phase_bias: float
+    radial_bias: float
     phase_scale: float
     radial_scale: float
     nu: torch.Tensor
@@ -41,7 +42,10 @@ def pack_samu_parameters(p: SamuParameters, dtype: torch.dtype = torch.bfloat16)
     weight[:, : useful.shape[-1]] = useful.to(dtype)
     return PackedSamu(
         weight=weight.contiguous(),
-        selector_bias=torch.stack((p.phase_direction[-1], p.radial_direction[-1])).float().contiguous(),
+        # Resolve static GPU scalars once while packing.  Calling .item() in the
+        # hot launch path would introduce a Device-to-Host synchronization.
+        phase_bias=float(p.phase_direction[-1].item()),
+        radial_bias=float(p.radial_direction[-1].item()),
         phase_scale=float(torch.tanh(p.phase_amplitude).item() / math.sqrt(modes)),
         radial_scale=float(torch.tanh(p.radial_amplitude).item() / math.sqrt(modes)),
         nu=p.nu.float().contiguous(),
@@ -66,7 +70,16 @@ def _control(raw_phase, raw_radial, phase_bias: tl.constexpr, radial_bias: tl.co
 def _transition(nu, cos_theta, sin_theta, c, d):
     g = tl.exp(c)
     rho = tl.exp(-nu * g)
-    cd, sd = tl.cos(d), tl.sin(d)
+    # The controller guarantees |d| <= tanh(phase_amplitude)/sqrt(M).
+    # For M=64 this is < 0.078 rad (and <=0.125 for every M>=64), so these
+    # alternating Taylor polynomials have <1e-11 absolute truncation error.
+    # This avoids libdevice's unnecessary general-angle range reduction and
+    # the associated local-memory spills on Ampere.
+    d2 = d * d
+    d4 = d2 * d2
+    d6 = d4 * d2
+    cd = 1.0 - 0.5 * d2 + d4 * (1.0 / 24.0) - d6 * (1.0 / 720.0)
+    sd = d * (1.0 - d2 * (1.0 / 6.0) + d4 * (1.0 / 120.0) - d6 * (1.0 / 5040.0))
     cp = cos_theta * cd - sin_theta * sd
     sp = sin_theta * cd + cos_theta * sd
     return rho * cp, rho * sp
@@ -74,7 +87,8 @@ def _transition(nu, cos_theta, sin_theta, c, d):
 
 @triton.jit
 def _serial_prefill_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr, out,
-                           length, modes: tl.constexpr, packed_width: tl.constexpr,
+                           last_r, last_i, length, modes: tl.constexpr,
+                           packed_width: tl.constexpr, RETURN_CACHE: tl.constexpr,
                            phase_bias: tl.constexpr, radial_bias: tl.constexpr,
                            phase_scale: tl.constexpr, radial_scale: tl.constexpr,
                            BLOCK_M: tl.constexpr):
@@ -101,6 +115,9 @@ def _serial_prefill_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr, out,
         o = ((batch * length + t) * modes + m) * 2
         tl.store(out + o, x, mask=mask)
         tl.store(out + o + 1, y, mask=mask)
+    if RETURN_CACHE:
+        tl.store(last_r + batch * modes + m, x, mask=mask)
+        tl.store(last_i + batch * modes + m, y, mask=mask)
 
 
 @triton.jit
@@ -140,7 +157,8 @@ def _chunk_summary_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr,
 
 @triton.jit
 def _chunk_prefix_kernel(pr, pi, qr, qi, in_r, in_i, modes: tl.constexpr,
-                         chunks, BLOCK_M: tl.constexpr):
+                         chunks, last_r, last_i, RETURN_CACHE: tl.constexpr,
+                         BLOCK_M: tl.constexpr):
     block = tl.program_id(0)
     batch = tl.program_id(1)
     m = block * BLOCK_M + tl.arange(0, BLOCK_M)
@@ -153,6 +171,9 @@ def _chunk_prefix_kernel(pr, pi, qr, qi, in_r, in_i, modes: tl.constexpr,
         br = tl.load(qr + o, mask=mask, other=0.0); bi = tl.load(qi + o, mask=mask, other=0.0)
         nx, ny = ar * x - ai * y + br, ai * x + ar * y + bi
         x, y = nx, ny
+    if RETURN_CACHE:
+        tl.store(last_r + batch * modes + m, x, mask=mask)
+        tl.store(last_i + batch * modes + m, y, mask=mask)
 
 
 @triton.jit
@@ -221,28 +242,34 @@ def _decode_kernel(u, wr_ptr, wi_ptr, phase_dir, radial_dir, state_r, state_i,
 
 def _launch_meta(packed: PackedSamu):
     return dict(
-        phase_bias=float(packed.selector_bias[0].item()), radial_bias=float(packed.selector_bias[1].item()),
+        phase_bias=packed.phase_bias, radial_bias=packed.radial_bias,
         phase_scale=packed.phase_scale, radial_scale=packed.radial_scale,
     )
 
 
-def samu_triton_serial(u: torch.Tensor, p: SamuParameters, packed: PackedSamu | None = None) -> torch.Tensor:
+def samu_triton_serial(u: torch.Tensor, p: SamuParameters,
+                       packed: PackedSamu | None = None, *,
+                       return_cache: bool = False):
     packed = packed or pack_samu_parameters(p, u.dtype)
     batch, length, _ = u.shape; modes = p.nu.numel()
     projected = u @ packed.weight
     out = torch.empty(batch, length, modes, 2, device=u.device, dtype=u.dtype)
+    last_r = torch.empty(batch, modes, device=u.device, dtype=torch.float32) if return_cache else packed.nu
+    last_i = torch.empty(batch, modes, device=u.device, dtype=torch.float32) if return_cache else packed.nu
     block = min(128, triton.next_power_of_2(modes))
     _serial_prefill_kernel[(triton.cdiv(modes, block), batch)](
-        projected, packed.nu, packed.cos_theta, packed.sin_theta, packed.gamma, out,
-        length, modes=modes, packed_width=packed.padded_width, BLOCK_M=block,
+        projected, packed.nu, packed.cos_theta, packed.sin_theta, packed.gamma,
+        out, last_r, last_i, length, modes=modes,
+        packed_width=packed.padded_width, RETURN_CACHE=return_cache, BLOCK_M=block,
         num_warps=4 if block >= 64 else 2, **_launch_meta(packed),
     )
-    return out
+    return (out, (last_r, last_i)) if return_cache else out
 
 
 def samu_triton_chunked(u: torch.Tensor, p: SamuParameters, chunk_size: int,
                         packed: PackedSamu | None = None, *,
-                        num_warps: int | None = None) -> torch.Tensor:
+                        num_warps: int | None = None,
+                        return_cache: bool = False):
     packed = packed or pack_samu_parameters(p, u.dtype)
     batch, length, _ = u.shape; modes = p.nu.numel()
     if length % chunk_size:
@@ -253,22 +280,27 @@ def samu_triton_chunked(u: torch.Tensor, p: SamuParameters, chunk_size: int,
     pr, pi, qr, qi = [torch.empty(shape, device=u.device, dtype=torch.float32) for _ in range(4)]
     in_r, in_i = [torch.empty(shape, device=u.device, dtype=torch.float32) for _ in range(2)]
     out = torch.empty(batch, length, modes, 2, device=u.device, dtype=u.dtype)
+    last_r = torch.empty(batch, modes, device=u.device, dtype=torch.float32) if return_cache else packed.nu
+    last_i = torch.empty(batch, modes, device=u.device, dtype=torch.float32) if return_cache else packed.nu
     block = min(128, triton.next_power_of_2(modes)); grid = (triton.cdiv(modes, block), batch * chunks)
     launch_warps = num_warps or (2 if block <= 64 else 4)
     meta = dict(length=length, modes=modes, chunks=chunks, packed_width=packed.padded_width,
                 CHUNK=chunk_size, BLOCK_M=block, num_warps=launch_warps, **_launch_meta(packed))
     _chunk_summary_kernel[grid](projected, packed.nu, packed.cos_theta, packed.sin_theta,
                                 packed.gamma, pr, pi, qr, qi, **meta)
-    _chunk_prefix_kernel[(triton.cdiv(modes, block), batch)](pr, pi, qr, qi, in_r, in_i,
-                                                             modes=modes, chunks=chunks,
-                                                             BLOCK_M=block, num_warps=launch_warps)
+    _chunk_prefix_kernel[(triton.cdiv(modes, block), batch)](
+        pr, pi, qr, qi, in_r, in_i, modes=modes, chunks=chunks,
+        last_r=last_r, last_i=last_i, RETURN_CACHE=return_cache,
+        BLOCK_M=block, num_warps=launch_warps,
+    )
     _chunk_replay_kernel[grid](projected, packed.nu, packed.cos_theta, packed.sin_theta,
                                packed.gamma, in_r, in_i, out, **meta)
-    return out
+    return (out, (last_r, last_i)) if return_cache else out
 
 
 def samu_triton_auto(u: torch.Tensor, p: SamuParameters,
-                     packed: PackedSamu | None = None) -> torch.Tensor:
+                     packed: PackedSamu | None = None, *,
+                     return_cache: bool = False):
     """Latency-oriented RTX 3090 dispatch policy for the canonical M=64 path.
 
     The thresholds are deliberately simple and are recorded in benchmark rows;
@@ -276,8 +308,11 @@ def samu_triton_auto(u: torch.Tensor, p: SamuParameters,
     """
     length = u.shape[1]
     if length <= 256:
-        return samu_triton_serial(u, p, packed)
-    return samu_triton_chunked(u, p, 16 if length <= 512 else 32, packed)
+        return samu_triton_serial(u, p, packed, return_cache=return_cache)
+    return samu_triton_chunked(
+        u, p, 16 if length <= 512 else 32, packed,
+        return_cache=return_cache,
+    )
 
 
 def samu_triton_decode(u: torch.Tensor, state: tuple[torch.Tensor, torch.Tensor],
@@ -298,13 +333,15 @@ def samu_triton_decode(u: torch.Tensor, state: tuple[torch.Tensor, torch.Tensor]
 
 
 def samu_packed_reference(u: torch.Tensor, p: SamuParameters,
-                          packed: PackedSamu | None = None, *, initial=None):
+                          packed: PackedSamu | None = None, *, initial=None,
+                          return_cache: bool = False):
     """PyTorch reference for the exact packed-BF16 inference policy."""
     packed = packed or pack_samu_parameters(p, u.dtype)
     batch, length, _ = u.shape; modes = p.nu.numel()
     projected = u @ packed.weight
     raw_phase, raw_radial = projected[..., 2*modes].float(), projected[..., 2*modes+1].float()
-    sp, sr = torch.tanh(raw_phase + packed.selector_bias[0]), torch.tanh(raw_radial + packed.selector_bias[1])
+    sp = torch.tanh(raw_phase + packed.phase_bias)
+    sr = torch.tanh(raw_radial + packed.radial_bias)
     d = packed.phase_scale * sp; c = packed.radial_scale * sr / (1 + sr.square())
     if initial is None:
         x = torch.zeros(batch, modes, device=u.device, dtype=torch.float32)
@@ -320,4 +357,5 @@ def samu_packed_reference(u: torch.Tensor, p: SamuParameters,
         wi = projected[:, t, 1:2*modes:2].float() * packed.gamma
         nx = rho*cp*x - rho*si*y + wr; ny = rho*si*x + rho*cp*y + wi
         x,y=nx,ny; outputs.append(torch.stack((x,y),-1).to(u.dtype))
-    return torch.stack(outputs,1)
+    output = torch.stack(outputs, 1)
+    return (output, (x, y)) if return_cache else output

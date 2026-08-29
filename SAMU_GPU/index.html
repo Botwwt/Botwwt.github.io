@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="SAMU 如何以 coherent control、融合 decode 与 chunked scan 加速官方源码 RG-LRU 对照。">
-  <title>SAMU GPU · Faster than the official RG-LRU source path</title>
+  <meta name="description" content="SAMU 与严格按官方方程实现的 Triton RG-LRU，以及官方 Mamba-3 的可复现实测与 GPU 资源剖析。">
+  <title>SAMU GPU · Equal-kernel RG-LRU & official Mamba-3</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -26,9 +26,9 @@
   <main id="top">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow">SAMU × official RG-LRU source · measured on RTX 3090</p>
+        <p class="eyebrow">SAMU × Triton RG-LRU × official Mamba-3 · RTX 3090</p>
         <h1 id="hero-title">把通道级动态门，<br>压成两个共享坐标。</h1>
-        <p class="hero-thesis">SAMU 用 <span class="var dynamic">c<sub>t</sub>, d<sub>t</sub></span> 调制静态复数谱，让 transition control 保持低维；实现上再把 write、control 与递推分别映射到 packed GEMM、chunk scan 和单 launch decode。</p>
+        <p class="hero-thesis">SAMU 用 <span class="var dynamic">c<sub>t</sub>, d<sub>t</sub></span> 调制静态复数谱，让 transition control 保持低维。现在对手不再是 Python scan：RG-LRU 也拥有严格遵循官方方程的 serial、chunk 与 fused-decode Triton kernel。</p>
         <div class="hero-actions">
           <a class="button primary" href="#benchmarks">先看实测</a><a class="button" href="#course">理解原理</a><a class="button" href="#architecture-explorer">运行架构动画</a><a class="text-link" href="#implementation">查看内核路径 →</a>
         </div>
@@ -42,24 +42,24 @@
 
     <section class="headline-results" aria-labelledby="headline-title">
       <div class="section-kicker"><span class="evidence measured">Measured</span><span id="headline-env">读取测试环境…</span></div>
-      <h2 id="headline-title">同状态预算下，SAMU 的实际执行优势</h2>
+      <h2 id="headline-title">同等级 kernel 下，优势从哪里出现？</h2>
       <div class="result-strip" id="headline-results" aria-live="polite"><div class="headline-result skeleton">正在从 summary.json 计算…</div><div class="headline-result skeleton">正在从 summary.json 计算…</div><div class="headline-result skeleton">正在从 summary.json 计算…</div></div>
-      <p class="fairness-inline">对照是固定 commit 的 Google RecurrentGemma 官方 PyTorch RG-LRU 源码，不是专用 RG-LRU kernel。因此这里证明的是“当前实现路径更快”，不是 RG-LRU 数学架构的终局。<a href="#fairness">读公平性协议</a></p>
+      <p class="fairness-inline">主结论使用同宽、近乎同参数、同 512 B FP32 state 的 Triton 对照。RG-LRU 在 L=512/2048 仍领先；SAMU 在 L=128、长序列与 decode 领先。Mamba-3 仅放在“官方 best-native”轨道：同宽，但参数与 state 不匹配。</p>
     </section>
 
     <section class="architecture-delta" id="advantage" aria-labelledby="advantage-title">
-      <div class="delta-heading"><p class="part-label">Architecture delta</p><h2 id="advantage-title">优势不是少做 recurrence，<br>而是让它更容易融合。</h2><p>两边使用相同模型宽度与相同 FP32 recurrent-state bytes。SAMU 保留 state-sized write，但把动态 transition 从逐通道 gate 收缩为两个 token 级坐标。</p></div>
+      <div class="delta-heading"><p class="part-label">Architecture delta</p><h2 id="advantage-title">不是“RG-LRU 没 kernel”，<br>而是动态 transition 的代价不同。</h2><p>两边同为 4-launch chunk prefill 与 1-launch decode。SAMU 保留 state-sized write，但把动态 transition 从逐通道 gate 收缩成两个 token 级坐标；RG-LRU 完整保留两组 block-diagonal gates。</p></div>
       <div class="pipeline-compare" id="implementation">
-        <div class="pipeline-row rglru-row"><span class="pipeline-name">Official RG-LRU</span><span>2× block-diagonal gates</span><i>→</i><span>channel-wise a, γ</span><i>→</i><span>Python sequence scan</span></div>
-        <div class="pipeline-row samu-row"><span class="pipeline-name">SAMU Triton</span><span>1× packed GEMM</span><i>→</i><span>shared c,d + static ν,θ</span><i>→</i><span>serial / C32 / fused decode</span></div>
+        <div class="pipeline-row rglru-row"><span class="pipeline-name">RG-LRU Triton</span><span>1× packed block BMM</span><i>→</i><span>official iₜ, rₜ, aₜ, √γ</span><i>→</i><span>C8 / C16 / C32 / fused decode</span></div>
+        <div class="pipeline-row samu-row"><span class="pipeline-name">SAMU Triton</span><span>1× packed GEMM</span><i>→</i><span>shared c,d + static ν,θ</span><i>→</i><span>serial / C16 / C32 / fused decode</span></div>
       </div>
       <dl class="delta-table">
-        <div><dt>Recurrent state</dt><dd><b>512 B / batch</b><span>64 complex FP32 vs 128 real FP32</span></dd></div>
-        <div><dt>Dynamic transition control</dt><dd><b>2 scalars / token</b><span>SAMU c,d；RG-LRU gates 随 128 channels 展开</span></dd></div>
-        <div><dt>Prefill dispatch</dt><dd><b>shape-aware</b><span>短 L serial；中段 C16；长 L C32</span></dd></div>
-        <div><dt>Decode</dt><dd><b>1 Triton launch</b><span>projection + control + transition + state update</span></dd></div>
+        <div><dt>Equal track</dt><dd><b>16,772 vs 16,768</b><span>参数差 4；两边 state 都是 512 B / batch</span></dd></div>
+        <div><dt>SFU work · C32</dt><dd><b>134 vs 1,024</b><span>每 token 的 exp/sigmoid 静态计数；RG-LRU 另有 256 sqrt</span></dd></div>
+        <div><dt>Launches</dt><dd><b>4 prefill · 1 decode</b><span>双方相同；不再拿 Python loop 当架构优势</span></dd></div>
+        <div><dt>Profiler</dt><dd><b>zero spill</b><span>双方代表 kernel；register 与 derived occupancy 逐 kernel 展示</span></dd></div>
       </dl>
-      <p class="delta-caveat"><span class="evidence derived">Why it helps</span> coherent control 让每个 program 只加载一次 c,d，再通过静态谱在寄存器中重建所有 mode transition；它没有消除 state-sized write，也不意味着优化后的 RG-LRU 必然慢。</p>
+      <p class="delta-caveat"><span class="evidence derived">SAMU-specific optimization</span> 相位增量被结构性限制在 ±0.0772 rad，因此可用有误差界的 degree-6/7 sin/cos 多项式替代通用 libdevice 范围归约；同时把静态 bias 在 pack 阶段转成 host scalar，消除了每次调用的两次 D2H 同步。</p>
     </section>
 
     <div class="course-shell" id="course">
@@ -69,20 +69,20 @@
     </div>
 
     <section class="wide-section benchmark-section" id="benchmarks" aria-labelledby="bench-title">
-      <div class="wide-heading"><div><p class="part-label">Part IV · Benchmark Lab</p><h2 id="bench-title">SAMU vs official-source RG-LRU</h2></div><p>53 个配置全部重新实测：prefill 长度、batch、state size、decode，以及 SAMU 的 serial / C8 / C16 / C32 选择。每个点保留完整 CUDA-event samples。</p></div>
-      <div class="benchmark-controls" id="benchmark-controls"><label>Experiment<select id="filter-experiment"><option value="length">Prefill · sequence length</option><option value="batch">Prefill · batch scaling</option><option value="state">Prefill · state size</option><option value="decode">Decode · batch scaling</option><option value="kernels">SAMU · kernel crossover</option></select></label><label>Metric<select id="filter-metric"><option value="median_ms">Median latency</option><option value="tokens_per_second">Throughput</option><option value="speedup">RG-LRU / SAMU speedup</option></select></label></div>
-      <div class="benchmark-grid"><figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">Measured figure</span><h3 id="chart-title">Prefill length sweep</h3></div><span id="chart-protocol" class="protocol">same width + same state bytes</span></div><svg id="benchmark-chart" viewBox="0 0 960 520" role="img" aria-label="SAMU 与官方源码 RG-LRU 实测折线图"></svg><figcaption id="chart-caption">读取 benchmark_results_samu_rg/summary.json…</figcaption></figure><aside class="benchmark-detail" id="benchmark-detail"><p class="aside-title">Selected point</p><p>点击实测点查看 backend、P10/P95、raw samples、precision 与公平性说明。</p></aside></div>
-      <div class="lab-tabs" role="tablist" aria-label="Benchmark 附加信息"><button class="active" data-lab-tab="protocol">Protocol</button><button data-lab-tab="correctness">Correctness</button><button data-lab-tab="environment">Environment</button><button data-lab-tab="raw">Raw data</button></div><div class="lab-panel" id="lab-panel"></div>
+      <div class="wide-heading"><div><p class="part-label">Part IV · Benchmark Lab</p><h2 id="bench-title">Equal Triton kernels + official Mamba context</h2></div><p>58 行结果：54 measured、4 个明确 unsupported。每个 latency 点保留 CUDA-event samples；另外记录实际 launch、Triton register/spill、derived occupancy、静态 SFU 与逻辑流量下界。</p></div>
+      <div class="benchmark-controls" id="benchmark-controls"><label>Experiment<select id="filter-experiment"><option value="equal-length">Equal Triton · length</option><option value="official-length">Official context · length</option><option value="batch">Equal Triton · batch</option><option value="decode">Equal Triton · decode</option><option value="chunks">Chunk sweep · C8/C16/C32</option></select></label><label>Metric<select id="filter-metric"><option value="median_ms">Median latency</option><option value="tokens_per_second">Throughput</option><option value="speedup">Pairwise speed ratio</option></select></label></div>
+      <div class="benchmark-grid"><figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">Measured figure</span><h3 id="chart-title">Equal-kernel prefill length sweep</h3></div><span id="chart-protocol" class="protocol">same width + parameters + state</span></div><svg id="benchmark-chart" viewBox="0 0 960 520" role="img" aria-label="SAMU、RG-LRU 与官方 Mamba-3 实测折线图"></svg><figcaption id="chart-caption">读取 benchmark_results_equal_kernel/summary.json…</figcaption></figure><aside class="benchmark-detail" id="benchmark-detail"><p class="aside-title">Selected point</p><p>点击实测点查看 track、backend、P10/P95、raw samples、state 与参数。</p></aside></div>
+      <div class="lab-tabs" role="tablist" aria-label="Benchmark 附加信息"><button class="active" data-lab-tab="protocol">Protocol</button><button data-lab-tab="profile">SFU / bandwidth / launch / register</button><button data-lab-tab="correctness">Correctness</button><button data-lab-tab="environment">Environment</button><button data-lab-tab="raw">Raw data</button></div><div class="lab-panel" id="lab-panel"></div>
     </section>
 
     <section class="wide-section sources-section" id="sources" aria-labelledby="sources-title">
-      <div class="wide-heading"><div><p class="part-label">Sources & reproducibility</p><h2 id="sources-title">只保留这次真正使用的对照</h2></div><p>SAMU kernel、官方 RG-LRU commit、环境、正确性与 53 份 raw measurements 都在仓库中；旧的多模型实验保留为历史数据，但不再进入主展示。</p></div>
-      <div class="source-columns"><div><h3>版本与数据</h3><ul class="source-list"><li><a href="SAMU_CANONICAL_AUDIT.md">SAMU canonical audit</a></li><li><a href="BENCHMARK_METHODOLOGY.md">Benchmark methodology</a></li><li><a href="benchmark/triton_samu.py">Fused Triton kernels</a></li><li><a href="benchmark/run_samu_vs_rglru.py">Focused benchmark runner</a></li><li><a href="benchmark_results_samu_rg/environment.json">Environment JSON</a></li><li><a href="benchmark_results_samu_rg/correctness.json">Correctness JSON</a></li><li><a href="benchmark_results_samu_rg/summary.csv">Aggregated CSV</a></li><li><a href="benchmark_results_samu_rg/summary.json">Aggregated JSON</a></li><li><a href="https://github.com/google-deepmind/recurrentgemma/tree/2efa84dac0e68e63547a27a18fa943c98f1c312e">Official RecurrentGemma snapshot</a></li></ul></div><div><h3>一条命令复现</h3><p class="code-label">SAMU Triton vs official RG-LRU source</p><pre><code>cd benchmark
-python run_samu_vs_rglru.py \
-  --output ../benchmark_results_samu_rg \
+      <div class="wide-heading"><div><p class="part-label">Sources & reproducibility</p><h2 id="sources-title">方程、代码、raw samples 都可追溯</h2></div><p>RG-LRU 同时对照 Griffin 论文公式与 RecurrentGemma 官方 PyTorch 语义；Mamba-3 来自固定 state-spaces commit。硬件计数器拿不到的项目保持 N/A，不用估算伪装成实测。</p></div>
+      <div class="source-columns"><div><h3>版本与数据</h3><ul class="source-list"><li><a href="SAMU_CANONICAL_AUDIT.md">SAMU canonical audit</a></li><li><a href="BENCHMARK_METHODOLOGY.md">Benchmark methodology</a></li><li><a href="benchmark/triton_samu.py">SAMU Triton kernels</a></li><li><a href="benchmark/triton_rglru.py">Official-equation RG-LRU Triton</a></li><li><a href="benchmark/run_equal_kernel_benchmarks.py">Equal-kernel runner</a></li><li><a href="benchmark/profile_equal_kernels.py">Profiler runner</a></li><li><a href="benchmark_results_equal_kernel/correctness.json">Equation/correctness audit</a></li><li><a href="benchmark_results_equal_kernel/profiles.json">Launch/register/occupancy profiles</a></li><li><a href="benchmark_results_equal_kernel/summary.csv">Aggregated CSV</a></li><li><a href="benchmark_results_equal_kernel/summary.json">Aggregated JSON</a></li><li><a href="https://arxiv.org/abs/2402.19427">Griffin paper · RG-LRU equations</a></li><li><a href="https://github.com/google-deepmind/recurrentgemma/tree/2efa84dac0e68e63547a27a18fa943c98f1c312e">Official RecurrentGemma snapshot</a></li><li><a href="https://github.com/state-spaces/mamba/tree/e9594ce1c732d97440f0332fdc43170a2294dbfa">Official Mamba snapshot</a></li></ul></div><div><h3>一条命令复现</h3><p class="code-label">Equal Triton + official baselines</p><pre><code>cd benchmark
+python run_equal_kernel_benchmarks.py \
+  --output ../benchmark_results_equal_kernel \
   --rglru-source /path/to/recurrentgemma \
-  --resume</code></pre><p>计时使用 synchronized CUDA events；首次编译、参数打包和 setup 不进入样本。短 runtime 的 decode 每个样本包含 100 次 inner iterations。</p></div></div>
-      <div class="source-note"><span class="evidence derived">Scope</span> 当前新 kernel 是 inference-only；没有 backward 数字。网页也不把官方 PyTorch source 的 Python loop 开销包装成 RG-LRU 架构劣势。</div>
+  --mamba-source /path/to/mamba</code></pre><p>计时使用 synchronized CUDA events；首次编译、参数打包和 setup 不进入样本。decode 每个样本包含 100 次 inner iterations。profiling 另见 <code>profile_equal_kernels.py</code>。</p></div></div>
+      <div class="source-note"><span class="evidence derived">Scope</span> 新 kernel 是 inference-only；没有 backward 数字。Nsight Compute 不在镜像中，因此 measured DRAM bandwidth 与 SFU utilization 明确为 N/A；网页只展示逻辑字节下界、静态 SFU 操作数和编译器 metadata。</div>
     </section>
   </main>
   <footer><p>SAMU GPU · audited code, executable figures, falsifiable claims.</p><a href="#top">Back to top ↑</a></footer>

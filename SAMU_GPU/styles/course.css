@@ -14,6 +14,8 @@
 .headline-result { min-height: 190px; padding: 1.4rem; border-right: 1px solid var(--line); }
 .headline-result:last-child { border-right: 0; }
 .headline-result .metric { display: block; margin: .35rem 0 .5rem; font: 500 clamp(2rem, 3.4vw, 3.7rem)/1 var(--mono); letter-spacing: -.07em; }
+.headline-result.winner-samu .metric { color: var(--state); }
+.headline-result.winner-other .metric { color: var(--rglru); }
 .headline-result .metric-label { font-size: .9rem; color: var(--muted); }
 .headline-result p { margin: .7rem 0 0; font-size: .82rem; line-height: 1.55; }
 .skeleton { color: var(--muted); animation: breathe 1.5s infinite alternate; }
@@ -163,6 +165,12 @@
 .coverage-grid strong { display: block; font: 2rem var(--mono); }
 .profiler-grid ol { padding-left: 1.2rem; font-size: .75rem; }
 .environment-grid dt { color: var(--muted); font: .67rem var(--mono); }.environment-grid dd { margin: .2rem 0 .75rem; overflow-wrap: anywhere; }
+.profile-table-wrap { overflow-x: auto; }
+.profile-table { width: 100%; min-width: 850px; border-collapse: collapse; font: .69rem/1.55 var(--mono); }
+.profile-table th, .profile-table td { padding: .7rem .75rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.profile-table th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+.profile-table td:nth-child(2), .profile-table td:nth-child(3) { white-space: nowrap; }
+.metric-audit { margin-top: 1.7rem; }
 
 .sources-section { background: var(--paper-2); }
 .source-columns { max-width: 1350px; margin: 0 auto; display: grid; grid-template-columns: .75fr 1.25fr; gap: 4rem; }
@@ -191,6 +199,8 @@
   .lane-detail, .tile-stats { border-left: 0; border-top: 1px solid var(--line); padding: 1rem 0 0; }
   .chart-panel { border-right: 0; padding-right: 0; }
   .benchmark-detail { border-top: 1px solid var(--line); }
+  .lab-tabs { overflow-x: auto; }
+  .lab-tabs button { white-space: nowrap; }
   .pipeline-row { grid-template-columns: 1fr; padding: 1rem 0; }
   .pipeline-row i { transform: rotate(90deg); }
   .delta-table { grid-template-columns: repeat(2, 1fr); }

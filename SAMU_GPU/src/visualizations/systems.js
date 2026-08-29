@@ -28,13 +28,13 @@ export function initTimeMode(root){
 
 const models={
   samu:{title:"SAMU",count:"2",subtitle:"token coordinates",list:["dynamic: cₜ,dₜ","static: νⱼ,θⱼ","state: M complex","ρⱼ,φⱼ reconstructed"] ,formula:"z′ⱼ = exp(−νⱼexp(c)) · exp(i(θⱼ+d)) · zⱼ + wⱼ"},
-  rglru:{title:"RG-LRU",count:"2d",subtitle:"dynamic gate outputs",list:["gate_x = sigmoid(input_gate(x))","gate_a = sigmoid(a_gate(x))","state: d real FP32 channels","optimized traffic is implementation-dependent"],formula:"x′ = aₜ ⊙ x + sqrt(1−aₜ²) ⊙ gate_x ⊙ input"}
+  rglru:{title:"RG-LRU",count:"2d",subtitle:"dynamic gate outputs",list:["iₜ = sigmoid(Wₓx+bₓ)","rₜ = sigmoid(Wₐx+bₐ)","aₜ = exp(−8rₜ·softplus(a_param))","state: d real FP32 channels"],formula:"hₜ = aₜ ⊙ hₜ₋₁ + sqrt(1−aₜ²) ⊙ (iₜ ⊙ xₜ)"}
 };
 export function initCompare(root){const host=root.querySelector("[data-compare-cards]"),formula=root.querySelector("[data-compare-formula]");let active="samu";host.innerHTML=Object.entries(models).map(([k,m])=>`<div class="recurrence-card ${k===active?"active":""}" tabindex="0" data-model="${k}"><h3>${m.title}</h3><span class="dynamic-count">${m.count}</span><p>${m.subtitle}</p><ul>${m.list.map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join("");function choose(k){active=k;host.querySelectorAll("[data-model]").forEach(e=>e.classList.toggle("active",e.dataset.model===k));formula.innerHTML=`<b>${models[k].title}</b><br>${models[k].formula}`;}host.addEventListener("click",e=>{const c=e.target.closest("[data-model]");if(c)choose(c.dataset.model);});host.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.dataset.model)choose(e.target.dataset.model);});choose(active);}
 
 const transitionData={
  token:{rglru:["2d dynamic gate outputs","channel-wise a and input gate","state-sized response"],samu:["dynamic: c,d","static ν,θ reconstruct Pⱼ","write q=wₜ: O(M)"]},
- tokens:{rglru:["32 channel-wise dynamic steps","official source scans in Python","fusion could avoid gate materialization"],samu:["32 pairs cₜ,dₜ","composable affine steps","q prefixes remain state-sized"]},
+  tokens:{rglru:["32 channel-wise dynamic steps","Triton summary/prefix/replay implemented","fusion avoids gate tensor materialization"],samu:["32 pairs cₜ,dₜ","composable affine steps","q prefixes remain state-sized"]},
  chunk:{rglru:["summary follows RG-LRU recurrence algebra","no special compression asserted"],samu:["transition can be C,G,D","zero-state output q: O(M)","whole summary is not O(1)"]}
 };
 export function initTransition(root){const view=root.querySelector("[data-transition-view]");let span="token";function render(){view.innerHTML=["rglru","samu"].map(k=>`<div class="transition-model ${k}"><h3>${k==="rglru"?"RG-LRU":"SAMU"}</h3><ul>${transitionData[span][k].map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join("");}root.addEventListener("click",e=>{if(!e.target.dataset.transitionSpan)return;span=e.target.dataset.transitionSpan;root.querySelectorAll("[data-transition-span]").forEach(b=>b.classList.toggle("primary",b===e.target));render();});render();}

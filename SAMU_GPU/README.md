@@ -1,8 +1,14 @@
-# SAMU GPU · focused RG-LRU comparison
+# SAMU GPU · equal-kernel RG-LRU comparison
 
-A static research course and benchmark lab connecting the audited SAMU recurrence to GPU dataflow, fused Triton inference kernels, and the pinned official RecurrentGemma RG-LRU source.
+A static research course and benchmark lab connecting the audited SAMU
+recurrence to GPU dataflow, an official-equation Triton RG-LRU baseline, and a
+pinned official Mamba-3 context line.
 
-The main result set contains 53/53 measured RTX 3090 configurations. It keeps model width and FP32 recurrent-state bytes equal, and never presents the official-source Python scan as a production RG-LRU kernel.
+The current result set contains 58 rows: 54 measured and four explicitly
+unsupported Mamba-3 decode configurations. The primary comparison fixes
+`d_model=128`, near-identical parameter count (16,772 vs 16,768), and identical
+512-byte FP32 recurrent state. It never uses the official RecurrentGemma Python
+scan as the equal-kernel opponent.
 
 ## Preview the site
 
@@ -11,32 +17,40 @@ cd D:\Spectral_analysis\spectral\botwwtgithubio_remote_inspect\SAMU_GPU
 python -m http.server 8000
 ```
 
-Open <http://localhost:8000>. A web server is required because the benchmark lab fetches JSON files.
+Open <http://localhost:8000>. A web server is required because the benchmark
+lab fetches JSON files.
 
-## Reproduce the focused benchmark
+## Reproduce
 
 ```bash
 cd SAMU_GPU/benchmark
-python run_samu_vs_rglru.py \
-  --output ../benchmark_results_samu_rg \
-  --rglru-source /path/to/recurrentgemma --resume
-```
+python run_equal_kernel_benchmarks.py \
+  --output ../benchmark_results_equal_kernel \
+  --rglru-source /path/to/recurrentgemma \
+  --mamba-source /path/to/mamba
 
-The runner checks serial, C16 chunk, and fused-decode correctness before timing. Each configuration is saved immediately under `benchmark_results_samu_rg/raw/`; first-call compile/setup is excluded from CUDA-event samples.
+python profile_equal_kernels.py \
+  --output ../benchmark_results_equal_kernel/profiles.json \
+  --rglru-source /path/to/recurrentgemma \
+  --mamba-source /path/to/mamba
+```
 
 ## Repository map
 
-- `index.html`: semantic page shell.
-- `src/lessons.js`: the continuous 24-lesson narrative.
-- `src/visualizations/`: canvas/DOM interactive systems figures.
-- `src/benchmark-lab.js`: focused length/batch/state/decode/kernel-crossover charts.
-- `benchmark/triton_samu.py`: packed projection, serial prefill, chunked summary/prefix/replay, and fused decode kernels.
-- `benchmark/run_samu_vs_rglru.py`: correctness, equal-state RG-LRU comparison, resume, raw samples, and aggregation.
-- `benchmark_results_samu_rg/`: primary raw samples, aggregate files, environment, and correctness evidence.
-- `benchmark_results/`: historical multi-model experiment archive; it is not loaded by the current page.
-- `SAMU_CANONICAL_AUDIT.md`: canonical model/source audit.
-- `BENCHMARK_METHODOLOGY.md`: timing, fairness, matching, and caveats.
+- `benchmark/triton_samu.py`: packed projection, serial/chunk prefill, fused
+  decode, bounded phase polynomial, and FP32 cache.
+- `benchmark/triton_rglru.py`: official-equation serial/chunk/decode Triton
+  kernels with reset and eager-BF16 semantics.
+- `benchmark/run_equal_kernel_benchmarks.py`: two-track correctness and timing
+  runner.
+- `benchmark/profile_equal_kernels.py`: launch and Triton compiler-resource
+  profiler.
+- `benchmark_results_equal_kernel/`: raw samples, aggregate files, environment,
+  correctness audit, and profile evidence loaded by the site.
+- `BENCHMARK_METHODOLOGY.md`: equations, matching rules, timing, and caveats.
+- `SAMU_CANONICAL_AUDIT.md`: canonical SAMU model/source audit.
 
-## Evidence language
-
-`Verified Code`, `Measured`, `Paper Fact`, `Derived`, `Proposed`, and `Hypothesis` labels deliberately separate current facts from future kernel ideas.
+`Measured`, `Verified`, `Derived`, `Paper Fact`, `Proposed`, and `Hypothesis`
+labels separate evidence from interpretation. Hardware DRAM/SFU counters are
+`N/A` because Nsight Compute was unavailable; logical traffic and static SFU
+counts are not presented as hardware measurements.

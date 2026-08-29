@@ -1,0 +1,880 @@
+{
+  "generated_utc": "2026-08-29T04:52:55Z",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "profiles": [
+    {
+      "cuda_kernel_launch_count": 4,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 14.0,
+          "flops_reported": 0,
+          "name": "_chunk_prefix_kernel",
+          "self_cuda_share": 0.3181818181818182,
+          "self_cuda_time_us": 14.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 14.0,
+          "flops_reported": 0,
+          "name": "_chunk_replay_kernel",
+          "self_cuda_share": 0.3181818181818182,
+          "self_cuda_time_us": 14.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 8.0,
+          "flops_reported": 0,
+          "name": "ampere_bf16_s16816gemm_bf16_128x64_ldg8_f2f_stages_32x6_nn",
+          "self_cuda_share": 0.18181818181818182,
+          "self_cuda_time_us": 8.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 8.0,
+          "flops_reported": 0,
+          "name": "_chunk_summary_kernel",
+          "self_cuda_share": 0.18181818181818182,
+          "self_cuda_time_us": 8.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute is not installed in the benchmark image; no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "samu_c32_prefill_B1_L2048",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 44.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 0.6666666666666666,
+          "derived_resident_blocks_per_sm": 16,
+          "hash": "0ecfbb4fb49ae0c4035b6f66a5966f2e0e0ef798c858d0db749a0c11a8b3f8bc",
+          "name": "_chunk_summary_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 64,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.6666666666666666,
+          "derived_resident_blocks_per_sm": 16,
+          "hash": "2a281235adc0c5ffa41698e56f2bfe59bc5800d43914529bcf557586881bce90",
+          "name": "_chunk_prefix_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 30,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.6666666666666666,
+          "derived_resident_blocks_per_sm": 16,
+          "hash": "8b84f994209ad08f21a152f34d54d2e0ff7fe4fdee066a242a5171138e1b9f29",
+          "name": "_chunk_replay_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 28,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        }
+      ]
+    },
+    {
+      "cuda_kernel_launch_count": 4,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 14.0,
+          "flops_reported": 0,
+          "name": "_chunk_replay_kernel",
+          "self_cuda_share": 0.30434782608695654,
+          "self_cuda_time_us": 14.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 13.0,
+          "flops_reported": 0,
+          "name": "_chunk_prefix_kernel",
+          "self_cuda_share": 0.2826086956521739,
+          "self_cuda_time_us": 13.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 12.0,
+          "flops_reported": 0,
+          "name": "_chunk_summary_kernel",
+          "self_cuda_share": 0.2608695652173913,
+          "self_cuda_time_us": 12.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 7.0,
+          "flops_reported": 0,
+          "name": "void cutlass::Kernel<cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_32x32_32x1_nn_align8>(cutlass_80_wmma_tensorop_bf16_s161616gemm_bf16_32x32_32x1_nn_align8::Params)",
+          "self_cuda_share": 0.15217391304347827,
+          "self_cuda_time_us": 7.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute is not installed in the benchmark image; no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "rglru_c32_prefill_B1_L2048",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 46.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "bf6dda3af1685d09b4a24ac831a1f050c3a2c8cb466abc9bf85525ecef5574c6",
+          "name": "_chunk_summary_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 207,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 12,
+          "hash": "924617d4cc2b2e5ca7909349cf2f83716082663aa922022c2297f451eba38db8",
+          "name": "_chunk_prefix_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 27,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 12,
+          "hash": "34f5af04d4427aa997dd6b63e8fc670c1db0922a3fdeca5eb8f0c8e5fb788d50",
+          "name": "_chunk_replay_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 30,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        }
+      ]
+    },
+    {
+      "cuda_kernel_launch_count": 1,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 4.0,
+          "flops_reported": 0,
+          "name": "_decode_kernel",
+          "self_cuda_share": 1.0,
+          "self_cuda_time_us": 4.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute is not installed in the benchmark image; no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "samu_fused_decode_B1",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 4.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 12,
+          "hash": "0e3045865acad63112d4dfacee0c37afab5aa8c991a7f82fd95f9c1797e3fba7",
+          "name": "_decode_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 40,
+          "shared_memory_bytes_per_block": 512,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        }
+      ]
+    },
+    {
+      "cuda_kernel_launch_count": 1,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 5.0,
+          "flops_reported": 0,
+          "name": "_decode_kernel",
+          "self_cuda_share": 1.0,
+          "self_cuda_time_us": 5.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute is not installed in the benchmark image; no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "rglru_fused_decode_B1",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 5.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 1.0,
+          "derived_resident_blocks_per_sm": 12,
+          "hash": "b97ba4a15ad5123b545f78f0fa89de2bee240b5bb217cd53c7d4f3777e6e828e",
+          "name": "_decode_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 40,
+          "shared_memory_bytes_per_block": 1024,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        }
+      ]
+    },
+    {
+      "cuda_kernel_launch_count": 26,
+      "cuda_memcpy_count": 0,
+      "events": [
+        {
+          "count": 1,
+          "cuda_time_us": 300.0,
+          "flops_reported": 0,
+          "name": "mamba3_siso_fwd_kernel",
+          "self_cuda_share": 0.7058823529411765,
+          "self_cuda_time_us": 300.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 35.0,
+          "flops_reported": 0,
+          "name": "angle_dt_fwd_kernel",
+          "self_cuda_share": 0.08235294117647059,
+          "self_cuda_time_us": 35.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 16.0,
+          "flops_reported": 0,
+          "name": "void cutlass::Kernel<cutlass_80_tensorop_bf16_s16816gemm_bf16_256x128_32x3_tn_align2>(cutlass_80_tensorop_bf16_s16816gemm_bf16_256x128_32x3_tn_align2::Params)",
+          "self_cuda_share": 0.03764705882352941,
+          "self_cuda_time_us": 16.0
+        },
+        {
+          "count": 2,
+          "cuda_time_us": 12.0,
+          "flops_reported": 0,
+          "name": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1}>(at::TensorIteratorBase&, at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1} const&)::{lambda(int)#2}>(int, at::native::gpu_kernel_impl<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1}>(at::TensorIteratorBase&, at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1} const&)::{lambda(int)#2})",
+          "self_cuda_share": 0.02823529411764706,
+          "self_cuda_time_us": 12.0
+        },
+        {
+          "count": 3,
+          "cuda_time_us": 12.0,
+          "flops_reported": 0,
+          "name": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1}>(at::TensorIteratorBase&, at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1} const&)::{lambda(int)#1}>(int, at::native::gpu_kernel_impl<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1}>(at::TensorIteratorBase&, at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1} const&)::{lambda(int)#1})",
+          "self_cuda_share": 0.02823529411764706,
+          "self_cuda_time_us": 12.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 8.0,
+          "flops_reported": 0,
+          "name": "ampere_bf16_s16816gemm_bf16_128x64_ldg8_f2f_stages_32x6_tn",
+          "self_cuda_share": 0.018823529411764704,
+          "self_cuda_time_us": 8.0
+        },
+        {
+          "count": 2,
+          "cuda_time_us": 7.0,
+          "flops_reported": 0,
+          "name": "_layer_norm_fwd_1pass_kernel",
+          "self_cuda_share": 0.01647058823529412,
+          "self_cuda_time_us": 7.0
+        },
+        {
+          "count": 3,
+          "cuda_time_us": 6.0,
+          "flops_reported": 0,
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::(anonymous namespace)::launch_clamp_scalar(at::TensorIteratorBase&, c10::Scalar, c10::Scalar, at::native::detail::ClampLimits)::{lambda()#1}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1}, at::detail::Array<char*, 2> >(int, at::native::(anonymous namespace)::launch_clamp_scalar(at::TensorIteratorBase&, c10::Scalar, c10::Scalar, at::native::detail::ClampLimits)::{lambda()#1}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1}, at::detail::Array<char*, 2>)",
+          "self_cuda_share": 0.01411764705882353,
+          "self_cuda_time_us": 6.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 5.0,
+          "flops_reported": 0,
+          "name": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl<at::native::CUDAFunctor_add<float> >(at::TensorIteratorBase&, at::native::CUDAFunctor_add<float> const&)::{lambda(int)#2}>(int, at::native::gpu_kernel_impl<at::native::CUDAFunctor_add<float> >(at::TensorIteratorBase&, at::native::CUDAFunctor_add<float> const&)::{lambda(int)#2})",
+          "self_cuda_share": 0.011764705882352941,
+          "self_cuda_time_us": 5.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 4.0,
+          "flops_reported": 0,
+          "name": "void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1}, at::detail::Array<char*, 2>, TrivialOffsetCalculator<1, unsigned int>, TrivialOffsetCalculator<1, unsigned int>, at::native::memory::LoadWithCast<1>, at::native::memory::StoreWithCast<1> >(int, at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1}, at::detail::Array<char*, 2>, TrivialOffsetCalculator<1, unsigned int>, TrivialOffsetCalculator<1, unsigned int>, at::native::memory::LoadWithCast<1>, at::native::memory::StoreWithCast<1>)",
+          "self_cuda_share": 0.009411764705882352,
+          "self_cuda_time_us": 4.0
+        },
+        {
+          "count": 2,
+          "cuda_time_us": 4.0,
+          "flops_reported": 0,
+          "name": "void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1}>(at::TensorIteratorBase&, at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1} const&)::{lambda(int)#1}>(int, at::native::gpu_kernel_impl<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1}>(at::TensorIteratorBase&, at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1} const&)::{lambda(int)#1})",
+          "self_cuda_share": 0.009411764705882352,
+          "self_cuda_time_us": 4.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctorOnOther_add<float>, at::detail::Array<char*, 2> >(int, at::native::CUDAFunctorOnOther_add<float>, at::detail::Array<char*, 2>)",
+          "self_cuda_share": 0.004705882352941176,
+          "self_cuda_time_us": 2.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::reciprocal_kernel_cuda(at::TensorIteratorBase&)::{lambda()#1}::operator()() const::{lambda()#2}::operator()() const::{lambda(float)#1}, at::detail::Array<char*, 2> >(int, at::native::reciprocal_kernel_cuda(at::TensorIteratorBase&)::{lambda()#1}::operator()() const::{lambda()#2}::operator()() const::{lambda(float)#1}, at::detail::Array<char*, 2>)",
+          "self_cuda_share": 0.004705882352941176,
+          "self_cuda_time_us": 2.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::CUDAFunctor_add<float>, at::detail::Array<char*, 3> >(int, at::native::CUDAFunctor_add<float>, at::detail::Array<char*, 3>)",
+          "self_cuda_share": 0.004705882352941176,
+          "self_cuda_time_us": 2.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::neg_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1}, at::detail::Array<char*, 2> >(int, at::native::neg_kernel_cuda(at::TensorIteratorBase&)::{lambda()#2}::operator()() const::{lambda()#7}::operator()() const::{lambda(float)#1}, at::detail::Array<char*, 2>)",
+          "self_cuda_share": 0.004705882352941176,
+          "self_cuda_time_us": 2.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::(anonymous namespace)::softplus_kernel(at::TensorIteratorBase&, c10::Scalar const&, c10::Scalar const&)::{lambda()#1}::operator()() const::{lambda()#2}::operator()() const::{lambda(float)#1}, at::detail::Array<char*, 2> >(int, at::native::(anonymous namespace)::softplus_kernel(at::TensorIteratorBase&, c10::Scalar const&, c10::Scalar const&)::{lambda()#1}::operator()() const::{lambda()#2}::operator()() const::{lambda(float)#1}, at::detail::Array<char*, 2>)",
+          "self_cuda_share": 0.004705882352941176,
+          "self_cuda_time_us": 2.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float> >, at::detail::Array<char*, 3> >(int, at::native::BinaryFunctor<float, float, float, at::native::binary_internal::MulFunctor<float> >, at::detail::Array<char*, 3>)",
+          "self_cuda_share": 0.004705882352941176,
+          "self_cuda_time_us": 2.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<c10::BFloat16>, at::detail::Array<char*, 1> >(int, at::native::FillFunctor<c10::BFloat16>, at::detail::Array<char*, 1>)",
+          "self_cuda_share": 0.004705882352941176,
+          "self_cuda_time_us": 2.0
+        },
+        {
+          "count": 1,
+          "cuda_time_us": 2.0,
+          "flops_reported": 0,
+          "name": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<float>, at::detail::Array<char*, 1> >(int, at::native::FillFunctor<float>, at::detail::Array<char*, 1>)",
+          "self_cuda_share": 0.004705882352941176,
+          "self_cuda_time_us": 2.0
+        }
+      ],
+      "hardware_counters": {
+        "dram_bandwidth": null,
+        "dram_bytes": null,
+        "l2_bytes": null,
+        "reason": "Nsight Compute is not installed in the benchmark image; no hardware counter is fabricated.",
+        "sfu_utilization": null,
+        "sm_utilization": null
+      },
+      "name": "mamba3_official_prefill_B1_L2048",
+      "profiler": "torch.profiler",
+      "scope": "one eager operation after three warmups",
+      "self_cuda_total_us": 425.0,
+      "triton_compiled_kernels": [
+        {
+          "derived_occupancy": 0.3333333333333333,
+          "derived_resident_blocks_per_sm": 16,
+          "hash": "c3df96824a168e16a468fe8a9f4f6232e538856d2967bf3448c82a8e6969fcd5",
+          "name": "_layer_norm_fwd_1pass_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 16,
+          "shared_memory_bytes_per_block": 0,
+          "spills_per_thread": 0,
+          "threads_per_block": 32,
+          "warps_per_block": 1
+        },
+        {
+          "derived_occupancy": 0.5833333333333334,
+          "derived_resident_blocks_per_sm": 14,
+          "hash": "568cfe13974a6df31234dbd3aa22f51954feddbe8b7a5d5ade2b69b8a2f0653c",
+          "name": "angle_dt_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 72,
+          "shared_memory_bytes_per_block": 256,
+          "spills_per_thread": 0,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.75,
+          "derived_resident_blocks_per_sm": 9,
+          "hash": "74c61f2d67f22ec5adef931c50cd1d0e0a90aff1aece6a6ead90cf7a091144a4",
+          "name": "angle_dt_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 56,
+          "shared_memory_bytes_per_block": 256,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.8333333333333334,
+          "derived_resident_blocks_per_sm": 5,
+          "hash": "7fdfbca5fefa95ed0aecac39c5447dd2aaf5e10891de71e493cf20b10bc6dfc8",
+          "name": "angle_dt_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 48,
+          "shared_memory_bytes_per_block": 512,
+          "spills_per_thread": 0,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.5833333333333334,
+          "derived_resident_blocks_per_sm": 14,
+          "hash": "e41b27fe00f99793b732fc75d55940d35f565c442eb82f0dbdac3501a641d4b0",
+          "name": "angle_dt_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 72,
+          "shared_memory_bytes_per_block": 256,
+          "spills_per_thread": 0,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.75,
+          "derived_resident_blocks_per_sm": 9,
+          "hash": "6bd761337804b5eea59a5a899bfb1f87da7dd1f872ff431d87b989a23408e99a",
+          "name": "angle_dt_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 56,
+          "shared_memory_bytes_per_block": 256,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.8333333333333334,
+          "derived_resident_blocks_per_sm": 5,
+          "hash": "13b0ce1b995593b32376a7c6f532e8e33fae6101cfdfd8452fb98add930296c7",
+          "name": "angle_dt_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 48,
+          "shared_memory_bytes_per_block": 512,
+          "spills_per_thread": 0,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.5833333333333334,
+          "derived_resident_blocks_per_sm": 14,
+          "hash": "225ffb67984c961acf440e624f1fc46e52d227341f20bd11a65a2820501f524e",
+          "name": "angle_dt_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 72,
+          "shared_memory_bytes_per_block": 256,
+          "spills_per_thread": 0,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.75,
+          "derived_resident_blocks_per_sm": 9,
+          "hash": "0b795fff2c463f13aa122fc1626addda96a74b3393aba6976cde0baa72e533d1",
+          "name": "angle_dt_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 56,
+          "shared_memory_bytes_per_block": 256,
+          "spills_per_thread": 0,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.8333333333333334,
+          "derived_resident_blocks_per_sm": 5,
+          "hash": "c976d846ab3021927af169c06abb4fa677396a2ef37bef3fe66a2efd4c1fce01",
+          "name": "angle_dt_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 48,
+          "shared_memory_bytes_per_block": 512,
+          "spills_per_thread": 0,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 4,
+          "hash": "f5465177886bc527370f80838b3cabf882abae57bb360222df9cbe3f76212ed0",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 24576,
+          "spills_per_thread": 240,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 4,
+          "hash": "ebe4bb849c7c0cffb88409f852cf621f67e786b1de34d67296e2321cc7b72cfa",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 128,
+          "shared_memory_bytes_per_block": 24576,
+          "spills_per_thread": 600,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 4,
+          "hash": "7f31a638abeb8158d249e743ac7d65f86c5225e53bf96b5629ced1ab62725408",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 24576,
+          "spills_per_thread": 232,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "0dbffac6d962318e0b2430f1fe66990d992a757953b1bada86cc84e043317c86",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 24576,
+          "spills_per_thread": 20,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.3333333333333333,
+          "derived_resident_blocks_per_sm": 4,
+          "hash": "6972d7a7bbebd73600a55fc0bb0ad6928a92a1acffad97a9f5146f2a834c3abc",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 128,
+          "shared_memory_bytes_per_block": 24576,
+          "spills_per_thread": 188,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "33c06fac1ca58023dced9f00ee43fd35f97435024fa43844d9a05544eb15aa53",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 24576,
+          "spills_per_thread": 26,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 1,
+          "hash": "8276f5161c33ba8b61423f3a8cf0c8d61165d8ad8539625bf9122ba27f044259",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 24576,
+          "spills_per_thread": 4,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.3333333333333333,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "e6e793b8cea6acda5a337081ff5f00b5fb044f282e25e4d49077d278d5967d15",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 128,
+          "shared_memory_bytes_per_block": 24576,
+          "spills_per_thread": 136,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 1,
+          "hash": "646db0e747514dc8cce4c40a64fc1ae96221e54e7d43c97f9aafe7f0d0733cad",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 24576,
+          "spills_per_thread": 4,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.125,
+          "derived_resident_blocks_per_sm": 3,
+          "hash": "9c2612654cd9dd55722687a00b1edd41fab9e984a5a34d78f883135ece6f3d3b",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 33024,
+          "spills_per_thread": 406,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.125,
+          "derived_resident_blocks_per_sm": 3,
+          "hash": "01a0f476a0b6cf419ddcaa71a2f1c9a8af60b3ccbc790f9356372e0c1e404cbf",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 128,
+          "shared_memory_bytes_per_block": 33024,
+          "spills_per_thread": 672,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.125,
+          "derived_resident_blocks_per_sm": 3,
+          "hash": "99ae27818b3326173724e1574a204cb081d655671af835693bfdecfe66d13244",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 33024,
+          "spills_per_thread": 438,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "c2f319fa7f3dd336fb8fa8a8b5ba19481e4c00f3eeb4a2ba7aba9e8f983ff945",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 33024,
+          "spills_per_thread": 102,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.25,
+          "derived_resident_blocks_per_sm": 3,
+          "hash": "6600a0df1c6f87fa2b977845cb243a0afbfc80d240853d7021d86fc137d4fc5e",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 128,
+          "shared_memory_bytes_per_block": 33024,
+          "spills_per_thread": 280,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "bbe04ce1cd23c814f6f24609456740d61225af669bb9d0acd628c075b80df0f6",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 33024,
+          "spills_per_thread": 94,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 1,
+          "hash": "490a28d16caaacf431f883b0c7bfe8e6e869e854520d5577b4542293e3cec75e",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 33024,
+          "spills_per_thread": 52,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.3333333333333333,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "33447562e8a3286bcccc8a2ceadc839b7c406c2fda7c5e0b516704de0808e4eb",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 128,
+          "shared_memory_bytes_per_block": 33024,
+          "spills_per_thread": 204,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 1,
+          "hash": "7f588a2c52d3ea4161e878960303d9549179f1abd05ecb54d443e3d6720bcc0e",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 33024,
+          "spills_per_thread": 52,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.08333333333333333,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "aac5156301a162056005adad93e6859886dba22ac9d5a47f16cbe5a2fdd16cd1",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 49664,
+          "spills_per_thread": 324,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.08333333333333333,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "00e85067aac0b749803b1e3ff8d84775977790899637cd5a0cff150be3776e41",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 128,
+          "shared_memory_bytes_per_block": 49664,
+          "spills_per_thread": 664,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.08333333333333333,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "6d119e9ad91681e49b1699d3b8de66a2fdddcd823c97da8a72466b440701e239",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 49664,
+          "spills_per_thread": 306,
+          "threads_per_block": 64,
+          "warps_per_block": 2
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "401a161ce3b4cb9290e449a4d1d1763d5820618531991f3d8951ed6c8f7d069b",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 49664,
+          "spills_per_thread": 82,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "0b5683d6d747d01b05ce54d4b691c2fdbb414fb3c480857d04d5ed27cb3f9943",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 128,
+          "shared_memory_bytes_per_block": 49664,
+          "spills_per_thread": 250,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "4bb0950be0246e962077bc3018585dff3379f3233f11a191da06dbb8dfce3ea2",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 49664,
+          "spills_per_thread": 78,
+          "threads_per_block": 128,
+          "warps_per_block": 4
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 1,
+          "hash": "7a1a99150a9043c71b2923ed2291fa1ba42732ea97ad378852d47dc7d9ac2175",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 49664,
+          "spills_per_thread": 46,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.3333333333333333,
+          "derived_resident_blocks_per_sm": 2,
+          "hash": "2d281d561d7d01fc499c22f3d5c58d0b7b9836b4c70fc723f4dc4b7c96515047",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 128,
+          "shared_memory_bytes_per_block": 49664,
+          "spills_per_thread": 194,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        },
+        {
+          "derived_occupancy": 0.16666666666666666,
+          "derived_resident_blocks_per_sm": 1,
+          "hash": "3be4aab1ffac2a518e3b8684d39f646da3009b9bb5a5921c43b1b89fef9e173c",
+          "name": "mamba3_siso_fwd_kernel",
+          "occupancy_method": "resource-limit estimate; ignores register allocation granularity and scheduler limits",
+          "registers_per_thread": 255,
+          "shared_memory_bytes_per_block": 49664,
+          "spills_per_thread": 46,
+          "threads_per_block": 256,
+          "warps_per_block": 8
+        }
+      ]
+    }
+  ],
+  "schema_version": 2,
+  "warning": "Launch timings/counts and Triton compiler register/spill/shared metadata are measured. Occupancy is derived. Hardware bandwidth/SFU counters are unavailable and remain null."
+}

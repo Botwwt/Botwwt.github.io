@@ -1,0 +1,25 @@
+{
+  "compute_capability": "8.6",
+  "driver_and_board": "NVIDIA GeForce RTX 3090, 580.105.08, 49152 MiB",
+  "gpu": "NVIDIA GeForce RTX 3090",
+  "gpu_total_memory_bytes": 50909085696,
+  "hostname": "autodl-container-skaz6cexrc-70aea542",
+  "max_threads_per_sm": 1536,
+  "ncu": "unavailable",
+  "nsys": "unavailable",
+  "os": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+  "python": "3.10.8",
+  "registers_per_sm": null,
+  "shared_memory_per_sm": null,
+  "sm_count": 82,
+  "source_commits": {
+    "mamba": "e9594ce1c732d97440f0332fdc43170a2294dbfa",
+    "recurrentgemma": "2efa84dac0e68e63547a27a18fa943c98f1c312e",
+    "rglru_triton": "sha256:44cf42bc45a5b3d77f1036e62bcfd60da75ac80939f43fd6a3b8f868f256f187",
+    "samu_triton": "sha256:c0345cef8aa2bd69e29a720652ac2dcef8f252a7fe0cc0c90a2bd4c0abfb4023"
+  },
+  "timestamp_utc": "2026-08-29T04:51:33Z",
+  "torch": "2.1.2+cu118",
+  "torch_cuda": "11.8",
+  "triton": "3.5.0"
+}
