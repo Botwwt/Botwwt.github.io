@@ -1,84 +1,76 @@
-# SAMU GPU benchmark methodology
+# SAMU vs official-source RG-LRU methodology
 
-## Questions
+## Scope
 
-The benchmark exists to measure implementation behavior, not to infer model quality. It asks:
+This benchmark measures inference implementation behavior on one RTX 3090. It asks:
 
-1. What is the cost of coherent SAMU control relative to a real gated recurrence under the same PyTorch execution strategy?
-2. When does a serial state-stationary recurrence lose to a time-parallel formulation?
-3. How much do phase factorization and control precomputation change wall-clock time?
-4. How does the best available official Mamba-3 implementation compare on supported native configurations?
+1. Can SAMU's two coherent token controls be mapped to a tighter GPU execution path than the pinned official RG-LRU source?
+2. Where does serial state-stationary execution cross over to chunk summary/prefix/replay?
+3. Which tested chunk size wins at short, medium, and long sequence lengths?
+4. Does a single-launch SAMU decode path reduce total one-token update latency?
 
-## Tracks
+It does not measure model quality or training/backward performance.
 
-### Track A — best available implementation
+## Compared implementations
 
-- SAMU: fastest measured implementation in this repository, named precisely.
-- RG-LRU: the best implementation actually available in the pinned official RecurrentGemma source. In this environment that is an official-source PyTorch serial reference, labelled exactly that way; it is not presented as a production kernel.
-- Mamba-3: official `state-spaces/mamba` source snapshot. Import/build/runtime failures are recorded as `unsupported` with the failure reason.
-- Mamba-2: official `state-spaces/mamba` source snapshot. Its fused forward requires `causal-conv1d`; the missing/failed extension is retained as `unsupported`, never substituted with a simplified competitor.
+- **SAMU:** custom Triton inference kernels in `benchmark/triton_samu.py`. Prefill uses one packed BF16 projection followed by either serial recurrence or three-stage chunk execution. Decode fuses write projection, controller projection, bounded control, transition reconstruction, and state update into one launch.
+- **RG-LRU:** the unmodified `RGLRU` layer from Google DeepMind RecurrentGemma commit `2efa84dac0e68e63547a27a18fa943c98f1c312e`. Its public PyTorch `rnn_scan` uses a Python sequence loop for `L>1` and an optimized source branch for `L=1`.
 
-This track answers what is fastest among the implementations that actually ran. It does not isolate architectural cost.
+The comparison therefore answers which available execution path ran faster. It is not a claim against a hypothetical custom optimized RG-LRU kernel.
 
-### Track B — architectural apples-to-apples
+## Matching protocol
 
-Reference SAMU and reference RG-LRU recurrence cores use the same PyTorch version, device, dtype, timing harness, input layout, synchronization, and scan/serial execution class. Every result is labelled `reference`, not production.
+Every paired row uses:
 
-Mamba-3 is not replaced by a simplified recurrence in Track B. If the official block cannot be compared under the same core interface, the cell is `N/A`.
+- equal model/input width `d_model`;
+- `d_model = 2M`;
+- SAMU `M` complex FP32 modes = `2M` real FP32 state scalars;
+- RG-LRU width `2M` = `2M` real FP32 state scalars;
+- equal recurrent-state bytes per batch;
+- BF16 input/output and FP32 recurrent accumulation/cache.
 
-## Matching protocols
+The main point is `d=128`, `M=64`: both recurrent states use 128 FP32 scalars, or 512 bytes per batch. Parameter and arithmetic counts are recorded but are not asserted to be exactly equal.
 
-- `same_width`: equal input/model width; native state configurations are displayed explicitly.
-- `state_bytes`: SAMU `M` complex modes are matched against approximately `2M` real state scalars. Padding or residual mismatch is reported.
-- `parameter_approx`: write/transition parameter counts are made approximately equal and the residual difference is reported.
-- `best_native`: each official implementation uses a supported/recommended native configuration. This is not an architecture-isolating comparison.
+## Sweep
 
-## Workloads
+- Prefill length: `128, 512, 2048, 8192, 32768, 65536`, batch 1, `d=128`, `M=64`.
+- SAMU kernel crossover: serial and chunk sizes `8, 16, 32`.
+- Prefill batch: `1, 2, 4, 8, 16` at `L=512`.
+- Equal-state size: `M=64, 128, 256` with `d=2M` at `L=512`.
+- Decode batch: `1, 4, 16, 64`.
 
-- `forward`: full sequence forward only.
-- `forward_backward`: forward, scalar loss, backward.
-- `decode`: one recurrent update with persistent state tensors outside the timed setup.
-- `prefill`: full known sequence. Backend is recorded (`serial`, `tree_scan`, `official_optimized`, and so on).
+The measured dispatcher uses serial for `L<=256`, C16 for `256<L<=512`, and C32 for longer sequences on this GPU. These thresholds are not extrapolated to other devices.
 
-Backward-only is derived only when the harness can isolate a previously constructed graph without reusing an invalid graph. Otherwise it is `N/A`, never `forward_backward - forward` presented as a direct measurement.
+## Correctness and precision
+
+The exact inference policy uses one packed BF16 projection, BF16 outputs, and FP32 controller/recurrent calculations. Before timing, the runner compares:
+
+- Triton serial prefill against the packed PyTorch reference;
+- Triton C16 chunk prefill against the same reference;
+- fused Triton decode against a one-step reference with nonzero initial state.
+
+Maximum and mean absolute errors are stored in `benchmark_results_samu_rg/correctness.json` and copied into `summary.json`.
 
 ## Timing
 
-- CUDA events bracket only the timed GPU region.
-- Device synchronization occurs before and after a measurement series.
-- Warmup runs precede recorded runs.
-- Very short kernels are repeated inside one sample until the aggregate duration is measurable; `inner_iterations` is saved.
-- Raw samples are written after every completed configuration.
-- Aggregate fields: median, mean, p10, p90, p95, standard deviation, minimum, maximum, and sample count.
-- OOM, unsupported dtype/backend, dependency failure, and runtime failure are first-class rows.
+- The first call is synchronized and recorded as `compile_setup_seconds`, outside samples.
+- Five warmup calls precede measurements.
+- Synchronized CUDA events measure device latency.
+- SAMU uses 30 samples; RG-LRU uses 15 samples, or 7 for the two longest rows.
+- Decode uses 100 inner iterations per sample so sub-millisecond launch latency is measurable.
+- Every row stores all raw samples plus median, mean, p10, p90, p95, standard deviation, minimum, maximum, peak PyTorch allocation, and throughput.
+- Each row is atomically written immediately, so `--resume` is safe.
 
-## Precision
-
-- FP32 is the numerical reference/performance baseline.
-- BF16 is measured only for operations/backends that support it.
-- FP16 is optional and labelled separately.
-- Transcendental/control calculations may deliberately execute in FP32 while state/write storage uses a lower precision; this mixed-precision policy is recorded.
-
-## Memory and profiler fields
-
-- `peak_allocated_bytes` comes from PyTorch CUDA allocator counters for the current process. It is not total board memory.
-- `logical_bytes` is a formula-derived data-volume model and is explicitly not measured DRAM traffic.
-- `dram_bytes`, `l2_bytes`, occupancy, registers/thread, Tensor Core utilization, SFU utilization, and SM utilization are `N/A` unless a profiler actually reports them.
-- Torch profiler kernel tables are stored when available and identified as Torch-profiler observations.
-
-## Sweep policy
-
-`quick` covers representative shapes and completes in minutes. `full` enumerates the requested batch, sequence, state, dtype, workload, and design grids with sane memory guards, resume, and per-result persistence. Configurations that exceed a conservative allocation estimate are written as `skipped_memory_guard`; they are not silently deleted.
+`peak_allocated_bytes` is a PyTorch allocator observation, not total board memory. No DRAM/L2/occupancy/register/Tensor Core/SFU/SM counter is claimed because Nsight Compute was unavailable.
 
 ## Reproduction
 
 ```bash
-cd SAMU_GPU
-python benchmark/run_benchmarks.py --preset quick --output benchmark_results \
-  --mamba-source /path/to/mamba --rglru-source /path/to/recurrentgemma --resume
-python benchmark/run_benchmarks.py --preset full --output benchmark_results \
-  --mamba-source /path/to/mamba --rglru-source /path/to/recurrentgemma --resume
-python benchmark/aggregate.py benchmark_results
+cd SAMU_GPU/benchmark
+python run_samu_vs_rglru.py \
+  --output ../benchmark_results_samu_rg \
+  --rglru-source /path/to/recurrentgemma \
+  --resume
 ```
 
-The exact commands actually used are also stored in `benchmark_results/run_manifest.json`.
+The exact executed command, environment, source hashes, raw rows, CSV, and JSON are committed with the site.

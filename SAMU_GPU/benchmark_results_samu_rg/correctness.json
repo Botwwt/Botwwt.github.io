@@ -1,0 +1,9 @@
+{
+  "chunk16_max_abs": 0.00390625,
+  "chunk16_mean_abs": 1.8763989828585181e-07,
+  "decode_max_abs": 0.0078125,
+  "decode_mean_abs": 0.0001958608627319336,
+  "reference_policy": "one packed BF16 projection; FP32 bounded control and complex recurrence",
+  "serial_max_abs": 0.00390625,
+  "serial_mean_abs": 2.023082288360456e-07
+}

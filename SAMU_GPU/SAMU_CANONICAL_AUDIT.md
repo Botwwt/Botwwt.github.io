@@ -16,9 +16,8 @@ The SAMU research extension is an untracked extension on top of RTU repository c
 | formal-task `models.py` | `2a92b2fca69bf8e3349a588da8956ee83aaa56616c9b4a72af207be21dd05d4a` |
 | formal-task `engineering/scan.py` | `410fc6d4610f4cd4a3f31714f1d242440f29570cdc7e8e9cdff79b2f99bab061` |
 
-External source snapshots used for comparison:
+External source snapshot used by the current focused comparison:
 
-- official `state-spaces/mamba`: `e9594ce1c732d97440f0332fdc43170a2294dbfa`
 - official `google-deepmind/recurrentgemma`: `2efa84dac0e68e63547a27a18fa943c98f1c312e`
 
 ## 1. Current recurrence
@@ -119,16 +118,24 @@ The previous page already corrected several common errors and the rebuild must p
 - logical global-memory traffic is not profiler-measured DRAM traffic;
 - register residency does not persist across ordinary decode kernel launches.
 
-## 10. GPU claims that remain proposals
+## 10. Current Triton engineering path and remaining proposals
 
-The following were not found as profiler-validated production kernels in the SAMU repository:
+The website engineering branch now contains audited inference experiments in `benchmark/triton_samu.py`:
 
-- a mode-parallel custom SAMU CUDA/Triton decode kernel;
-- per-warp or CTA-shared coherent-control reconstruction;
+- one packed BF16 projection followed by FP32 serial recurrence;
+- chunk summary, exclusive prefix, and local replay kernels with C8/C16/C32 variants;
+- one-launch decode that fuses write/controller dot products, coherent-control reconstruction, transition, and state update;
+- an RTX 3090 dispatch policy selected from measured crossover points.
+
+These are custom research kernels, not a claim of framework-integrated production readiness. The following remain proposals or missing evidence:
+
 - a compressed `(C,G,D,q)` training scan kernel;
-- time × mode custom tiling;
+- backward/training kernels;
+- configurable time × mode tiling with profiler-validated occupancy;
 - persistent multi-step decode;
-- dense-write / recurrence fusion;
-- any measured claim that SAMU is faster than RG-LRU, Mamba-2, or Mamba-3.
+- prefill GEMM/recurrence fusion;
+- Nsight Compute counters for SFU, registers, occupancy, DRAM and L2;
+- a same-maturity custom RG-LRU kernel comparison;
+- model-quality evidence for the coherent-control constraint.
 
-The benchmark harness added by the website rebuild is an engineering experiment. Its results must keep backend, framework, matching protocol, and evidence class visible.
+The measured claim supported here is narrower: on the recorded RTX 3090 shapes, the SAMU Triton inference path has lower CUDA-event latency than the pinned official-source PyTorch RG-LRU path. Backend, framework, equal-state protocol, and the absence of a production RG-LRU kernel remain visible beside that result.

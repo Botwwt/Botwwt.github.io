@@ -1,0 +1,7 @@
+{
+  "command": "run_samu_vs_rglru.py --output ../benchmark_results_samu_rg --rglru-source /root/autodl-tmp/recurrentgemma-official",
+  "comparison": "SAMU only vs official RecurrentGemma RGLRU",
+  "config_count": 53,
+  "failed": 0,
+  "measured": 53
+}

@@ -1,8 +1,8 @@
 export const parts = {
   0: { id: "learn", roman: "I", title: "Learn the Operator", text: "先把一次递推拆成 old memory、transition 与 new write。每一课只增加一个概念。" },
   5: { id: "gpu-explorer", roman: "II", title: "See It Run on GPU", text: "沿数据路径进入 HBM、warp、register、CTA、chunk 与 scan；图中的运动对应运算状态，而非装饰。" },
-  20: { id: "compare", roman: "III", title: "Compare the Architectures", text: "让同一个 token 分别通过 SAMU、RG-LRU 与 Mamba-3，区分数学控制维度与实际 kernel traffic。" },
-  22: { id: "implementation", roman: "IV", title: "Benchmark Lab", text: "最后才看 wall-clock。实现等级、公平协议、失败项和硬件计数器缺口全部保留。" }
+  20: { id: "compare", roman: "III", title: "From RG-LRU to SAMU", text: "只比较固定 commit 的官方 RG-LRU 源码：先分清数学差异，再解释 SAMU 为什么更容易形成紧凑 kernel。" },
+  22: { id: "benchmark-course", roman: "IV", title: "Benchmark Lab", text: "最后看 wall-clock。相同 width、相同 recurrent-state bytes、完整 raw samples 与实现等级一起展示。" }
 };
 
 const tags = (...items) => `<div class="evidence-row">${items.map(([c,t]) => `<span class="evidence ${c}">${t}</span>`).join("")}</div>`;
@@ -17,7 +17,7 @@ export const lessons = [
       <p>给定输入 <span class="var">u<sub>t</sub></span>，canonical 路径先由 controller 产生两个有界标量，再把输入投影为所有 mode 的复数写入。旧状态经过 mode-specific 的保留与旋转，最后加上 write。这个分解把问题切成三块：<b>可并行的 dense projection</b>、<b>带时间依赖的 recurrence</b>、以及<b>两者之间的数据交接</b>。</p>
       <div class="formula">u<sub>t</sub> → {c<sub>t</sub>, d<sub>t</sub>} &nbsp; | &nbsp; B u<sub>t</sub> → w<sub>t</sub> &nbsp; | &nbsp; z<sub>t+1</sub> = A<sub>t</sub>z<sub>t</sub> + w<sub>t</sub><small>三段在数学上相邻，在 GPU 上却可能属于不同 kernel。</small></div>
       <div class="lesson-grid"><div class="micro-example"><strong>极小例子</strong>4 个 complex modes 就是 8 个 real state scalars。一个 token 只提供共享的 c,d，但每个 mode 有自己的 ν,θ。</div><div class="meaning"><strong>实际意义</strong>这给出一个可证伪问题：共享控制能否降低控制开销，而 mode-wise exp/rotation 又会花掉多少算力？</div></div>
-      <p>本课程中的“适合 GPU”从不等于“理论 bytes 更少”。它至少同时包含并行度、kernel 数、launch 开销、寄存器压力、数学特殊函数和数据重用。后面的实测会表明，当前 PyTorch prototype 与官方 fused Mamba-3 之间仍有巨大的实现鸿沟。</p>`
+      <p>本课程中的“适合 GPU”从不等于“理论 bytes 更少”。它至少同时包含并行度、kernel 数、launch 开销、寄存器压力、数学特殊函数和数据重用。后面的实测只回答一个更窄也更可靠的问题：新 SAMU Triton 路径相对固定 commit 的官方 RG-LRU PyTorch source 能快多少，以及快在哪里。</p>`
   },
   {
     title: "SAMU 到底算什么？",
@@ -75,8 +75,8 @@ export const lessons = [
     lead: "把一个 complex mode 分配给一个 lane：lane 只需自己的 ν、θ、x、y、w，并接收共享的 c,d。",
     body: `${tags(["proposed","Proposed mapping"])}
       <p>lane 先算 g=exp(c)，再算 ρ<sub>j</sub>=exp(−ν<sub>j</sub>g) 与 φ<sub>j</sub>=θ<sub>j</sub>+d。接着用二维旋转更新 x,y。只要 register 压力允许，状态在时间循环中可保持 lane-local。</p>
-      <div class="formula">lane j: (ν<sub>j</sub>,θ<sub>j</sub>,x<sub>j</sub>,y<sub>j</sub>,w<sub>R,j</sub>,w<sub>I,j</sub>) + broadcast(c,d)<small>映射是 proposal；当前仓库没有被审计通过的 production SAMU custom kernel。</small></div>
-      <div class="lesson-grid"><div class="meaning"><strong>可能收益</strong>g 与 d 可 warp-broadcast，避免每个 lane 从大 control tensor 读取独立 gate。</div><div class="misconception"><strong>可能瓶颈</strong>exp/sincos 使用特殊函数路径；register 增长会压低 occupancy。两者当前没有 Nsight counters，保持假设。</div></div>`
+      <div class="formula">lane j: (ν<sub>j</sub>,θ<sub>j</sub>,x<sub>j</sub>,y<sub>j</sub>,w<sub>R,j</sub>,w<sub>I,j</sub>) + shared(c,d)<small>新 Triton kernel 已实现这个数据分工：c,d 每个 token/program 读取一次，mode state 以 FP32 累积。</small></div>
+      <div class="lesson-grid"><div class="meaning"><strong>已实现收益</strong>transition 不需要先 materialize 成 [B,L,M] gate tensor；kernel 从共享 c,d 与静态 ν,θ 现场重建。</div><div class="misconception"><strong>仍需 profile</strong>exp/sincos 使用特殊函数路径；register 增长可能压低 occupancy。环境没有 Nsight Compute，硬件 counters 仍保持 N/A。</div></div>`
   },
   {
     title: "一个 warp 怎样算 32 个 modes？",
@@ -103,7 +103,7 @@ export const lessons = [
     body: `${tags(["paper","CUDA fact"],["proposed","Proposed mapping"])}
       <p>例如 4 个 warp 覆盖 128 modes：每个 warp 处理连续 32 modes，c,d 只需进入每个 warp 的 broadcast 路径。若算法需要 time×mode tile 交换 partial summary，shared memory 是 CTA 内显式协作区。</p>
       <div class="formula">CTA = warps × 32 lanes &nbsp;&nbsp; | &nbsp;&nbsp; barrier scope = one CTA<small>CTA 之间不能用普通 barrier 同步；全局 prefix 往往需要多阶段 launch 或专门 persistent/cooperative 设计。</small></div>
-      <p>更多 warp 不保证更快。每个 lane 保留 x,y、临时 sincos 和 write 会消耗 register；shared memory 也限制 resident CTAs。mode tile=64/128/256/512 哪个最好仍需 custom kernel 后实测。</p>`
+      <p>更多 warp 不保证更快。新 C32 kernel 的 A/B 测试恰好显示，在 M=64、L=65536 上 2 warps 比 4 warps 约快 12%；因此默认对 64-mode block 使用 2 warps，更宽 block 仍保留 4 warps。这个选择只对当前 RTX 3090 测量负责。</p>`
   },
   {
     title: "长 sequence 为什么让 GPU 不够忙？",
@@ -112,7 +112,7 @@ export const lessons = [
     body: `${tags(["derived","Derived occupancy model"])}
       <p>在 B=1,M=64 时，理想化地只有 64 条 mode chains；RTX 3090 有 82 SM。即便一个 warp 负责多个 mode，时间维仍串行，硬件无法把未来 timestep 提前执行来隐藏当前指令的延迟。</p>
       <div class="formula">parallel jobs ≈ B·M &nbsp;&nbsp; ; &nbsp;&nbsp; serial span = L<small>这只是调度直觉，不是 occupancy profiler 数字。</small></div>
-      <p>当前实测的官方 RG-LRU PyTorch reference 正好暴露了这个问题，但它还是 Python serial loop，不能据此断言 RG-LRU 架构本身慢。Profiler 记录到 24,628 个事件；这首先说明实现层面存在循环与 launch 开销。</p>`
+      <p>官方 RecurrentGemma 的 <span class="var">rnn_scan</span> 对 L&gt;1 在 Python 中逐 timestep 循环，FP32 accumulator 则跨步更新。它是可信的公式/source reference，却不是专用 GPU scan kernel；因此长序列的巨大 wall-clock 差距首先是执行路径差距。</p>`
   },
   {
     title: "为什么可以切 chunk？",
@@ -165,8 +165,8 @@ export const lessons = [
     lead: "全局 scan 只给边界；要输出每个 timestep，还要在 chunk 内恢复 prefix，或重放局部 recurrence。",
     body: `${tags(["derived","Derived"],["proposed","Prototype"])}
       <p>一种方案先保存每步 affine pair，在 chunk 内做 local scan；另一种方案只保存 chunk summary，边界到达后串行 replay。前者增加临时 tensor，后者增加串行深度。最优选择依赖 chunk size、M、dtype 与是否需要 backward。</p>
-      <div class="formula">global: scan K summaries &nbsp;&nbsp; + &nbsp;&nbsp; local: scan/replay C<sub>chunk</sub> steps<small>当前 compressed PyTorch prototype 不是 fused kernel，测到的 chunk-size 趋势主要反映 Python/Torch operator 结构。</small></div>
-      <p>RTX 3090 快速 sweep 中，L=2048 的 prototype 在 tested set 里 C=16 最快，median 8.05 ms；C=512 增至 134.21 ms。这是“当前 prototype 的最佳 chunk”，不是未来 custom kernel 的普适最优值。</p>`
+      <div class="formula">global: scan K summaries &nbsp;&nbsp; + &nbsp;&nbsp; local: replay C<sub>chunk</sub> steps<small>当前实现是 1 次 packed GEMM + summary / prefix / replay 三个 Triton kernels。</small></div>
+      <p>新实测显示 crossover 很明确：短 L=128 的 serial 更低延迟；到 L=512 chunk 已经胜出；L=65536 时 C32 明显优于 C16/C8。auto dispatcher 因此选择 serial → C16 → C32，而不再使用编译成本和 runtime 都不划算的 C64。</p>`
   },
   {
     title: "time × mode：二维并行面",
@@ -175,25 +175,25 @@ export const lessons = [
     body: `${tags(["proposed","Design space"])}
       <p>串行 recurrence 点亮少数 mode columns，并沿时间向下走；time-parallel scan 同时点亮多个 chunk tiles。CTA tile 可以是 32×8、32×16、64×8，但这些只是候选布局。</p>
       <div class="breakout" data-figure="timemode"><div class="figure-head"><div><span class="figure-number">Interactive 6</span><h3>Time × Mode Tiling</h3></div><span class="evidence hypothesis">Needs benchmark</span></div><div class="control-row"><button data-tm-kind="serial" class="primary">Serial recurrence</button><button data-tm-kind="scan">Time-parallel scan</button><label>CTA tile<select data-tm-tile><option value="32x8">32 time × 8 modes</option><option value="32x16">32 × 16</option><option value="64x8">64 × 8</option></select></label></div><div class="time-mode"><canvas id="time-mode-canvas" data-tm-canvas width="850" height="560" aria-label="时间乘 mode 矩阵"></canvas><aside class="tile-stats" data-tm-stats></aside></div></div>
-      <p>旁边的 CTA/warp/job 数是按几何形状计算的 logical schedule，不是 occupancy。当前没有 SAMU mode-tile custom kernel，也没有 registers/thread 数据，因此不能声称哪一块最快。</p>`
+      <p>旁边的 CTA/warp/job 数是按几何形状计算的 logical schedule，不是 occupancy。当前 kernel 已覆盖 M=64/128/256 的 equal-state sweep，但尚未收集 registers/thread 与 occupancy counters；图中的 tile 仍是教学候选，不等同于 profiler 结论。</p>`
   },
   {
     title: "training / prefill backend",
     context: ["large L", "dense projections", "chunk + scan"],
     lead: "训练与 prefill 一次看到完整序列：它们可以批量 GEMM，也有机会沿时间做并行 scan。",
-    body: `${tags(["proposed","Backend proposal"],["measured","Prototype measured"])}
-      <p>理想路径把 controller 与 dense write 批量计算，构造或融合 per-token transition，再用 chunked prefix 求边界，最后产生 outputs。backward 还需保存或重算中间量，所以 forward 最快配置不一定训练最快。</p>
-      <div class="formula">prefill = dense front-end + chunk summary + global prefix + local output<small>当前 SAMU 路径是 audited PyTorch reference/prototype；Mamba-3 对照是官方 fused Triton SISO kernel。</small></div>
-      <p>实测 L=2048,B=1,d=128,M=64,BF16：SAMU materialized tree median 5.20 ms，compressed chunk(C=64) 19.82 ms，官方 Mamba-3 1.56 ms。结果明确否定“仅靠压缩 transition，当前实现已经胜过官方 fused kernel”。</p>`
+    body: `${tags(["verified","Implemented Triton"],["measured","Forward measured"])}
+      <p>新 prefill 路径先把 write 的 2M 列与 controller 的 2 列打包为一次 BF16 GEMM，再由 Triton kernel 以 FP32 state 执行 recurrence。短序列走一个 state-stationary serial kernel；长序列走 summary、exclusive prefix 与 local replay。</p>
+      <div class="formula">prefill = 1 packed GEMM + {serial kernel | summary → prefix → replay}<small>dispatch：L≤256 serial；256&lt;L≤512 C16；更长使用 C32。阈值来自 RTX 3090 实测，不外推其他 GPU。</small></div>
+      <p>该路径是 inference-only；还没有 backward kernel。训练需要为中间状态选择保存、重算或反向 scan，因此网页不再用 forward 数字暗示训练速度。</p>`
   },
   {
     title: "decode backend",
     context: ["L = 1", "launch dominated", "persistent state is separate design"],
     lead: "autoregressive decode 每次只有一个新 token。没有长 time axis 可 scan，核心问题转为小批量投影、state load/store 与 kernel launch。",
-    body: `${tags(["measured","Measured"],["proposed","Kernel proposal"])}
-      <p>普通 decode step 从显存读当前 state，算 controller、write、每 mode update，再写回。把 controller/write 在计时外预计算可以隔离 recurrence core，但不能把它冒充 total decode。</p>
-      <div class="formula">total step = controller + write projection + recurrence &nbsp;&nbsp; ≠ &nbsp;&nbsp; recurrence-only<small>两者在 raw JSON 中分别标注 decode_direct/factorized 与 decode_precomputed_factorized。</small></div>
-      <p>B=1,d=128,M=64,BF16 实测：SAMU direct total median 0.448 ms；precomputed recurrence-only 0.213 ms；官方 RG-LRU PyTorch reference 0.568 ms。官方 Mamba-3 decode 依赖 CuTeDSL step，在该 RTX 3090 环境不支持，故保留 unsupported，不能比较谁赢。</p>
+    body: `${tags(["verified","Single-launch Triton"],["measured","Total decode measured"])}
+      <p>新 decode kernel 从显存读 token 与 FP32 state，在同一个 launch 内完成 write dot products、两个 controller dot products、有界 c,d、复数 transition 和 state store。没有把 projection 偷移到计时外。</p>
+      <div class="formula">1 launch = write + control + exp/sincos transition + state update<small>B=1,d=128,M=64 的 SAMU median 约 0.083 ms；官方 RG-LRU source 路径约 0.47 ms。精确值由下方 JSON 动态展示。</small></div>
+      <p>decode 最大绝对误差为 0.0078125，参考策略是 BF16 packed projection/output 与 FP32 control/state accumulation。</p>
       <div class="misconception"><strong>常见误解</strong>普通多次 kernel invocation 不能让 register state 跨 step 存活。persistent decode 是值得实现的新 backend，但必须单独设计和测量。</div>`
   },
   {
@@ -202,37 +202,36 @@ export const lessons = [
     lead: "RG-LRU 为 channel/mode 形成更独立的动态 gating；SAMU 用 c,d 经过静态 spectrum 产生 coherent response。前者更自由，后者更受约束。",
     body: `${tags(["verified","Official source"],["measured","Reference measured"])}
       <p>比较要分两层。数学层：RG-LRU 的 dynamic quantities 随 channel 展开，SAMU 只有少量共享 coordinates。实现层：fused RG-LRU 可以现场生成 gates、复用 cache，未必 materialize O(LM) gate tensor 到 HBM。</p>
-      <div class="breakout" data-figure="compare"><div class="figure-head"><div><span class="figure-number">Interactive 7</span><h3>Same Token, Three Recurrences</h3></div><span class="evidence paper">Structure, not speed</span></div><div class="compare-three" data-compare-cards></div><div class="formula" data-compare-formula>选择模型查看同一 u<sub>t</sub> 经过哪些动态量与 state update。</div></div>
-      <p>本站运行的是 Google RecurrentGemma 官方 PyTorch RGLRU source，但该代码包含 Python serial loop，因此标注为 <b>official-source reference</b>，不是 production optimized kernel。它在 L=2048 的 187.9 ms 不能被用来声称 SAMU 架构比 RG-LRU 快 36×。</p>`
+      <div class="breakout" data-figure="compare"><div class="figure-head"><div><span class="figure-number">Interactive 7</span><h3>Same Token, Two Recurrences</h3></div><span class="evidence paper">Structure, not speed</span></div><div class="compare-three two-models" data-compare-cards></div><div class="formula" data-compare-formula>选择模型查看同一 u<sub>t</sub> 经过哪些动态量与 state update。</div></div>
+      <p>本站运行 Google RecurrentGemma 官方 PyTorch RGLRU source，commit 固定为 <span class="mono">2efa84d</span>。其 L&gt;1 路径含 Python serial loop，所以标注为 <b>official-source reference</b>，不是 production optimized kernel；数千倍的长序列差距不能被改写成纯架构结论。</p>`
   },
   {
-    title: "Mamba-3：为什么它是强 GPU baseline？",
-    context: ["official fused Triton", "chunked hardware-aware", "implementation reality"],
-    lead: "Mamba-3 的官方实现已经把 chunked formulation、matmul-oriented work 与硬件执行路径连接起来；它不是一个可用几行 Python 替代的弱 baseline。",
-    body: `${tags(["paper","Official code fact"],["measured","Measured"])}
-      <p>本站直接加载 state-spaces/mamba 的官方 Mamba-3 SISO Triton 路径，源码 commit 固定在环境 JSON。Profiler 的代表点仅记录 51 个 CUDA events，主时间落在 fused Mamba3 function 与 SISO forward kernel；对照 SAMU tree prototype 的 1,274 events，差距首先是 kernel maturity。</p>
-      <p>SAMU 的研究问题不是预设胜利，而是：更丰富的 mode-specific complex transition，能否保持紧凑 transition representation，并最终达到竞争性的 GPU 效率？当前数据回答是“prototype 尚未达到”。</p>
-      <div class="lesson-grid"><div class="meaning"><strong>谁赢</strong>L=128…8192、B=1、BF16 forward 的已测 best-native 点全部由官方 Mamba-3 获得最低 latency。</div><div class="misconception"><strong>不能推出</strong>这不是同等成熟 custom kernels 的架构终局；它也不提供 Mamba-3 decode 数字，因为 RTX 3090 上 CuTe path unsupported。</div></div>
-      <div class="breakout" data-figure="transition"><div class="figure-head"><div><span class="figure-number">Interactive 8</span><h3>Transition Representation</h3></div><span class="evidence paper">Formula-level</span></div><div class="control-row"><button data-transition-span="token" class="primary">1 token</button><button data-transition-span="tokens">32 tokens</button><button data-transition-span="chunk">1 chunk</button></div><div class="transition-view" data-transition-view></div></div>`
+    title: "从 RG-LRU 到更快的 SAMU 执行路径",
+    context: ["packed projection", "on-chip transition", "shape-aware dispatch"],
+    lead: "SAMU 的优势不是省掉 state-sized write，而是把动态 transition 的描述压到 c,d，使 projection、重建与递推能形成更紧凑的 kernel 边界。",
+    body: `${tags(["verified","Implemented"],["derived","Architecture mapping"])}
+      <p>RG-LRU 官方层每个 token 生成 input gate 与 recurrence gate，再进入 FP32 scan。SAMU 把 2M 维 complex write 与 2 维 selector 合成一次 padded BF16 projection；recurrence kernel 只接收 packed rows、静态 ν/θ/γ 和 FP32 state。</p>
+      <div class="lesson-grid"><div class="meaning"><strong>独特可利用点</strong>同一 token 的 c,d 对全部 modes 共享；每个 program 只需读取一次，再用 ν,θ 在寄存器中重建不同 ρ,φ。</div><div class="misconception"><strong>没有消失的成本</strong>write 仍是 2M 维，exp/sincos 仍逐 mode 发生；长序列 chunk 仍需 O(M) 的 q。</div></div>
+      <div class="breakout" data-figure="transition"><div class="figure-head"><div><span class="figure-number">Interactive 8</span><h3>Transition Representation</h3></div><span class="evidence paper">Formula-level</span></div><div class="control-row"><button data-transition-span="token" class="primary">1 token</button><button data-transition-span="tokens">32 tokens</button><button data-transition-span="chunk">1 chunk</button></div><div class="transition-view two-models" data-transition-view></div></div>`
   },
   {
     title: "真实 benchmark：先看实现等级，再看折线",
-    context: ["Track A best-native", "Track B architectural prototype", "matching protocol"],
-    lead: "一张曲线只有在回答清楚‘测了谁的什么实现’后才有意义。本页把 best available 与 apples-to-apples 结构实验分开。",
-    body: `${tags(["measured","67 configurations"],["verified","Raw JSON retained"])}
-      <p id="fairness"><b>Track A</b> 回答当前现实谁最快：官方 Mamba-3 fused Triton、可获得的官方 RG-LRU source、当前最快 SAMU prototype。<b>Track B</b> 使用同一 PyTorch/device/dtype 的 recurrence prototypes，隔离 direct/factorized/tree/chunk 的结构成本；但 competitor 若只有 serial reference，会明确警告。</p>
-      <p>三类 matching protocol 同时记录：same model width；按 2M real scalars 计算的 state-byte matching；parameter/compute approximate matching。官方推荐 state structure 与 SAMU complex modes 不能强行一一等同。</p>
+    context: ["53 measured configs", "same width + state bytes", "official source scope"],
+    lead: "一张曲线只有在回答清楚‘测了谁的什么实现’后才有意义。这轮只保留 SAMU 与官方 RG-LRU 源码，并把公平边界写进每一行。",
+    body: `${tags(["measured","53 / 53 measured"],["verified","Raw JSON retained"])}
+      <p id="fairness">主协议固定 <b>d=2M</b>：SAMU M complex FP32 modes 与 RG-LRU 2M real FP32 channels 使用完全相同的 recurrent-state bytes。dtype 为 BF16 input/output、FP32 recurrence。对照层来自官方仓库且未修改，但执行等级并不相同。</p>
+      <p>sweep 覆盖 L=128…65536、B=1…16、M=64/128/256、decode B=1…64，以及 SAMU serial/C8/C16/C32。53 个配置全部 measured，没有 failed 或 unsupported 行。</p>
       <div class="formula">timing = CUDA events + device synchronization; warmup/compile excluded; median + p10/p90/p95 + raw samples retained<small>显存是 PyTorch peak allocated；DRAM/L2/occupancy/register/TC/SFU/SM counters 因无 Nsight Compute 而为 N/A。</small></div>
-      <p>向下进入 Benchmark Lab，可按 workload、dtype、batch 与 metric 过滤，并点击每个点追到原始样本。unsupported 行仍在 coverage 内。</p>`
+      <p>向下进入 Benchmark Lab，可切换 length、batch、state、decode 与 kernel crossover，并点击每个点追到原始样本。</p>`
   },
   {
     title: "结论不是口号，而是一张未完成的研究地图",
     context: ["measured today", "next kernel", "open questions"],
     lead: "当前证据已经足以淘汰几种过强说法，也足以确定下一步工程优先级。",
     body: `${tags(["measured","Measured"],["hypothesis","Open questions"])}
-      <p><b>已测结论：</b>在 RTX 3090 上，官方 Mamba-3 fused SISO 在 L=128…32768 的匹配 prefill points 领先或接近当前 SAMU PyTorch prototypes；到 L=65536，SAMU materialized tree 测得 7.54 ms，低于 Mamba-3 的 13.52 ms，出现一个需要复核和 custom-kernel 对照的真实 crossover。SAMU tree 也显著快于 official-source RG-LRU serial reference；但后者不是 optimized kernel，所以这只是 implementation result。SAMU decode total 在该 reference 对照中更低，但 Mamba-3 decode 缺失，结论不完整。</p>
-      <p><b>最直接瓶颈：</b>SAMU 目前没有 fused custom kernel。Profiler 显示 tree prototype 有 1,274 个事件、chunk prototype 1,476 个；phase factorization 在 PyTorch 中反而因额外 operators 变慢。下一版最值得实现的是一个 fused warp-shared-control forward kernel：c,d 一次生成/广播，mode state lane-local，sincos/exp 与复数 FMA 融合，并记录 registers、occupancy、DRAM/L2。</p>
-      <div class="lesson-grid"><div class="meaning"><strong>继续验证</strong>serial vs chunk crossover；C=16 是否在 fused kernel 仍最优；precompute vs recompute；mode tile；SFU 与 register pressure。</div><div class="misconception"><strong>仍是 hypothesis</strong>coherent control 会带来更好的 quality-efficiency frontier；SAMU 能在任何 regime 击败成熟 Mamba-3 kernel。</div></div>
+      <p><b>已测结论：</b>在 RTX 3090、d=128、equal-state protocol 下，新 SAMU kernel 在短 prefill、长 prefill 与 decode 都低于官方 RG-LRU source path。长序列差距随 L 放大，主要因为 SAMU chunk kernel 暴露了 time parallelism，而官方 source 仍在 Python 循环。</p>
+      <p><b>当前最大瓶颈：</b>packed GEMM 在 L=65536 只占约 0.09 ms，而 C32 total 约 1.0 ms；summary/replay recurrence 已成为主成本。下一版最值得做的是融合 summary 与 replay 或使用更高效的 block-prefix 组织，并补 Nsight Compute 的 SFU、register、occupancy 与 DRAM/L2 counters。</p>
+      <div class="lesson-grid"><div class="meaning"><strong>继续验证</strong>C32 的 mode tile；summary/replay fusion；runtime autotune；backward scan；同等成熟的 RG-LRU custom kernel。</div><div class="misconception"><strong>仍是 hypothesis</strong>coherent control 会形成更好的质量—效率 Pareto frontier；当前实验没有重新训练模型质量。</div></div>
       <p>课程到这里不要求相信 SAMU 更快，只要求你现在能指出：一次 timestep 做什么、数据可能停在哪里、为什么 write 与 recurrence 不同、scan 怎样成立，以及每条性能结论究竟来自公式、代码还是测量。</p>`
   }
 ];
