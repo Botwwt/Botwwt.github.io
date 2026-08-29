@@ -52,11 +52,12 @@ function pairedPoint(workload, length, batch = 1) {
 function ratioCard(label, samu, other, otherLabel, caveat = "") {
   if (!samu || !other) return `<div class="headline-result"><span class="metric-label">${esc(label)}</span><strong class="metric">N/A</strong><p>缺少匹配的实测点。</p></div>`;
   const ratio = other.median_ms / samu.median_ms;
+  const tied = Math.abs(other.median_ms - samu.median_ms) < 1e-12;
   const samuWins = ratio >= 1;
-  return `<div class="headline-result ${samuWins ? "winner-samu" : "winner-other"}">
+  return `<div class="headline-result ${tied ? "" : samuWins ? "winner-samu" : "winner-other"}">
     <span class="metric-label">${esc(label)}</span>
-    <strong class="metric">${fmt(samuWins ? ratio : 1 / ratio, 2)}×</strong>
-    <p>${samuWins ? "SAMU 更快" : `${esc(otherLabel)} 更快`}<br>SAMU ${fmt(samu.median_ms, 4)} ms · ${esc(otherLabel)} ${fmt(other.median_ms, 4)} ms${caveat ? `<br><small>${esc(caveat)}</small>` : ""}</p>
+    <strong class="metric">${tied ? "TIE" : `${fmt(samuWins ? ratio : 1 / ratio, 2)}×`}</strong>
+    <p>${tied ? "事件分辨率内持平" : samuWins ? "SAMU 更快" : `${esc(otherLabel)} 更快`}<br>SAMU ${fmt(samu.median_ms, 4)} ms · ${esc(otherLabel)} ${fmt(other.median_ms, 4)} ms${caveat ? `<br><small>${esc(caveat)}</small>` : ""}</p>
   </div>`;
 }
 
@@ -191,8 +192,9 @@ function renderChart() {
 
 function renderDetail(row, metric) {
   if (row.status === "derived") {
+    const tied = Math.abs(row.speedup - 1) < 1e-12;
     const winner = row.speedup >= 1 ? "SAMU" : row.otherLabel;
-    $("#benchmark-detail").innerHTML = `<p class="aside-title">Pairwise ratio</p><span class="evidence derived">Derived</span><strong class="big">${metricLabel(row.speedup, "speedup")}</strong><p>${esc(winner)} 更快；比值为 ${esc(row.otherLabel)} median / SAMU median。</p><dl><dt>SAMU</dt><dd>${fmt(row.samu.median_ms, 4)} ms</dd><dt>${esc(row.otherLabel)}</dt><dd>${fmt(row.other.median_ms, 4)} ms</dd></dl>`;
+    $("#benchmark-detail").innerHTML = `<p class="aside-title">Pairwise ratio</p><span class="evidence derived">Derived</span><strong class="big">${metricLabel(row.speedup, "speedup")}</strong><p>${tied ? "事件分辨率内持平" : `${esc(winner)} 更快`}；比值为 ${esc(row.otherLabel)} median / SAMU median。</p><dl><dt>SAMU</dt><dd>${fmt(row.samu.median_ms, 4)} ms</dd><dt>${esc(row.otherLabel)}</dt><dd>${fmt(row.other.median_ms, 4)} ms</dd></dl>`;
     return;
   }
   const sfu = row.sfu_static_counts || {};
@@ -224,11 +226,11 @@ function renderProfile() {
 function renderLab() {
   const panel = $("#lab-panel");
   if (activeTab === "protocol") {
-    panel.innerHTML = `<div class="coverage-grid"><div><span class="context-label">Official RG-LRU equations</span><strong>Eq. 1–4</strong><p>r=σ(Wₐx+bₐ), i=σ(Wₓx+bₓ), a=a_base^(8r), h=a·h_prev+√(1−a²)·(i·x)。reset 位置强制 a=0、write multiplier=1。</p></div><div><span class="context-label">Equal track</span><strong>16,772 vs 16,768</strong><p>d=128；参数只差 4，recurrent state 均为 128 FP32 scalars = 512 B / batch。</p></div><div><span class="context-label">Timing</span><strong>CUDA events</strong><p>首次 compile/setup 排除；prefill 21 samples，decode 每个 sample 含 100 次 inner iterations。</p></div></div><p class="fairness-inline">Track A 才用于 SAMU↔RG-LRU 架构结论。Track B 的官方 Mamba-3 是同宽 best-native 背景线：118,920 参数、66,816 B native cache，并不与 SAMU 参数或 state 匹配。</p>`;
+    panel.innerHTML = `<div class="coverage-grid"><div><span class="context-label">Official RG-LRU equations</span><strong>Eq. 1–4</strong><p>r=σ(Wₐx+bₐ), i=σ(Wₓx+bₓ), a=a_base^(8r), h=a·h_prev+√(1−a²)·(i·x)。reset 位置强制 a=0、write multiplier=1。</p></div><div><span class="context-label">Equal track</span><strong>16,772 vs 16,768</strong><p>d=128；参数只差 4，recurrent state 均为 128 FP32 scalars = 512 B / batch。</p></div><div><span class="context-label">Timing</span><strong>Triton driver events</strong><p>每个 timed call 前清 L2；compile、packing、shape dispatch 排除，raw event samples 全部保留。</p></div></div><p class="fairness-inline">Track A 才用于 SAMU↔RG-LRU 架构结论。Track B 的官方 Mamba-3 是同宽 best-native 背景线：118,920 参数、66,816 B native cache，并不与 SAMU 参数或 state 匹配。</p>`;
   } else if (activeTab === "profile") {
     panel.innerHTML = renderProfile();
   } else if (activeTab === "correctness") {
-    panel.innerHTML = `<div class="coverage-grid"><div><span class="context-label">RG-LRU serial</span><strong>${fmt(audit.rglru_serial_max_abs, 8)}</strong><p>BF16 output max abs；FP32 cache max abs ${fmt(audit.rglru_serial_cache_max_abs, 9)}。</p></div><div><span class="context-label">RG-LRU C16</span><strong>${fmt(audit.rglru_chunk16_max_abs, 7)}</strong><p>与固定 commit 官方实现逐值对照；cache max abs ${fmt(audit.rglru_chunk16_cache_max_abs, 9)}。</p></div><div><span class="context-label">RG-LRU fused decode</span><strong>${fmt(audit.rglru_decode_max_abs, 8)}</strong><p>output max abs；覆盖 nonzero h0、t=5/t=77 reset 和混合 reset/non-reset decode。</p></div></div><p class="fairness-inline">SAMU 有界相位多项式在 |d|≤${fmt(audit.samu_phase_delta_bound_rad, 8)} rad 内：float32 sin max abs ${fmt(audit.samu_sin_polynomial_max_abs, 10)}，cos ${fmt(audit.samu_cos_polynomial_max_abs, 10)}。</p>`;
+    panel.innerHTML = `<div class="coverage-grid"><div><span class="context-label">RG-LRU serial</span><strong>${fmt(audit.rglru_serial_max_abs, 8)}</strong><p>BF16 output max abs；FP32 cache max abs ${fmt(audit.rglru_serial_cache_max_abs, 9)}。</p></div><div><span class="context-label">RG-LRU C16</span><strong>${fmt(audit.rglru_chunk16_max_abs, 7)}</strong><p>与固定 commit 官方实现逐值对照；cache max abs ${fmt(audit.rglru_chunk16_cache_max_abs, 9)}。</p></div><div><span class="context-label">RG-LRU fused decode</span><strong>${fmt(audit.rglru_adversarial_decode_max_abs, 8)}</strong><p>对抗尺度 sweep 的 output max abs；cache max abs ${fmt(audit.rglru_adversarial_decode_cache_max_abs, 9)}。</p></div></div><p class="fairness-inline">SAMU auto-short output max abs ${fmt(audit.samu_auto_short_max_abs, 8)}，cache ${fmt(audit.samu_auto_short_cache_max_abs, 9)}；|d|≤${fmt(audit.samu_phase_delta_bound_rad, 8)} rad 内 sin/cos polynomial max abs 为 ${fmt(audit.samu_sin_polynomial_max_abs, 10)} / ${fmt(audit.samu_cos_polynomial_max_abs, 10)}。</p>`;
   } else if (activeTab === "environment") {
     const fields = { GPU: environment.gpu, "Board / driver": environment.driver_and_board, "Compute capability": environment.compute_capability, "SM count": environment.sm_count, "CUDA runtime": environment.torch_cuda, PyTorch: environment.torch, Triton: environment.triton, Python: environment.python, "RecurrentGemma commit": environment.source_commits?.recurrentgemma, "Mamba commit": environment.source_commits?.mamba, Timestamp: environment.timestamp_utc };
     panel.innerHTML = `<dl class="environment-grid">${Object.entries(fields).map(([key, value]) => `<div><dt>${esc(key)}</dt><dd>${esc(value)}</dd></div>`).join("")}</dl>`;

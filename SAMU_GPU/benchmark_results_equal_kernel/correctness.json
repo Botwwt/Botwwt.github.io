@@ -1,4 +1,6 @@
 {
+  "rglru_adversarial_decode_cache_max_abs": 3.814697265625e-06,
+  "rglru_adversarial_decode_max_abs": 0.0,
   "rglru_chunk16_cache_max_abs": 2.980232238769531e-07,
   "rglru_chunk16_max_abs": 0.0009765625,
   "rglru_chunk16_mean_abs": 3.003334825280035e-08,
@@ -14,11 +16,19 @@
   "rglru_serial_cache_max_abs": 1.7881393432617188e-07,
   "rglru_serial_max_abs": 1.52587890625e-05,
   "rglru_serial_mean_abs": 4.62051508165473e-10,
-  "samu_chunk16_cache_max_abs": 1.6689300537109375e-06,
+  "samu_auto_short_cache_max_abs": 1.3113021850585938e-06,
+  "samu_auto_short_max_abs": 0.00390625,
+  "samu_bounded_exp_enabled_in_production": "auto prefill L<=128 only; certified parameters required",
+  "samu_bounded_exp_max_abs_c": 0.032666586339473724,
+  "samu_bounded_exp_max_decay_exponent": 0.30996178056887086,
+  "samu_bounded_exp_safe": true,
+  "samu_bounded_vs_exact_cache_max_abs": 2.86102294921875e-06,
+  "samu_bounded_vs_exact_output_max_abs": 0.00390625,
+  "samu_chunk16_cache_max_abs": 2.0265579223632812e-06,
   "samu_chunk16_max_abs": 0.00390625,
   "samu_cos_polynomial_max_abs": 5.960464477539063e-08,
   "samu_phase_delta_bound_rad": 0.07711367309093475,
-  "samu_serial_cache_max_abs": 1.9073486328125e-06,
+  "samu_serial_cache_max_abs": 2.6226043701171875e-06,
   "samu_serial_max_abs": 0.00390625,
   "samu_sin_polynomial_max_abs": 7.450580596923828e-09
 }

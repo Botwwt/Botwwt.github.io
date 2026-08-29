@@ -1,4 +1,5 @@
 import {activateWhenVisible, AnimationController, bindTransport, css, fitCanvas} from "../animation-controller.js";
+import {renderMath} from "../math.js";
 
 export function initScan(root){
   const track=root.querySelector("[data-scan-track]"),eq=root.querySelector("[data-scan-equation]");let mode="tokens";
@@ -27,10 +28,10 @@ export function initTimeMode(root){
 }
 
 const models={
-  samu:{title:"SAMU",count:"2",subtitle:"token coordinates",list:["dynamic: cₜ,dₜ","static: νⱼ,θⱼ","state: M complex","ρⱼ,φⱼ reconstructed"] ,formula:"z′ⱼ = exp(−νⱼexp(c)) · exp(i(θⱼ+d)) · zⱼ + wⱼ"},
-  rglru:{title:"RG-LRU",count:"2d",subtitle:"dynamic gate outputs",list:["iₜ = sigmoid(Wₓx+bₓ)","rₜ = sigmoid(Wₐx+bₐ)","aₜ = exp(−8rₜ·softplus(a_param))","state: d real FP32 channels"],formula:"hₜ = aₜ ⊙ hₜ₋₁ + sqrt(1−aₜ²) ⊙ (iₜ ⊙ xₜ)"}
+  samu:{title:"SAMU",count:"2",subtitle:"token coordinates",list:["dynamic: cₜ,dₜ","static: νⱼ,θⱼ","state: M complex","ρⱼ,φⱼ reconstructed"] ,formula:String.raw`z_{j,t+1}=e^{-\nu_j e^{c_t}}e^{i(\theta_j+d_t)}z_{j,t}+w_{j,t}`},
+  rglru:{title:"RG-LRU",count:"2d",subtitle:"dynamic gate outputs",list:["iₜ = sigmoid(Wₓx+bₓ)","rₜ = sigmoid(Wₐx+bₐ)","aₜ = exp(−8rₜ·softplus(a_param))","state: d real FP32 channels"],formula:String.raw`h_t=a_t\odot h_{t-1}+\sqrt{1-a_t^2}\odot(i_t\odot x_t)`}
 };
-export function initCompare(root){const host=root.querySelector("[data-compare-cards]"),formula=root.querySelector("[data-compare-formula]");let active="samu";host.innerHTML=Object.entries(models).map(([k,m])=>`<div class="recurrence-card ${k===active?"active":""}" tabindex="0" data-model="${k}"><h3>${m.title}</h3><span class="dynamic-count">${m.count}</span><p>${m.subtitle}</p><ul>${m.list.map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join("");function choose(k){active=k;host.querySelectorAll("[data-model]").forEach(e=>e.classList.toggle("active",e.dataset.model===k));formula.innerHTML=`<b>${models[k].title}</b><br>${models[k].formula}`;}host.addEventListener("click",e=>{const c=e.target.closest("[data-model]");if(c)choose(c.dataset.model);});host.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.dataset.model)choose(e.target.dataset.model);});choose(active);}
+export function initCompare(root){const host=root.querySelector("[data-compare-cards]"),formula=root.querySelector("[data-compare-formula]");let active="samu";host.innerHTML=Object.entries(models).map(([k,m])=>`<div class="recurrence-card ${k===active?"active":""}" tabindex="0" data-model="${k}"><h3>${m.title}</h3><span class="dynamic-count">${m.count}</span><p>${m.subtitle}</p><ul>${m.list.map(x=>`<li>${x}</li>`).join("")}</ul></div>`).join("");function choose(k){active=k;host.querySelectorAll("[data-model]").forEach(e=>e.classList.toggle("active",e.dataset.model===k));formula.innerHTML=`<span class="formula-label">${models[k].title}</span><div class="math-display" data-katex>${models[k].formula}</div>`;renderMath(formula);}host.addEventListener("click",e=>{const c=e.target.closest("[data-model]");if(c)choose(c.dataset.model);});host.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.dataset.model)choose(e.target.dataset.model);});choose(active);}
 
 const transitionData={
  token:{rglru:["2d dynamic gate outputs","channel-wise a and input gate","state-sized response"],samu:["dynamic: c,d","static ν,θ reconstruct Pⱼ","write q=wₜ: O(M)"]},

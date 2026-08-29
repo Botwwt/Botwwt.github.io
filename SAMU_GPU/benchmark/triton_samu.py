@@ -28,11 +28,18 @@ class PackedSamu:
     nu: torch.Tensor
     cos_theta: torch.Tensor
     sin_theta: torch.Tensor
+    chunk_cos_theta: dict[int, torch.Tensor]
+    chunk_sin_theta: dict[int, torch.Tensor]
     gamma: torch.Tensor
     padded_width: int
+    bounded_poly_safe: bool
+    use_bounded_poly: bool
+    max_abs_c: float
+    max_decay_exponent: float
 
 
-def pack_samu_parameters(p: SamuParameters, dtype: torch.dtype = torch.bfloat16) -> PackedSamu:
+def pack_samu_parameters(p: SamuParameters, dtype: torch.dtype = torch.bfloat16, *,
+                         enable_bounded_poly: bool = False) -> PackedSamu:
     modes = p.nu.numel()
     interleaved = torch.stack((p.wr, p.wi), dim=-1).reshape(p.wr.shape[0], 2 * modes)
     selectors = torch.stack((p.phase_direction[:-1], p.radial_direction[:-1]), dim=-1)
@@ -40,19 +47,41 @@ def pack_samu_parameters(p: SamuParameters, dtype: torch.dtype = torch.bfloat16)
     padded = math.ceil(useful.shape[-1] / 16) * 16
     weight = torch.zeros(useful.shape[0], padded, device=useful.device, dtype=dtype)
     weight[:, : useful.shape[-1]] = useful.to(dtype)
+    phase_scale = float(torch.tanh(p.phase_amplitude).item() / math.sqrt(modes))
+    radial_scale = float(torch.tanh(p.radial_amplitude).item() / math.sqrt(modes))
+    # sr / (1 + sr**2) is bounded by 1/2.  The resulting interval is a
+    # property of SAMU's controller, not an empirical range guessed from one
+    # batch.  It lets the kernel replace general exp implementations only when
+    # the packed parameters certify a small, non-positive exponent.
+    max_abs_c = abs(radial_scale) * 0.5
+    min_nu = float(p.nu.min().item())
+    max_decay_exponent = float(p.nu.max().item()) * math.exp(max_abs_c)
+    bounded_poly_safe = min_nu >= 0.0 and max_abs_c <= 0.125 and max_decay_exponent <= 0.375
+    use_bounded_poly = enable_bounded_poly and bounded_poly_safe
+    if enable_bounded_poly and not bounded_poly_safe:
+        raise ValueError(
+            "bounded polynomial exp requested outside its certified interval: "
+            f"max_abs_c={max_abs_c:.6g}, max_decay_exponent={max_decay_exponent:.6g}"
+        )
     return PackedSamu(
         weight=weight.contiguous(),
         # Resolve static GPU scalars once while packing.  Calling .item() in the
         # hot launch path would introduce a Device-to-Host synchronization.
         phase_bias=float(p.phase_direction[-1].item()),
         radial_bias=float(p.radial_direction[-1].item()),
-        phase_scale=float(torch.tanh(p.phase_amplitude).item() / math.sqrt(modes)),
-        radial_scale=float(torch.tanh(p.radial_amplitude).item() / math.sqrt(modes)),
+        phase_scale=phase_scale,
+        radial_scale=radial_scale,
         nu=p.nu.float().contiguous(),
         cos_theta=torch.cos(p.theta).float().contiguous(),
         sin_theta=torch.sin(p.theta).float().contiguous(),
+        chunk_cos_theta={size: torch.cos(size * p.theta).float().contiguous() for size in (8, 16, 32)},
+        chunk_sin_theta={size: torch.sin(size * p.theta).float().contiguous() for size in (8, 16, 32)},
         gamma=torch.sqrt((1.0 - torch.exp(-2.0 * p.nu)).clamp_min(1e-8)).float().contiguous(),
         padded_width=padded,
+        bounded_poly_safe=bounded_poly_safe,
+        use_bounded_poly=use_bounded_poly,
+        max_abs_c=max_abs_c,
+        max_decay_exponent=max_decay_exponent,
     )
 
 
@@ -67,9 +96,33 @@ def _control(raw_phase, raw_radial, phase_bias: tl.constexpr, radial_bias: tl.co
 
 
 @triton.jit
-def _transition(nu, cos_theta, sin_theta, c, d):
-    g = tl.exp(c)
-    rho = tl.exp(-nu * g)
+def _exp_small_symmetric(x):
+    """Degree-6 exp on |x| <= 0.125, evaluated as an FMA-friendly Horner chain."""
+
+    return 1.0 + x * (1.0 + x * (0.5 + x * (
+        0.16666666666666666 + x * (0.041666666666666664 + x * (
+            0.008333333333333333 + x * 0.001388888888888889)))))
+
+
+@triton.jit
+def _exp_small_negative(x):
+    """Degree-8 exp on -0.375 <= x <= 0."""
+
+    return 1.0 + x * (1.0 + x * (0.5 + x * (
+        0.16666666666666666 + x * (0.041666666666666664 + x * (
+            0.008333333333333333 + x * (0.001388888888888889 + x * (
+                0.0001984126984126984 + x * 0.0000248015873015873)))))))
+
+
+@triton.jit
+def _transition(nu, cos_theta, sin_theta, c, d,
+                USE_BOUNDED_POLY: tl.constexpr):
+    if USE_BOUNDED_POLY:
+        g = _exp_small_symmetric(c)
+        rho = _exp_small_negative(-nu * g)
+    else:
+        g = tl.exp(c)
+        rho = tl.exp(-nu * g)
     # The controller guarantees |d| <= tanh(phase_amplitude)/sqrt(M).
     # For M=64 this is < 0.078 rad (and <=0.125 for every M>=64), so these
     # alternating Taylor polynomials have <1e-11 absolute truncation error.
@@ -82,7 +135,7 @@ def _transition(nu, cos_theta, sin_theta, c, d):
     sd = d * (1.0 - d2 * (1.0 / 6.0) + d4 * (1.0 / 120.0) - d6 * (1.0 / 5040.0))
     cp = cos_theta * cd - sin_theta * sd
     sp = sin_theta * cd + cos_theta * sd
-    return rho * cp, rho * sp
+    return rho * cp, rho * sp, g
 
 
 @triton.jit
@@ -91,6 +144,7 @@ def _serial_prefill_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr, out,
                            packed_width: tl.constexpr, RETURN_CACHE: tl.constexpr,
                            phase_bias: tl.constexpr, radial_bias: tl.constexpr,
                            phase_scale: tl.constexpr, radial_scale: tl.constexpr,
+                           USE_BOUNDED_POLY: tl.constexpr,
                            BLOCK_M: tl.constexpr):
     block = tl.program_id(0)
     batch = tl.program_id(1)
@@ -106,7 +160,7 @@ def _serial_prefill_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr, out,
         raw_phase = tl.load(packed + row + 2 * modes)
         raw_radial = tl.load(packed + row + 2 * modes + 1)
         c, d = _control(raw_phase, raw_radial, phase_bias, radial_bias, phase_scale, radial_scale)
-        ar, ai = _transition(nu, ct, st, c, d)
+        ar, ai, _ = _transition(nu, ct, st, c, d, USE_BOUNDED_POLY)
         wr = tl.load(packed + row + 2 * m, mask=mask, other=0.0).to(tl.float32) * gamma
         wi = tl.load(packed + row + 2 * m + 1, mask=mask, other=0.0).to(tl.float32) * gamma
         nx = ar * x - ai * y + wr
@@ -121,11 +175,14 @@ def _serial_prefill_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr, out,
 
 
 @triton.jit
-def _chunk_summary_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr,
+def _chunk_summary_kernel(packed, nu_ptr, ct_ptr, st_ptr, chunk_ct_ptr,
+                          chunk_st_ptr, gamma_ptr,
                           pr, pi, qr, qi, length, modes: tl.constexpr,
                           chunks, packed_width: tl.constexpr,
                           phase_bias: tl.constexpr, radial_bias: tl.constexpr,
                           phase_scale: tl.constexpr, radial_scale: tl.constexpr,
+                          USE_BOUNDED_POLY: tl.constexpr,
+                          USE_COMPRESSED_P: tl.constexpr,
                           CHUNK: tl.constexpr, BLOCK_M: tl.constexpr):
     block = tl.program_id(0)
     chunk_program = tl.program_id(1)
@@ -136,7 +193,11 @@ def _chunk_summary_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr,
     nu = tl.load(nu_ptr + m, mask=mask, other=0.0)
     ct, st = tl.load(ct_ptr + m, mask=mask, other=1.0), tl.load(st_ptr + m, mask=mask, other=0.0)
     gamma = tl.load(gamma_ptr + m, mask=mask, other=0.0)
-    px, py = tl.full((BLOCK_M,), 1.0, tl.float32), tl.zeros((BLOCK_M,), tl.float32)
+    if USE_COMPRESSED_P:
+        total_g = 0.0
+        total_d = 0.0
+    else:
+        px, py = tl.full((BLOCK_M,), 1.0, tl.float32), tl.zeros((BLOCK_M,), tl.float32)
     x, y = tl.zeros((BLOCK_M,), tl.float32), tl.zeros((BLOCK_M,), tl.float32)
     for offset in tl.static_range(0, CHUNK):
         t = chunk * CHUNK + offset
@@ -144,12 +205,29 @@ def _chunk_summary_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr,
         raw_phase = tl.load(packed + row + 2 * modes)
         raw_radial = tl.load(packed + row + 2 * modes + 1)
         c, d = _control(raw_phase, raw_radial, phase_bias, radial_bias, phase_scale, radial_scale)
-        ar, ai = _transition(nu, ct, st, c, d)
+        ar, ai, g = _transition(nu, ct, st, c, d, USE_BOUNDED_POLY)
         wr = tl.load(packed + row + 2 * m, mask=mask, other=0.0).to(tl.float32) * gamma
         wi = tl.load(packed + row + 2 * m + 1, mask=mask, other=0.0).to(tl.float32) * gamma
-        npx, npy = ar * px - ai * py, ai * px + ar * py
+        if USE_COMPRESSED_P:
+            total_g += g
+            total_d += d
+        else:
+            npx, npy = ar * px - ai * py, ai * px + ar * py
         nx, ny = ar * x - ai * y + wr, ai * x + ar * y + wi
-        px, py, x, y = npx, npy, nx, ny
+        if not USE_COMPRESSED_P:
+            px, py = npx, npy
+        x, y = nx, ny
+    if USE_COMPRESSED_P:
+        # SAMU's transition family is closed under composition:
+        # P_j = exp(-nu_j * sum(exp(c_t))) * exp(i(CHUNK*theta_j + sum(d_t))).
+        # Keep only the shared sufficient statistics live through the loop,
+        # then reconstruct the mode vector once at the chunk boundary.
+        base_c = tl.load(chunk_ct_ptr + m, mask=mask, other=1.0)
+        base_s = tl.load(chunk_st_ptr + m, mask=mask, other=0.0)
+        delta_c, delta_s = tl.cos(total_d), tl.sin(total_d)
+        magnitude = tl.exp(-nu * total_g)
+        px = magnitude * (base_c * delta_c - base_s * delta_s)
+        py = magnitude * (base_s * delta_c + base_c * delta_s)
     o = (chunk_program * modes + m)
     tl.store(pr + o, px, mask=mask); tl.store(pi + o, py, mask=mask)
     tl.store(qr + o, x, mask=mask); tl.store(qi + o, y, mask=mask)
@@ -181,7 +259,8 @@ def _chunk_replay_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr, in_r, in_i, 
                          length, modes: tl.constexpr, chunks,
                          packed_width: tl.constexpr, phase_bias: tl.constexpr,
                          radial_bias: tl.constexpr, phase_scale: tl.constexpr,
-                         radial_scale: tl.constexpr, CHUNK: tl.constexpr,
+                         radial_scale: tl.constexpr,
+                         USE_BOUNDED_POLY: tl.constexpr, CHUNK: tl.constexpr,
                          BLOCK_M: tl.constexpr):
     block = tl.program_id(0)
     chunk_program = tl.program_id(1)
@@ -201,7 +280,7 @@ def _chunk_replay_kernel(packed, nu_ptr, ct_ptr, st_ptr, gamma_ptr, in_r, in_i, 
         raw_phase = tl.load(packed + row + 2 * modes)
         raw_radial = tl.load(packed + row + 2 * modes + 1)
         c, d = _control(raw_phase, raw_radial, phase_bias, radial_bias, phase_scale, radial_scale)
-        ar, ai = _transition(nu, ct, st, c, d)
+        ar, ai, _ = _transition(nu, ct, st, c, d, USE_BOUNDED_POLY)
         wr = tl.load(packed + row + 2 * m, mask=mask, other=0.0).to(tl.float32) * gamma
         wi = tl.load(packed + row + 2 * m + 1, mask=mask, other=0.0).to(tl.float32) * gamma
         nx, ny = ar * x - ai * y + wr, ai * x + ar * y + wi
@@ -216,6 +295,7 @@ def _decode_kernel(u, wr_ptr, wi_ptr, phase_dir, radial_dir, state_r, state_i,
                    d_model: tl.constexpr, modes: tl.constexpr,
                    phase_bias: tl.constexpr, radial_bias: tl.constexpr,
                    phase_scale: tl.constexpr, radial_scale: tl.constexpr,
+                   USE_BOUNDED_POLY: tl.constexpr,
                    BLOCK_D: tl.constexpr, BLOCK_M: tl.constexpr):
     block = tl.program_id(0)
     batch = tl.program_id(1)
@@ -232,7 +312,7 @@ def _decode_kernel(u, wr_ptr, wi_ptr, phase_dir, radial_dir, state_r, state_i,
     nu = tl.load(nu_ptr + m, mask=mmask, other=0.0)
     ct, st = tl.load(ct_ptr + m, mask=mmask, other=1.0), tl.load(st_ptr + m, mask=mmask, other=0.0)
     gamma = tl.load(gamma_ptr + m, mask=mmask, other=0.0)
-    ar, ai = _transition(nu, ct, st, c, delta)
+    ar, ai, _ = _transition(nu, ct, st, c, delta, USE_BOUNDED_POLY)
     x = tl.load(state_r + batch * modes + m, mask=mmask, other=0.0)
     y = tl.load(state_i + batch * modes + m, mask=mmask, other=0.0)
     nx, ny = ar * x - ai * y + wr * gamma, ai * x + ar * y + wi * gamma
@@ -240,10 +320,14 @@ def _decode_kernel(u, wr_ptr, wi_ptr, phase_dir, radial_dir, state_r, state_i,
     tl.store(out_i + batch * modes + m, ny, mask=mmask)
 
 
-def _launch_meta(packed: PackedSamu):
+def _launch_meta(packed: PackedSamu, bounded_poly: bool | None = None):
+    use_bounded_poly = packed.use_bounded_poly if bounded_poly is None else bounded_poly
+    if use_bounded_poly and not packed.bounded_poly_safe:
+        raise ValueError("bounded polynomial exp requested outside its certified interval")
     return dict(
         phase_bias=packed.phase_bias, radial_bias=packed.radial_bias,
         phase_scale=packed.phase_scale, radial_scale=packed.radial_scale,
+        USE_BOUNDED_POLY=use_bounded_poly,
     )
 
 
@@ -269,6 +353,8 @@ def samu_triton_serial(u: torch.Tensor, p: SamuParameters,
 def samu_triton_chunked(u: torch.Tensor, p: SamuParameters, chunk_size: int,
                         packed: PackedSamu | None = None, *,
                         num_warps: int | None = None,
+                        compressed_p: bool = False,
+                        bounded_poly: bool | None = None,
                         return_cache: bool = False):
     packed = packed or pack_samu_parameters(p, u.dtype)
     batch, length, _ = u.shape; modes = p.nu.numel()
@@ -284,22 +370,29 @@ def samu_triton_chunked(u: torch.Tensor, p: SamuParameters, chunk_size: int,
     last_i = torch.empty(batch, modes, device=u.device, dtype=torch.float32) if return_cache else packed.nu
     block = min(128, triton.next_power_of_2(modes)); grid = (triton.cdiv(modes, block), batch * chunks)
     launch_warps = num_warps or (2 if block <= 64 else 4)
+    effective_bounded_poly = packed.use_bounded_poly if bounded_poly is None else bounded_poly
+    use_compressed_p = compressed_p and chunk_size in packed.chunk_cos_theta and not effective_bounded_poly
+    chunk_ct = packed.chunk_cos_theta[chunk_size] if use_compressed_p else packed.cos_theta
+    chunk_st = packed.chunk_sin_theta[chunk_size] if use_compressed_p else packed.sin_theta
     meta = dict(length=length, modes=modes, chunks=chunks, packed_width=packed.padded_width,
-                CHUNK=chunk_size, BLOCK_M=block, num_warps=launch_warps, **_launch_meta(packed))
+                CHUNK=chunk_size, BLOCK_M=block, USE_COMPRESSED_P=use_compressed_p,
+                num_warps=launch_warps, **_launch_meta(packed, effective_bounded_poly))
     _chunk_summary_kernel[grid](projected, packed.nu, packed.cos_theta, packed.sin_theta,
-                                packed.gamma, pr, pi, qr, qi, **meta)
+                                chunk_ct, chunk_st, packed.gamma, pr, pi, qr, qi, **meta)
     _chunk_prefix_kernel[(triton.cdiv(modes, block), batch)](
         pr, pi, qr, qi, in_r, in_i, modes=modes, chunks=chunks,
         last_r=last_r, last_i=last_i, RETURN_CACHE=return_cache,
         BLOCK_M=block, num_warps=launch_warps,
     )
     _chunk_replay_kernel[grid](projected, packed.nu, packed.cos_theta, packed.sin_theta,
-                               packed.gamma, in_r, in_i, out, **meta)
+                               packed.gamma, in_r, in_i, out,
+                               **{key: value for key, value in meta.items() if key != "USE_COMPRESSED_P"})
     return (out, (last_r, last_i)) if return_cache else out
 
 
 def samu_triton_auto(u: torch.Tensor, p: SamuParameters,
                      packed: PackedSamu | None = None, *,
+                     compressed_p: bool = False,
                      return_cache: bool = False):
     """Latency-oriented RTX 3090 dispatch policy for the canonical M=64 path.
 
@@ -308,21 +401,30 @@ def samu_triton_auto(u: torch.Tensor, p: SamuParameters,
     """
     length = u.shape[1]
     if length <= 256:
-        return samu_triton_serial(u, p, packed, return_cache=return_cache)
+        return samu_triton_chunked(
+            u, p, 8, packed, num_warps=2, compressed_p=compressed_p,
+            bounded_poly=packed.bounded_poly_safe if length <= 128 else False,
+            return_cache=return_cache,
+        )
     return samu_triton_chunked(
         u, p, 16 if length <= 512 else 32, packed,
+        compressed_p=compressed_p,
         return_cache=return_cache,
     )
 
 
 def samu_triton_decode(u: torch.Tensor, state: tuple[torch.Tensor, torch.Tensor],
                        p: SamuParameters, packed: PackedSamu | None = None, *,
-                       block_m: int | None = None, num_warps: int = 4):
+                       block_m: int | None = None, num_warps: int | None = None):
     packed = packed or pack_samu_parameters(p, u.dtype)
     batch, d_model = u.shape; modes = p.nu.numel()
     out_r, out_i = torch.empty_like(state[0]), torch.empty_like(state[1])
     block_d = triton.next_power_of_2(d_model)
     block_m = block_m or min(32, triton.next_power_of_2(modes))
+    if num_warps is None:
+        # RTX 3090 M=64 sweep: small/large batches prefer fewer warps, while
+        # B=16 benefits from extra issue-level parallelism.
+        num_warps = 2 if batch == 1 or batch > 16 else 8 if batch > 4 else 4
     _decode_kernel[(triton.cdiv(modes, block_m), batch)](
         u, p.wr, p.wi, p.phase_direction, p.radial_direction, state[0], state[1],
         packed.nu, packed.cos_theta, packed.sin_theta, packed.gamma, out_r, out_i,

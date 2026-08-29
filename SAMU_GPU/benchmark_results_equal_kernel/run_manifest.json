@@ -1,10 +1,14 @@
 {
-  "command": "run_equal_kernel_benchmarks.py --only-model rglru --output ../benchmark_results_equal_kernel --rglru-source /root/autodl-tmp/recurrentgemma-official --mamba-source /root/autodl-tmp/mamba-official",
+  "command": "full 58-row run, followed by --only-custom-triton after final shape dispatch was frozen",
+  "commands": [
+    "run_equal_kernel_benchmarks.py --output ../benchmark_results_equal_kernel_v5 --rglru-source /root/autodl-tmp/recurrentgemma-official --mamba-source /root/autodl-tmp/mamba-official",
+    "run_equal_kernel_benchmarks.py --output ../benchmark_results_equal_kernel_v5 --rglru-source /root/autodl-tmp/recurrentgemma-official --mamba-source /root/autodl-tmp/mamba-official --only-custom-triton"
+  ],
   "expected_full_config_count": 58,
   "failed": 0,
   "measured": 54,
   "result_row_count": 58,
-  "selected_config_count": 29,
+  "selected_config_count": 58,
   "status": "complete",
   "unsupported": 4
 }

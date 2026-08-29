@@ -19,10 +19,12 @@ import statistics
 import subprocess
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Callable
 
 import torch
+import triton
 
 from kernels import load_official_mamba3, load_official_rglru, make_samu_parameters
 from triton_rglru import (
@@ -106,27 +108,24 @@ def percentile(values: list[float], fraction: float) -> float:
     return ordered[lower] * (upper - position) + ordered[upper] * (position - lower)
 
 
-def measure(operation: Callable[[], Any], *, warmup: int, samples: int,
+def measure(operation: Callable[[], Any], *, warmup_ms: int, rep_ms: int,
             inner: int = 1) -> tuple[dict[str, Any], float]:
     torch.cuda.empty_cache()
     compile_start = time.perf_counter()
     operation()
     torch.cuda.synchronize()
     compile_seconds = time.perf_counter() - compile_start
-    for _ in range(warmup):
-        operation()
-    torch.cuda.synchronize()
     torch.cuda.reset_peak_memory_stats()
-    values: list[float] = []
-    for _ in range(samples):
-        start = torch.cuda.Event(enable_timing=True)
-        end = torch.cuda.Event(enable_timing=True)
-        start.record()
-        for _inner in range(inner):
-            operation()
-        end.record()
-        end.synchronize()
-        values.append(start.elapsed_time(end) / inner)
+    # Use Triton's driver-level event implementation rather than torch.cuda.Event.
+    # On this pinned Torch 2.1 / CUDA 11.8 stack the latter quantized 7-50 us
+    # kernels into 0.16-0.22 ms values and could reverse rankings.  do_bench
+    # preallocates driver events, clears L2 before each timed call, synchronizes
+    # once, and can return every individual sample.
+    requested_warmup_ms = max(1, warmup_ms)
+    requested_rep_ms = max(25, rep_ms)
+    values = [float(value) for value in triton.testing.do_bench(
+        operation, warmup=requested_warmup_ms, rep=requested_rep_ms, return_mode="all"
+    )]
     return {
         "median_ms": statistics.median(values),
         "p10_ms": percentile(values, .10),
@@ -137,10 +136,12 @@ def measure(operation: Callable[[], Any], *, warmup: int, samples: int,
         "mean_ms": statistics.mean(values),
         "std_ms": statistics.pstdev(values),
         "raw_samples_ms": values,
-        "samples": samples,
-        "inner_iterations": inner,
+        "samples": len(values),
+        "requested_warmup_ms": requested_warmup_ms,
+        "requested_rep_ms": requested_rep_ms,
+        "inner_iterations": 1,
         "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
-        "timing": "CUDA events; synchronized; first-call compile/setup excluded",
+        "timing": "Triton driver CUDA events; L2 cleared per sample; first-call compile/setup excluded",
     }, compile_seconds
 
 
@@ -213,14 +214,17 @@ def logical_metrics(config: dict[str, Any]) -> tuple[int | None, dict[str, Any] 
                         "trig_sfu_per_token": 0}
     if config["model"] == "samu":
         projected = 2 * m + 2
-        passes = 1 if config["backend"] == "triton_serial" or (config["backend"] == "triton_auto" and l <= 256) else 2
+        passes = 1 if config["backend"] == "triton_serial" else 2
         dynamic = b * l * (d * 2 + projected * 2 * (1 + passes) + 2 * m * 2)
         weights = d * math.ceil(projected / 16) * 16 * 2
-        chunks = math.ceil(l / (config.get("chunk_size") or (16 if l <= 512 else 32))) if passes == 2 else 0
+        auto_chunk = 8 if l <= 256 else 16 if l <= 512 else 32
+        chunks = math.ceil(l / (config.get("chunk_size") or auto_chunk)) if passes == 2 else 0
         metadata = b * chunks * 48 * m if passes == 2 else 0
+        bounded = config["backend"] == "triton_auto" and l <= 128
         return dynamic + weights + metadata, {
-            "exp_or_sigmoid_per_token": passes * (m + 3), "sqrt_per_token": 0,
+            "exp_or_sigmoid_per_token": passes * (2 if bounded else (m + 3)), "sqrt_per_token": 0,
             "trig_sfu_per_token": 0, "transition_evaluations_per_token": passes,
+            "bounded_exp_polynomial": bounded,
         }
     if config["backend"] == "official_pytorch_source":
         passes = 1
@@ -257,13 +261,21 @@ def make_case(config: dict[str, Any], rglru_root: Path, mamba_root: Path):
         if config["workload"] == "decode":
             token = torch.randn(b, d, device="cuda", dtype=torch.bfloat16)
             state = (torch.randn(b, m, device="cuda"), torch.randn(b, m, device="cuda"))
-            operation = lambda: samu_triton_decode(token, state, params, packed)
+            decode_warps = 2 if b == 1 or b > 16 else 8 if b > 4 else 4
+            operation = lambda: samu_triton_decode(
+                token, state, params, packed, block_m=32, num_warps=decode_warps
+            )
             launches = 1
         else:
             x = torch.randn(b, l, d, device="cuda", dtype=torch.bfloat16)
             if config["backend"] == "triton_auto":
-                operation = lambda: samu_triton_auto(x, params, packed, return_cache=True)
-                launches = 2 if l <= 256 else 4
+                chunk = 8 if l <= 256 else 16 if l <= 512 else 32
+                operation = lambda: samu_triton_chunked(
+                    x, params, chunk, packed, num_warps=2,
+                    bounded_poly=packed.bounded_poly_safe if l <= 128 else False,
+                    return_cache=True,
+                )
+                launches = 4
             else:
                 chunk = int(config["chunk_size"])
                 operation = lambda: samu_triton_chunked(x, params, chunk, packed, return_cache=True)
@@ -308,7 +320,8 @@ def make_case(config: dict[str, Any], rglru_root: Path, mamba_root: Path):
             x = torch.randn(b, l, d, device="cuda", dtype=torch.bfloat16)
             positions = torch.arange(l, device="cuda").unsqueeze(0).expand(b, -1)
             if config["backend"] == "triton_auto":
-                operation = lambda: rglru_triton_auto(x, positions, packed)
+                chunk = 8 if l <= 256 else 16 if l <= 1024 else 32
+                operation = lambda: rglru_triton_chunked(x, positions, packed, chunk)
             elif config["backend"] == "triton_serial":
                 operation = lambda: rglru_triton_serial(x, positions, packed)
             else:
@@ -359,6 +372,16 @@ def correctness(rglru_root: Path) -> dict[str, Any]:
     decode_x, decode_pos = x[:, :1], torch.tensor([[1], [0]], device="cuda")
     official_decode, official_decode_cache = model(decode_x, decode_pos, cache=cache, return_cache=True)
     triton_decode, triton_decode_cache = rglru_triton_decode(decode_x, decode_pos, packed_rg, cache)
+    adversarial_output_error = 0.0
+    adversarial_cache_error = 0.0
+    for scale in (2.0 ** -8, 2.0 ** -2, 1.0, 4.0, 16.0, 64.0):
+        probe = (torch.randn(4, 1, 128, device="cuda") * scale).to(torch.bfloat16)
+        probe_cache = torch.randn(4, 128, device="cuda") * scale
+        probe_pos = torch.tensor([[0], [1], [7], [0]], device="cuda")
+        expected, expected_cache = model(probe, probe_pos, cache=probe_cache, return_cache=True)
+        actual, actual_cache = rglru_triton_decode(probe, probe_pos, packed_rg, probe_cache)
+        adversarial_output_error = max(adversarial_output_error, float((actual - expected).abs().max()))
+        adversarial_cache_error = max(adversarial_cache_error, float((actual_cache - expected_cache).abs().max()))
 
     samu_params = make_samu_parameters(128, 64, "cuda", torch.bfloat16)
     packed_samu = pack_samu_parameters(samu_params)
@@ -368,6 +391,17 @@ def correctness(rglru_root: Path) -> dict[str, Any]:
     )
     samu_serial, samu_serial_cache = samu_triton_serial(samu_x, samu_params, packed_samu, return_cache=True)
     samu_chunk, samu_chunk_cache = samu_triton_chunked(samu_x, samu_params, 16, packed_samu, return_cache=True)
+    samu_auto_short, samu_auto_short_cache = samu_triton_auto(
+        samu_x, samu_params, packed_samu, return_cache=True
+    )
+    exact_exp_samu = replace(packed_samu, use_bounded_poly=False)
+    bounded_samu = pack_samu_parameters(samu_params, enable_bounded_poly=True)
+    bounded_out, bounded_cache = samu_triton_chunked(
+        samu_x, samu_params, 16, bounded_samu, compressed_p=False, return_cache=True
+    )
+    exact_exp_out, exact_exp_cache = samu_triton_chunked(
+        samu_x, samu_params, 16, exact_exp_samu, compressed_p=False, return_cache=True
+    )
 
     bound = packed_samu.phase_scale
     sample_d = torch.linspace(-bound, bound, 10001, device="cuda")
@@ -386,10 +420,20 @@ def correctness(rglru_root: Path) -> dict[str, Any]:
         "rglru_chunk16_cache_max_abs": float((chunk_cache - official_cache).abs().max()),
         "rglru_decode_max_abs": float((triton_decode - official_decode).abs().max()),
         "rglru_decode_cache_max_abs": float((triton_decode_cache - official_decode_cache).abs().max()),
+        "rglru_adversarial_decode_max_abs": adversarial_output_error,
+        "rglru_adversarial_decode_cache_max_abs": adversarial_cache_error,
         "samu_serial_max_abs": float((samu_serial - samu_reference).abs().max()),
         "samu_chunk16_max_abs": float((samu_chunk - samu_reference).abs().max()),
         "samu_serial_cache_max_abs": float((torch.stack(samu_serial_cache, -1) - torch.stack(samu_reference_cache, -1)).abs().max()),
         "samu_chunk16_cache_max_abs": float((torch.stack(samu_chunk_cache, -1) - torch.stack(samu_reference_cache, -1)).abs().max()),
+        "samu_bounded_exp_safe": bounded_samu.bounded_poly_safe,
+        "samu_bounded_exp_enabled_in_production": "auto prefill L<=128 only; certified parameters required",
+        "samu_bounded_exp_max_abs_c": bounded_samu.max_abs_c,
+        "samu_bounded_exp_max_decay_exponent": bounded_samu.max_decay_exponent,
+        "samu_bounded_vs_exact_output_max_abs": float((bounded_out - exact_exp_out).abs().max()),
+        "samu_bounded_vs_exact_cache_max_abs": float((torch.stack(bounded_cache, -1) - torch.stack(exact_exp_cache, -1)).abs().max()),
+        "samu_auto_short_max_abs": float((samu_auto_short - samu_reference).abs().max()),
+        "samu_auto_short_cache_max_abs": float((torch.stack(samu_auto_short_cache, -1) - torch.stack(samu_reference_cache, -1)).abs().max()),
         "samu_phase_delta_bound_rad": bound,
         "samu_sin_polynomial_max_abs": float((sin_poly - torch.sin(sample_d)).abs().max()),
         "samu_cos_polynomial_max_abs": float((cos_poly - torch.cos(sample_d)).abs().max()),
@@ -415,6 +459,7 @@ def main() -> None:
     parser.add_argument("--mamba-source", type=Path, required=True)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--only-model", choices=("samu", "rglru", "mamba3"))
+    parser.add_argument("--only-custom-triton", action="store_true")
     args = parser.parse_args()
     output = args.output.resolve()
     raw = output / "raw"
@@ -426,7 +471,11 @@ def main() -> None:
     atomic_json(output / "correctness.json", audit)
     print("correctness", json.dumps(audit), flush=True)
     selected = [config for config in configs()
-                if args.only_model is None or config["model"] == args.only_model]
+                if (args.only_model is None or config["model"] == args.only_model)
+                and (not args.only_custom_triton or (
+                    config["model"] in ("samu", "rglru")
+                    and config["backend"] != "official_pytorch_source"
+                ))]
     for index, config in enumerate(selected, 1):
         identifier = row_id(config)
         path = raw / f"{identifier}.json"
@@ -439,14 +488,15 @@ def main() -> None:
             operation, metadata = make_case(config, args.rglru_source, args.mamba_source)
             is_decode = config["workload"] == "decode"
             if config["backend"] == "official_pytorch_source":
-                samples = 5 if config["length"] >= 8192 else 9
-                warmup = 2
+                warmup_ms = 2
             elif config["model"] == "mamba3":
-                samples, warmup = 11, 3
+                warmup_ms = 3
             else:
-                samples, warmup = 21, 5
-            timing, compile_seconds = measure(operation, warmup=warmup, samples=samples,
-                                               inner=100 if is_decode else 1)
+                warmup_ms = 5
+            rep_ms = 25
+            inner = 1
+            timing, compile_seconds = measure(operation, warmup_ms=warmup_ms, rep_ms=rep_ms,
+                                               inner=inner)
             tokens = config["batch"] if is_decode else config["batch"] * config["length"]
             row = {
                 "id": identifier, "status": "measured", **config, **metadata, **timing,
@@ -472,6 +522,7 @@ def main() -> None:
     rows.sort(key=lambda row: (row.get("workload", ""), row.get("batch", 0), row.get("length", 0), row.get("track", ""), row.get("model", ""), row.get("backend", "")))
     summary = {
         "schema_version": 2,
+        "generated_from_raw": True,
         "title": "Equal-kernel SAMU vs official-equation RG-LRU, with official Mamba-3 context",
         "tracks": {
             "A_equal_triton": "SAMU and RG-LRU custom Triton inference paths; d_model=128, 16,772 vs 16,768 parameters, 512-byte FP32 state per batch element.",

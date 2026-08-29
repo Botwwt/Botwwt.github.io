@@ -37,7 +37,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+html { scroll-behavior: smooth; scroll-padding-top: 104px; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.72 var(--sans); text-rendering: optimizeLegibility; }
 button, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }

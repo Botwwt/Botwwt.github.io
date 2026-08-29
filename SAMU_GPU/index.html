@@ -44,14 +44,14 @@
       <div class="section-kicker"><span class="evidence measured">Measured</span><span id="headline-env">读取测试环境…</span></div>
       <h2 id="headline-title">同等级 kernel 下，优势从哪里出现？</h2>
       <div class="result-strip" id="headline-results" aria-live="polite"><div class="headline-result skeleton">正在从 summary.json 计算…</div><div class="headline-result skeleton">正在从 summary.json 计算…</div><div class="headline-result skeleton">正在从 summary.json 计算…</div></div>
-      <p class="fairness-inline">主结论使用同宽、近乎同参数、同 512 B FP32 state 的 Triton 对照。RG-LRU 在 L=512/2048 仍领先；SAMU 在 L=128、长序列与 decode 领先。Mamba-3 仅放在“官方 best-native”轨道：同宽，但参数与 state 不匹配。</p>
+      <p class="fairness-inline">主结论使用同宽、近乎同参数、同 512 B FP32 state 的 Triton 对照。SAMU 在本次 L=128…65536 的全部 prefill 点领先 1.06×–2.03×；单 token decode 在 1.024 µs 事件分辨率下与 RG-LRU 持平。Mamba-3 仅放在“官方 best-native”轨道：同宽，但参数与 state 不匹配。</p>
     </section>
 
     <section class="architecture-delta" id="advantage" aria-labelledby="advantage-title">
       <div class="delta-heading"><p class="part-label">Architecture delta</p><h2 id="advantage-title">不是“RG-LRU 没 kernel”，<br>而是动态 transition 的代价不同。</h2><p>两边同为 4-launch chunk prefill 与 1-launch decode。SAMU 保留 state-sized write，但把动态 transition 从逐通道 gate 收缩成两个 token 级坐标；RG-LRU 完整保留两组 block-diagonal gates。</p></div>
       <div class="pipeline-compare" id="implementation">
         <div class="pipeline-row rglru-row"><span class="pipeline-name">RG-LRU Triton</span><span>1× packed block BMM</span><i>→</i><span>official iₜ, rₜ, aₜ, √γ</span><i>→</i><span>C8 / C16 / C32 / fused decode</span></div>
-        <div class="pipeline-row samu-row"><span class="pipeline-name">SAMU Triton</span><span>1× packed GEMM</span><i>→</i><span>shared c,d + static ν,θ</span><i>→</i><span>serial / C16 / C32 / fused decode</span></div>
+        <div class="pipeline-row samu-row"><span class="pipeline-name">SAMU Triton</span><span>1× packed GEMM</span><i>→</i><span>shared c,d + static ν,θ</span><i>→</i><span>C8 / C16 / C32 / fused decode</span></div>
       </div>
       <dl class="delta-table">
         <div><dt>Equal track</dt><dd><b>16,772 vs 16,768</b><span>参数差 4；两边 state 都是 512 B / batch</span></dd></div>
@@ -59,7 +59,7 @@
         <div><dt>Launches</dt><dd><b>4 prefill · 1 decode</b><span>双方相同；不再拿 Python loop 当架构优势</span></dd></div>
         <div><dt>Profiler</dt><dd><b>zero spill</b><span>双方代表 kernel；register 与 derived occupancy 逐 kernel 展示</span></dd></div>
       </dl>
-      <p class="delta-caveat"><span class="evidence derived">SAMU-specific optimization</span> 相位增量被结构性限制在 ±0.0772 rad，因此可用有误差界的 degree-6/7 sin/cos 多项式替代通用 libdevice 范围归约；同时把静态 bias 在 pack 阶段转成 host scalar，消除了每次调用的两次 D2H 同步。</p>
+      <p class="delta-caveat"><span class="evidence derived">SAMU-specific optimization</span> 相位增量被结构性限制在 ±0.0772 rad，因此用有误差界的 degree-6/7 sin/cos 多项式替代通用范围归约；L≤128 还会在解析参数界通过时启用 bounded-exp，多项式不安全或实测无益时自动回退通用 exp。</p>
     </section>
 
     <div class="course-shell" id="course">
@@ -69,7 +69,7 @@
     </div>
 
     <section class="wide-section benchmark-section" id="benchmarks" aria-labelledby="bench-title">
-      <div class="wide-heading"><div><p class="part-label">Part IV · Benchmark Lab</p><h2 id="bench-title">Equal Triton kernels + official Mamba context</h2></div><p>58 行结果：54 measured、4 个明确 unsupported。每个 latency 点保留 CUDA-event samples；另外记录实际 launch、Triton register/spill、derived occupancy、静态 SFU 与逻辑流量下界。</p></div>
+      <div class="wide-heading"><div><p class="part-label">Part IV · Benchmark Lab</p><h2 id="bench-title">Equal Triton kernels + official Mamba context</h2></div><p>58 行结果：54 measured、4 个明确 unsupported。每个 latency 点保留 Triton driver-event samples；另外记录实际 launch、Triton register/spill、derived occupancy、静态 SFU 与逻辑流量下界。</p></div>
       <div class="benchmark-controls" id="benchmark-controls"><label>Experiment<select id="filter-experiment"><option value="equal-length">Equal Triton · length</option><option value="official-length">Official context · length</option><option value="batch">Equal Triton · batch</option><option value="decode">Equal Triton · decode</option><option value="chunks">Chunk sweep · C8/C16/C32</option></select></label><label>Metric<select id="filter-metric"><option value="median_ms">Median latency</option><option value="tokens_per_second">Throughput</option><option value="speedup">Pairwise speed ratio</option></select></label></div>
       <div class="benchmark-grid"><figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">Measured figure</span><h3 id="chart-title">Equal-kernel prefill length sweep</h3></div><span id="chart-protocol" class="protocol">same width + parameters + state</span></div><svg id="benchmark-chart" viewBox="0 0 960 520" role="img" aria-label="SAMU、RG-LRU 与官方 Mamba-3 实测折线图"></svg><figcaption id="chart-caption">读取 benchmark_results_equal_kernel/summary.json…</figcaption></figure><aside class="benchmark-detail" id="benchmark-detail"><p class="aside-title">Selected point</p><p>点击实测点查看 track、backend、P10/P95、raw samples、state 与参数。</p></aside></div>
       <div class="lab-tabs" role="tablist" aria-label="Benchmark 附加信息"><button class="active" data-lab-tab="protocol">Protocol</button><button data-lab-tab="profile">SFU / bandwidth / launch / register</button><button data-lab-tab="correctness">Correctness</button><button data-lab-tab="environment">Environment</button><button data-lab-tab="raw">Raw data</button></div><div class="lab-panel" id="lab-panel"></div>
@@ -81,7 +81,7 @@
 python run_equal_kernel_benchmarks.py \
   --output ../benchmark_results_equal_kernel \
   --rglru-source /path/to/recurrentgemma \
-  --mamba-source /path/to/mamba</code></pre><p>计时使用 synchronized CUDA events；首次编译、参数打包和 setup 不进入样本。decode 每个样本包含 100 次 inner iterations。profiling 另见 <code>profile_equal_kernels.py</code>。</p></div></div>
+  --mamba-source /path/to/mamba</code></pre><p>计时使用 Triton driver CUDA events；每个样本前清 L2，保留全部 raw times。首次编译、参数打包、shape dispatch 和 setup 不进入样本。profiling 另见 <code>profile_equal_kernels.py</code>。</p></div></div>
       <div class="source-note"><span class="evidence derived">Scope</span> 新 kernel 是 inference-only；没有 backward 数字。Nsight Compute 不在镜像中，因此 measured DRAM bandwidth 与 SFU utilization 明确为 N/A；网页只展示逻辑字节下界、静态 SFU 操作数和编译器 metadata。</div>
     </section>
   </main>

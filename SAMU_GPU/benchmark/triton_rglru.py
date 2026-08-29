@@ -85,8 +85,15 @@ def _official_step(x_value, projected_x, projected_a, bias_x, bias_a, softplus_a
                    is_reset):
     """Official eager-BF16 pointwise order, represented in FP32 registers."""
 
-    raw_x = _bf16_round(projected_x.to(tl.float32) + bias_x.to(tl.float32))
-    raw_a = _bf16_round(projected_a.to(tl.float32) + bias_a.to(tl.float32))
+    # Official BlockDiagonalLinear returns a BF16 activation before RGLRU adds
+    # its BF16 bias.  Prefill already arrives here from a BF16 torch.bmm, while
+    # fused decode accumulates the dot product in FP32 registers.  Round both
+    # paths at the same projection boundary so decode cannot silently gain a
+    # different numerical policy.
+    projected_x = _bf16_round(projected_x.to(tl.float32))
+    projected_a = _bf16_round(projected_a.to(tl.float32))
+    raw_x = _bf16_round(projected_x + bias_x.to(tl.float32))
+    raw_a = _bf16_round(projected_a + bias_a.to(tl.float32))
     gate_x = _bf16_round(tl.sigmoid(raw_x))
     gate_a = _bf16_round(tl.sigmoid(raw_a))
     # Source expression is: -8.0 * gate_a * softplus(a_param).

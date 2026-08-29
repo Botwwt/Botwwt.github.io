@@ -2,6 +2,7 @@ import {lessons,parts} from "./lessons.js";
 import {initArchitecture,initCoreFigure} from "./visualizations/core.js";
 import {initSystemFigure} from "./visualizations/systems.js";
 import {initBenchmarkLab} from "./benchmark-lab.js";
+import {renderMathWhenReady} from "./math.js";
 
 const content=document.querySelector("#lesson-content"),nav=document.querySelector("#lesson-links");
 
@@ -12,6 +13,7 @@ function lessonHTML(lesson,i){
 
 content.innerHTML=lessons.map(lessonHTML).join("");
 nav.innerHTML=lessons.map((l,i)=>`<li><a href="#lesson-${i}"><span>${String(i).padStart(2,"0")}</span> ${l.title}</a></li>`).join("");
+renderMathWhenReady(content);
 
 initArchitecture();
 document.querySelectorAll("[data-figure]").forEach(root=>{initCoreFigure(root);initSystemFigure(root);});
