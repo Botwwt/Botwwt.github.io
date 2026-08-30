@@ -17,9 +17,9 @@ renderMathWhenReady(document);
 initArchitecture();
 document.querySelectorAll("[data-figure]").forEach(initCoreFigure);
 initCompleteAnalysis().catch(error => {
-  console.error("canonical H800 results unavailable", error);
-  document.querySelector("#training-result").innerHTML = "<p><b>扫描结果尚未写入。</b> 页面不会用旧候选结果代替。</p>";
-  document.querySelector("#inference-result").innerHTML = "<p><b>canonical 连续生成实验尚未完成。</b> 页面不会用需要重训的结果代替。</p>";
+  console.error("H800 result loading failed", error);
+  document.querySelector("#training-result").innerHTML = "<p><b>训练结果文件读取失败。</b> 请刷新页面或直接查看下方原始数据链接。</p>";
+  document.querySelector("#inference-result").innerHTML = "<p><b>推理结果文件读取失败。</b> 请刷新页面或直接查看下方原始数据链接。</p>";
 });
 
 const navItems = [...nav.children];

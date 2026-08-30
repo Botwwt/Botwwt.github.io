@@ -44,7 +44,7 @@ from triton_training_scan import (
     samu_decode,
     samu_decode_blocked,
 )
-from triton_rglru import pack_rglru, rglru_triton_decode
+from triton_rglru import pack_rglru, rglru_triton_decode, rglru_triton_serial
 
 
 OFFICIAL_RECURRENTGEMMA_COMMIT = "2efa84dac0e68e63547a27a18fa943c98f1c312e"
@@ -61,10 +61,22 @@ class StudyConfig:
     conv_width: int = 4
     train_sequence_length: int = 256
     train_batch_size: int = 32
+    # Griffin/Hawk paper presets use no sqrt(D) embedding scaling and apply
+    # the 2/N variance factor to every residual branch's final projection.
+    embedding_scale_by_sqrt_dim: bool = False
+    final_w_init_variance_scale: float | None = None
 
     @property
     def mlp_width(self) -> int:
         return self.width * self.mlp_expansion
+
+    @property
+    def resolved_final_w_init_variance_scale(self) -> float:
+        return (
+            2.0 / self.depth
+            if self.final_w_init_variance_scale is None
+            else self.final_w_init_variance_scale
+        )
 
 
 def sha256(path: Path) -> str:
@@ -137,7 +149,11 @@ class CausalDepthwiseConv1D(nn.Module):
     def step(self, x, cache):
         combined = torch.cat((cache, x[:, None]), dim=1)
         output = (combined * self.w[None]).sum(dim=1) + self.b
-        return output, combined[:, 1:].contiguous()
+        # Elementwise reduction is promoted to FP32 by CUDA autocast, whereas
+        # the full-sequence grouped conv returns BF16.  Restore the official
+        # BF16 activation boundary so prefill and one-token decode use the
+        # same numerical policy; recurrence caches remain explicitly FP32.
+        return output.to(x.dtype), combined[:, 1:].contiguous()
 
 
 class BlockDiagonalLinear(nn.Module):
@@ -176,6 +192,8 @@ class RGLRUMixer(nn.Module):
         self.a_gate = BlockDiagonalLinear(width, num_blocks)
         self.a_param = nn.Parameter(_official_a_parameter(width))
         self._inference_packed = None
+        self._decode_backend = "fused"
+        self._decode_num_warps = 2
         self.scan_backend = "auto"
 
     def _terms(self, x):
@@ -237,11 +255,28 @@ class RGLRUMixer(nn.Module):
     def prepare_inference(self):
         self._inference_packed = pack_rglru(self)
 
+    def set_decode_num_warps(self, num_warps: int) -> None:
+        if num_warps not in (1, 2, 4, 8):
+            raise ValueError(num_warps)
+        self._decode_num_warps = num_warps
+
+    def set_decode_backend(self, backend: str) -> None:
+        if backend not in ("fused", "bmm"):
+            raise ValueError(backend)
+        self._decode_backend = backend
+
     def step(self, x, state, segment_pos):
         if self._inference_packed is not None:
-            output, new_state = rglru_triton_decode(
-                x, segment_pos, self._inference_packed, state
-            )
+            if self._decode_backend == "bmm":
+                output, new_state = rglru_triton_serial(
+                    x[:, None], segment_pos[:, None], self._inference_packed,
+                    state, num_warps=self._decode_num_warps,
+                )
+            else:
+                output, new_state = rglru_triton_decode(
+                    x, segment_pos, self._inference_packed, state,
+                    num_warps=self._decode_num_warps,
+                )
             return output[:, 0], new_state
         gate_x = torch.sigmoid(self.input_gate(x))
         gate_a = torch.sigmoid(self.a_gate(x))
@@ -314,7 +349,9 @@ class SAMUMixer(nn.Module):
     def _scan_inputs(self, x):
         eta, delta = self._controls(x)
         nu = torch.exp(self.nu_log)
-        gamma = torch.sqrt((1.0 - torch.exp(-2.0 * nu)).clamp_min(1e-8))
+        # canonical_grouped_samu_math.base_geometry adds epsilon after the
+        # square root.  Keeping it outside is part of the SAMU equation.
+        gamma = torch.sqrt(1.0 - torch.exp(-2.0 * nu)) + 1.0e-8
         write_r = x[..., :self.modes].float() * gamma
         write_i = x[..., self.modes:].float() * gamma
         return eta, delta, write_r.to(x.dtype), write_i.to(x.dtype)
@@ -330,9 +367,26 @@ class SAMUMixer(nn.Module):
             )
             cache = (last_r, last_i)
         elif backend == "triton":
-            if not return_cache:
+            if self.modes <= 512:
                 out_r, out_i = samu_scan(
                     eta, delta, self.nu_log, self.theta_log, write_r, write_i
+                )
+                cache = None
+            else:
+                # The fully fused serial kernel keeps all modes in one
+                # program and is intentionally capped at 512 modes.  At
+                # paper widths, materialize the exact transition once and
+                # use the tiled state-stationary complex scan.  This is the
+                # conservative wide-mode analogue of the Pallas linear scan;
+                # the primary H800 path remains the exact chunk scan.
+                nu, theta = torch.exp(self.nu_log), torch.exp(self.theta_log)
+                radius = torch.exp(-nu * torch.exp(eta).unsqueeze(-1))
+                phase = theta + delta.unsqueeze(-1)
+                out_r, out_i = complex_scan(
+                    radius * torch.cos(phase),
+                    radius * torch.sin(phase),
+                    write_r,
+                    write_i,
                 )
                 cache = None
         elif backend == "precomputed_decay":
@@ -395,7 +449,7 @@ class SAMUMixer(nn.Module):
                 nu,
                 torch.cos(theta).contiguous(),
                 torch.sin(theta).contiguous(),
-                torch.sqrt((1.0 - torch.exp(-2.0 * nu)).clamp_min(1e-8)).contiguous(),
+                (torch.sqrt(1.0 - torch.exp(-2.0 * nu)) + 1.0e-8).contiguous(),
             )
 
     def set_decode_backend(self, backend: str):
@@ -437,13 +491,21 @@ class SAMUMixer(nn.Module):
 
 
 class GatedMLP(nn.Module):
-    def __init__(self, width: int, expanded_width: int):
+    def __init__(
+        self,
+        width: int,
+        expanded_width: int,
+        final_w_init_variance_scale: float = 1.0,
+    ):
         super().__init__()
         self.up = nn.Linear(width, 2 * expanded_width)
         self.down = nn.Linear(expanded_width, width)
         nn.init.normal_(self.up.weight, std=math.sqrt(1.0 / width))
         nn.init.zeros_(self.up.bias)
-        nn.init.normal_(self.down.weight, std=math.sqrt(1.0 / expanded_width))
+        nn.init.normal_(
+            self.down.weight,
+            std=math.sqrt(final_w_init_variance_scale / expanded_width),
+        )
         nn.init.zeros_(self.down.bias)
 
     def forward(self, x):
@@ -465,11 +527,20 @@ class RecurrentBlock(nn.Module):
         )
         self.linear_out = nn.Linear(config.rnn_width, config.width)
         self.channel_norm = RMSNorm(config.width)
-        self.mlp = GatedMLP(config.width, config.mlp_width)
+        self.mlp = GatedMLP(
+            config.width,
+            config.mlp_width,
+            config.resolved_final_w_init_variance_scale,
+        )
         for linear in (self.linear_y, self.linear_x):
             nn.init.normal_(linear.weight, std=math.sqrt(1.0 / config.width))
             nn.init.zeros_(linear.bias)
-        nn.init.normal_(self.linear_out.weight, std=math.sqrt(1.0 / config.rnn_width))
+        nn.init.normal_(
+            self.linear_out.weight,
+            std=math.sqrt(
+                config.resolved_final_w_init_variance_scale / config.rnn_width
+            ),
+        )
         nn.init.zeros_(self.linear_out.bias)
 
     def forward(self, x, return_cache: bool = False):
@@ -512,7 +583,9 @@ class SmallHawkLM(nn.Module):
         self.final_norm = RMSNorm(config.width)
 
     def forward(self, tokens, return_cache: bool = False):
-        x = self.embedding(tokens) * math.sqrt(self.config.width)
+        x = self.embedding(tokens)
+        if self.config.embedding_scale_by_sqrt_dim:
+            x = x * math.sqrt(self.config.width)
         caches = []
         for block in self.blocks:
             x, cache = block(x, return_cache)
@@ -545,7 +618,9 @@ class SmallHawkLM(nn.Module):
             block.mixer.prepare_inference()
 
     def step(self, tokens, caches, segment_pos):
-        x = self.embedding(tokens) * math.sqrt(self.config.width)
+        x = self.embedding(tokens)
+        if self.config.embedding_scale_by_sqrt_dim:
+            x = x * math.sqrt(self.config.width)
         new_caches = []
         for block, cache in zip(self.blocks, caches):
             x, new_cache = block.step(x, cache, segment_pos)
@@ -927,11 +1002,23 @@ def correctness_checks():
         rg_state = torch.randn(batch, width, device="cuda")
         expected_out, expected_state = rg.step(decode_x, rg_state, positions)
         rg.prepare_inference()
-        observed_out, observed_state = rg.step(decode_x, rg_state, positions)
-        reports["rglru_decode_bfloat16"] = {
-            "output_max_abs": float((observed_out.float() - expected_out.float()).abs().max()),
-            "state_max_abs": float((observed_state - expected_state).abs().max()),
-        }
+        for backend in ("fused", "bmm"):
+            rg.set_decode_backend(backend)
+            rg.set_decode_num_warps(4)
+            observed_out, observed_state = rg.step(
+                decode_x, rg_state, positions
+            )
+            reports[
+                "rglru_decode_bfloat16"
+                if backend == "fused" else "rglru_decode_bmm_bfloat16"
+            ] = {
+                "output_max_abs": float(
+                    (observed_out.float() - expected_out.float()).abs().max()
+                ),
+                "state_max_abs": float(
+                    (observed_state - expected_state).abs().max()
+                ),
+            }
         samu = SAMUMixer(width).cuda().eval()
         samu.phase_amplitude.fill_(0.7)
         samu.radial_amplitude.fill_(0.5)

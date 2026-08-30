@@ -259,6 +259,12 @@
 .term-note { margin: 1.35rem 0; padding: 1rem 1.1rem; border-left: 3px solid var(--state); background: color-mix(in srgb, var(--state) 6%, var(--panel)); }
 .term-note > b { display: block; margin-bottom: .35rem; }
 .term-note p { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.65; }
+.execution-steps { list-style: none; margin: 1.5rem 0; padding: 0; border-top: 1px solid var(--line); }
+.execution-steps li { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--line); }
+.execution-steps li > span { color: var(--state); font: 600 .72rem var(--mono); padding-top: .2rem; }
+.execution-steps h4 { margin: 0 0 .35rem; font-size: .96rem; }
+.execution-steps p { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.68; }
+.execution-steps small { display: block; margin-top: .55rem; color: var(--ink); font-size: .74rem; line-height: 1.55; }
 .dataflow-diagram { display: grid; grid-template-columns: minmax(150px, 1fr) auto minmax(220px, 1.3fr) auto minmax(150px, 1fr); gap: .65rem; align-items: center; margin: 1.6rem 0; padding: 1.1rem; border: 1px solid var(--line); background: var(--panel); }
 .dataflow-diagram > i { color: var(--muted); font: normal .7rem/1.4 var(--mono); text-align: center; }
 .flow-node { display: grid; gap: .25rem; place-content: center; min-height: 76px; padding: .7rem; border: 1px solid var(--line-strong); text-align: center; }

@@ -6,12 +6,12 @@
     9,
     0
   ],
-  "data_sha256": "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed",
-  "data_characters": 1115394,
-  "alphabet_size": 65,
+  "data_sha256": "19c1a06f8fc774e0400f7d8d58f9080e58f88294e7495b7500bdf086ca411886",
+  "data_characters": 100000000,
+  "alphabet_size": 205,
   "official_recurrentgemma_commit": "2efa84dac0e68e63547a27a18fa943c98f1c312e",
   "config": {
-    "vocab_size": 65,
+    "vocab_size": 205,
     "width": 256,
     "rnn_width": 384,
     "depth": 6,
@@ -19,6 +19,8 @@
     "num_gate_blocks": 16,
     "conv_width": 4,
     "train_sequence_length": 256,
-    "train_batch_size": 32
+    "train_batch_size": 32,
+    "embedding_scale_by_sqrt_dim": false,
+    "final_w_init_variance_scale": null
   }
 }

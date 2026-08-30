@@ -768,7 +768,7 @@ def _samu_decode(x, phase_direction, radial_direction,
     rho = tl.exp(-nu * tl.exp(radial_delta))
     phase = theta + phase_delta
     ar, ai = rho * tl.cos(phase), rho * tl.sin(phase)
-    gamma = tl.sqrt(tl.maximum(1.0 - tl.exp(-2.0 * nu), 1e-8))
+    gamma = tl.sqrt(tl.maximum(1.0 - tl.exp(-2.0 * nu), 0.0)) + 1.0e-8
     write_r = values * gamma
     write_i_values = tl.load(
         x + batch * width + modes + lane, mask=mode_mask, other=0.0

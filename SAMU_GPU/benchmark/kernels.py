@@ -69,7 +69,7 @@ def samu_controller(u: torch.Tensor, p: SamuParameters) -> tuple[torch.Tensor, t
 
 def samu_write(u: torch.Tensor, p: SamuParameters) -> tuple[torch.Tensor, torch.Tensor]:
     """One wide real projection represented as two output views."""
-    gamma = torch.sqrt((1.0 - torch.exp(-2.0 * p.nu)).clamp_min(1e-8)).to(u.dtype)
+    gamma = (torch.sqrt(1.0 - torch.exp(-2.0 * p.nu)) + 1.0e-8).to(u.dtype)
     wr = (u @ p.wr) * gamma
     wi = (u @ p.wi) * gamma
     return wr, wi

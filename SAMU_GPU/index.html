@@ -24,9 +24,9 @@
   <main id="top">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow">NVIDIA H800 · 完整小模型实验</p>
+        <p class="eyebrow">NVIDIA H800 · 400M / 1.3B 完整系统实验</p>
         <h1 id="hero-title">SAMU 与 RG-LRU<br>从方程比到完整模型</h1>
-        <p class="hero-thesis">我们把 Griffin 的 RG-LRU 方程、16 组分块门控、数值精度和状态重置语义逐项迁移到 CUDA；再让两种递推单元进入同一套六层语言模型，用相同数据、训练预算和解码协议比较。SAMU 直接复用块内已有的输入分支作为复数写入，不再携带旧微基准中的额外大投影。</p>
+        <p class="hero-thesis">我们固定 Griffin 的 RG-LRU 方程、16 组分块门控、数值精度和状态重置语义，再把 SAMU 与 RG-LRU 分别装入完全相同的 Hawk 模型骨架。质量实验使用同数据、同预算的六层语言模型；系统实验使用 Griffin 表 2 的 400M 与 1.3B 配置。SAMU 直接复用块内已有的输入分支作为复数写入，不再携带旧微基准中的额外大投影。</p>
         <div class="hero-actions"><a class="button primary" href="#summary">先看实测</a><a class="button" href="#report">理解实现</a><a class="text-link" href="#sources">代码与原始结果 →</a></div>
       </div>
       <div class="hero-figure" id="architecture-explorer">
@@ -55,19 +55,20 @@
         <div><b>SAMU 的结构机会</b><p>全部模态共享两个随词元变化的坐标，所以动态控制计算不会随状态宽度线性展开。状态越宽，这一差异越有机会抵消复数乘法的额外成本。</p></div>
         <div><b>不能省略的成本</b><p>每个复数模态仍需两维实数状态、一次旋转和一次缩放。页面按相同 FP32 状态字节比较，不把一个复数误算成一个实数。</p></div>
       </div>
+      <div class="resource-table-wrap" id="correctness-audit"><p>正在读取官方方程与整块数值审计…</p></div>
     </section>
 
     <section class="wide-section evidence-section" id="training" aria-labelledby="training-title">
-      <div class="wide-heading"><div><p class="part-label">对应 Griffin 第 4 节与附录 D</p><h2 id="training-title">设备端高效训练递推模型</h2></div><p>这里不再用只有前向扫描的微基准替代训练。主结果来自完整六层字符语言模型：每一步均执行前向传播、交叉熵、反向传播、梯度裁剪和 AdamW 参数更新；双方的样本窗口与优化器状态分别独立但配置相同。</p></div>
+      <div class="wide-heading"><div><p class="part-label">对应 Griffin 第 4 节与附录 D</p><h2 id="training-title">设备端高效训练递推模型</h2></div><p>质量结果来自完整六层字节语言模型，系统速度同时覆盖 Griffin 表 2 的 400M 与 1.3B 形状。每一步都执行词嵌入、矩阵乘法、卷积、前馈网络、递推、交叉熵、反向传播、梯度裁剪和 AdamW 参数更新。投影后的递推扫描只用于解释端到端结果，不代替完整训练。</p></div>
       <div class="method-grid">
         <div><h3>完整训练配置</h3><p>模型宽度 256，递推宽度 384，共 6 层；训练序列长 256、批量 32，因此每步处理 8192 个字符。每种方法训练 3000 步，并使用 17、29、43 三个随机种子。</p></div>
-        <div><h3>训练质量</h3><p>在 Tiny Shakespeare 的固定训练、验证和测试切分上报告每字符比特数。数值越低，说明模型对真实下一个字符分配的概率越高。</p></div>
+        <div><h3>训练质量</h3><p>使用 enwik8 的前 9000 万字节训练、中间 500 万字节验证、最后 500 万字节测试。每个原始字节对应一个词元，报告每字节比特数；数值越低，说明模型给真实下一个字节分配的概率越高。</p></div>
         <div><h3>固定总词元的长度轴</h3><p>仿照 Griffin 图 3，把每步总词元固定为 8192，再把序列长度改为 2K、4K、8K。这样观察长序列是否让递推扫描成为瓶颈，而不会同时增加训练数据量。</p></div>
         <div><h3>为何需要自定义反向扫描</h3><p>自动微分若保存每一步的大量中间量，会增加显存流量。我们的内核只保存前向状态；反向时逆序重建递推梯度，使当前伴随状态驻留在寄存器中。</p></div>
       </div>
       <div class="analysis-summary" id="training-result"><p>正在读取完整训练结果…</p></div>
       <div class="system-chart-grid">
-        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">3 个随机种子</span><h3>验证集训练曲线</h3></div><span class="protocol">越低越好</span></div><svg id="training-quality-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU 与 RG-LRU 验证集训练曲线"></svg><figcaption>每条线对应一次从头训练；所有共享超参数相同，不挑选对某一种方法更有利的单次运行。</figcaption></figure>
+        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">3 个随机种子</span><h3>验证集训练曲线</h3></div><span class="protocol">越低越好</span></div><svg id="training-quality-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU 与 RG-LRU 验证集训练曲线"></svg><figcaption>每条线对应一次从头训练；曲线来自 500、1000、1500、2000、2500 和 3000 次更新时的完整验证集评估。三次运行都保留，不挑选单次结果。</figcaption></figure>
         <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">每步 8192 个词元</span><h3>完整训练步吞吐</h3></div><span class="protocol">L=256 / 2K / 4K / 8K</span></div><svg id="training-step-chart" viewBox="0 0 760 430" role="img" aria-label="固定总词元的完整训练吞吐"></svg><figcaption>计时包括损失函数、反向传播、梯度裁剪和参数更新；第一轮编译不计入中位数。</figcaption></figure>
       </div>
       <div class="method-grid">
@@ -77,9 +78,10 @@
         <div><h3>为什么短序列收益更小</h3><p>L=256、B=32 时，顺序内核本来就有足够多的批量并行任务，分块摘要和块间前缀会带来额外启动与读写。L=8K、B=1 时，增加时间块并行度的收益远大于这部分开销，因此加速随序列长度增加。</p></div>
       </div>
       <div class="resource-table-wrap" id="training-matrix-table"><p>正在读取三个模型规模的训练矩阵…</p></div>
+      <div class="resource-table-wrap" id="paper-scale-table"><p>正在读取 Griffin 表 2 尺度的完整训练步…</p></div>
       <div class="analysis-summary" id="scan-result"><p>正在读取投影后的扫描诊断…</p></div>
       <div class="single-chart"><figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">补充诊断 · B=8 · 状态宽度 1024</span><h3>只看投影后的前向扫描</h3></div><span class="protocol">不是完整训练结果</span></div><svg id="training-chart" viewBox="0 0 920 470" role="img" aria-label="SAMU 与 RG-LRU 的前向扫描延迟"></svg><figcaption>这张图只回答扫描内核本身的差异；上面的完整训练图才回答端到端训练速度。</figcaption></figure></div>
-      <div class="analysis-summary"><h3>复现 Griffin 附录中的扫描后端实验</h3><p>下面两张表补齐 Griffin 附录图 8 的两个关键问题。第一张固定批量、状态宽度和序列长度，只计投影后的递推；第二张把不同扫描后端装回完整模型，计入一次完整优化器更新。表中的“框架逐步循环”指由 PyTorch 逐词元发起运算的透明参考实现；“结合扫描”指先把所有仿射转移写入显存，再用可结合的前缀运算合并。</p></div>
+      <div class="analysis-summary"><h3>复现 Griffin 附录中的扫描后端实验</h3><p>下面两张表补齐 Griffin 附录图 8 的两个关键问题。第一张固定批量、状态宽度和序列长度，只计投影后的递推；第二张把不同扫描后端装回完整模型，计入一次完整优化器更新。“PyTorch 逐步参考”逐词元建立运算，其中 RG-LRU 保持 RecurrentGemma 官方扫描语义；它用来检查方程并量化未优化 GPU 实现的开销，不是 SAMU 与 RG-LRU 的主性能对手。主对比会让双方先在独立调优样本上选择最快的精确 GPU 内核，再使用另一组样本复测完整模型。“结合扫描”则先把所有仿射转移写入显存，再用可结合的前缀运算合并。</p></div>
       <div class="resource-table-wrap" id="device-scan-table"><p>正在读取设备端扫描后端矩阵…</p></div>
       <div class="resource-table-wrap" id="scan-backend-table"><p>正在读取完整训练步的扫描后端矩阵…</p></div>
     </section>
@@ -90,20 +92,21 @@
     </div>
 
     <section class="wide-section section5-section" id="inference" aria-labelledby="inference-title">
-      <div class="wide-heading"><div><p class="part-label">对应 Griffin 第 5 节与附录 F</p><h2 id="inference-title">完整模型推理速度</h2></div><p>推理主结果使用训练后的同一六层小模型，不再只测一个递推层。每个生成步都执行词嵌入、六个递推块、最终归一化、词表投影和下一个词元选择；CUDA Graph 只消除 Python 调度噪声，不省略任何模型计算。</p></div>
+      <div class="wide-heading"><div><p class="part-label">对应 Griffin 第 5 节与附录 F</p><h2 id="inference-title">完整模型推理速度</h2></div><p>推理主结果使用 Griffin 表 2 的 1.3B 配置：模型宽度 2048、递推宽度 2560、24 层和 32K 词表。每个生成步都执行词嵌入、归一化、两条输入投影、因果卷积、递推、输出投影、门控前馈网络、最终归一化、词表投影和下一个词元选择；CUDA Graph 只消除 Python 调度噪声，不省略模型计算。</p></div>
       <div class="method-grid">
         <div><h3>连续生成延迟</h3><p>固定批量 16，分别从空状态和 4K 提示形成的状态缓存开始，连续生成 128 到 4096 个词元。提示处理时间不混入生成延迟。</p></div>
-        <div><h3>最高完整轨迹吞吐</h3><p>对 512、1K、2K、4K 生成长度，在双方共同的 B=1、4、16、32、64、128、256 候选集合中选择最高完整轨迹吞吐。</p></div>
+        <div><h3>最高完整轨迹吞吐</h3><p>对 512、1K、2K、4K 生成长度，在双方共同的 B=1、4、16、32、64、96、128、192、256、384、512 候选集合中选择最高完整轨迹吞吐。</p></div>
         <div><h3>FP32 状态缓存</h3><p>扫描输出可写成 BF16 供下一层使用，但最后一个递推状态直接以 FP32 写入缓存，不经过 BF16 截断。4K 提示与后续逐词元生成使用相同状态语义。</p></div>
-        <div><h3>按批量选择解码路径</h3><p>B=16 使用预先打包的静态谱参数，避免每一步重复计算方向归一化、基础相位的正弦和余弦；其他批量保留单程序融合路径。选择依据是完整 512 步轨迹，不依据单次内核短探针。</p></div>
+        <div><h3>按批量选择解码路径</h3><p>先在上述全部候选批量上运行 64 步探针，并分别为 SAMU 与 RG-LRU 选择最快的精确解码内核；随后让探针吞吐最高的两个批量完成 512、1K、2K 和 4K 整条轨迹。最终图只从完成整条轨迹的候选中选最高值。</p></div>
       </div>
       <div class="system-result" id="inference-result"><p>正在读取 H800 完整模型生成结果…</p></div>
       <div class="system-chart-grid">
         <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">B=16</span><h3>连续生成整条轨迹延迟</h3></div><span class="protocol">空提示与 4K 提示</span></div><svg id="inference-latency-chart" viewBox="0 0 760 430" role="img" aria-label="完整模型连续生成延迟"></svg><figcaption>4K 提示只用于构造起始状态；提示预填充时间与生成时间分开报告。</figcaption></figure>
         <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">共同批量候选</span><h3>完整模型最高生成吞吐</h3></div><span class="protocol">512–4096 个词元</span></div><svg id="inference-throughput-chart" viewBox="0 0 760 430" role="img" aria-label="完整模型最高生成吞吐"></svg><figcaption>每一个点都完成整条生成轨迹；不会把单步短探针外推成数千步结果。</figcaption></figure>
       </div>
-      <div class="resource-table-wrap" id="resource-table"><p>正在读取参数与缓存规模…</p></div>
+      <div class="resource-table-wrap" id="resource-table"><p>正在读取 1.3B 配置的参数与缓存规模…</p></div>
       <div class="formula section5-formula"><div class="math-display" data-katex>t_{\mathrm{step}}\approx\frac{\text{权重字节数}+B\times\text{每序列缓存字节数}}{\text{有效显存带宽}}</div><small>这是 Griffin 第 5 节用于解释逐词元生成的近似式。它说明权重读取和批量相关的状态缓存如何共同影响单步时间；最终判断仍以完整模型实测为准。</small></div>
+      <div class="resource-table-wrap" id="roofline-table"><p>正在读取 H800 计算吞吐、显存复制带宽与解码字节模型…</p></div>
     </section>
 
     <section class="wide-section sources-section" id="sources" aria-labelledby="sources-title">
@@ -120,7 +123,12 @@
         <li><a href="benchmark_results_small_model/full_model_benchmark.json">完整训练步与推理原始结果</a></li>
         <li><a href="benchmark_results_small_model/training_equation_audit.json">官方方程与分块梯度审计</a></li>
         <li><a href="benchmark_results_small_model/training_on_device_complete.json">设备端扫描后端原始结果</a></li>
-        <li><a href="benchmark_results_small_model/griffin_scan_backend_matrix.json">完整训练步后端矩阵</a></li>
+        <li><a href="benchmark_results_small_model/paper_scale_backend_ablation.json">400M / 1.3B 完整训练步后端矩阵</a></li>
+        <li><a href="benchmark_results_small_model/official_hawk_block_audit.json">官方 Hawk 块参数与整块数值审计</a></li>
+        <li><a href="benchmark_results_small_model/paper_scale_h800.json">Griffin 表 2 尺度训练结果</a></li>
+        <li><a href="benchmark_results_small_model/h800_roofline_decode.json">H800 屋顶线与解码字节模型</a></li>
+        <li><a href="benchmark_results_small_model/paper_scale_inference_h800.json">1.3B 配置完整模型推理结果</a></li>
+        <li><a href="benchmark_results_small_model/enwik8_dataset_manifest.json">enwik8 数据切分与校验值</a></li>
       </ul></div></div>
       <p class="source-note">硬件：NVIDIA H800 PCIe 80GB。RecurrentGemma 固定提交：<code>2efa84dac0e68e63547a27a18fa943c98f1c312e</code>。数据集、软件版本、GPU 型号与计算能力记录在 <a href="benchmark_results_small_model/environment.json">实验环境文件</a> 中。</p>
     </section>

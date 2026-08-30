@@ -1,0 +1,116 @@
+{
+  "real_torch.float32": {
+    "output_max_abs": 5.960464477539063e-08,
+    "grad_a_max_abs": 2.384185791015625e-07,
+    "grad_b_max_abs": 0.0
+  },
+  "real_chunk16_torch.float32": {
+    "output_max_abs": 1.1920928955078125e-07,
+    "grad_a_max_abs": 3.5762786865234375e-07,
+    "grad_b_max_abs": 9.5367431640625e-07
+  },
+  "complex_torch.float32": {
+    "output_max_abs": 5.960464477539063e-08,
+    "gradient_max_abs": 9.5367431640625e-07
+  },
+  "samu_fused_torch.float32": {
+    "output_max_abs": 1.080334186553955e-06,
+    "gradient_max_abs": 0.000152587890625
+  },
+  "samu_precomputed_decay_torch.float32": {
+    "output_max_abs": 1.080334186553955e-06,
+    "gradient_max_abs": 0.000152587890625
+  },
+  "samu_chunk16_torch.float32": {
+    "output_max_abs": 1.1883676052093506e-06,
+    "gradient_max_abs": 0.00026035308837890625,
+    "gradient_max_relative": 1.0042464542926975e-05,
+    "gradient_errors": {
+      "eta": 3.2782554626464844e-07,
+      "delta": 7.152557373046875e-06,
+      "nu_log": 1.6689300537109375e-06,
+      "theta_log": 0.00026035308837890625,
+      "write_r": 1.6927719116210938e-05,
+      "write_i": 1.8715858459472656e-05
+    },
+    "gradient_relative_errors": {
+      "eta": 5.298594591136839e-07,
+      "delta": 1.5838661899159042e-06,
+      "nu_log": 9.874578743417536e-07,
+      "theta_log": 1.0042464542926975e-05,
+      "write_r": 1.896028018914562e-06,
+      "write_i": 2.2655470496689875e-06
+    }
+  },
+  "real_torch.bfloat16": {
+    "output_max_abs": 0.0,
+    "grad_a_max_abs": 0.0078125,
+    "grad_b_max_abs": 0.0
+  },
+  "real_chunk16_torch.bfloat16": {
+    "output_max_abs": 0.0,
+    "grad_a_max_abs": 0.015625,
+    "grad_b_max_abs": 1.9073486328125e-06
+  },
+  "complex_torch.bfloat16": {
+    "output_max_abs": 0.0,
+    "gradient_max_abs": 0.0078125
+  },
+  "samu_fused_torch.bfloat16": {
+    "output_max_abs": 0.0,
+    "gradient_max_abs": 0.007555842399597168
+  },
+  "samu_precomputed_decay_torch.bfloat16": {
+    "output_max_abs": 0.0,
+    "gradient_max_abs": 0.007555842399597168
+  },
+  "samu_chunk16_torch.bfloat16": {
+    "output_max_abs": 0.0,
+    "gradient_max_abs": 0.0326385498046875,
+    "gradient_max_relative": 0.0022858392775450915,
+    "gradient_errors": {
+      "eta": 0.0014643967151641846,
+      "delta": 0.0051337480545043945,
+      "nu_log": 0.0015971064567565918,
+      "theta_log": 0.0326385498046875,
+      "write_r": 0.0,
+      "write_i": 0.0
+    },
+    "gradient_relative_errors": {
+      "eta": 0.0022858392775450915,
+      "delta": 0.001214979448184632,
+      "nu_log": 0.0007394082085211174,
+      "theta_log": 0.00120570443626941,
+      "write_r": 0.0,
+      "write_i": 0.0
+    }
+  },
+  "rglru_decode_bfloat16": {
+    "output_max_abs": 0.015625,
+    "state_max_abs": 0.013005256652832031
+  },
+  "rglru_decode_bmm_bfloat16": {
+    "output_max_abs": 0.015625,
+    "state_max_abs": 0.013005256652832031
+  },
+  "samu_decode_bfloat16": {
+    "output_max_abs": 0.015625,
+    "state_max_abs": 0.007296562194824219
+  },
+  "samu_decode_packed_bfloat16": {
+    "output_max_abs": 0.015625,
+    "state_max_abs": 0.007296562194824219
+  },
+  "samu_decode_blocked16_bfloat16": {
+    "output_max_abs": 0.015625,
+    "state_max_abs": 0.007296562194824219
+  },
+  "samu_decode_blocked32_bfloat16": {
+    "output_max_abs": 0.015625,
+    "state_max_abs": 0.007296562194824219
+  },
+  "samu_decode_blocked64_bfloat16": {
+    "output_max_abs": 0.015625,
+    "state_max_abs": 0.007296562194824219
+  }
+}

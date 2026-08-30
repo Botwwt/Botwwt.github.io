@@ -1,0 +1,1328 @@
+{
+  "schema_version": 1,
+  "generated_utc": "2026-08-30T03:49:13Z",
+  "paper_mapping": {
+    "source": "Griffin Table 2, Figure 3, Section 4.3 and Appendix Figure 8(b)",
+    "matched": [
+      "Table 2 widths, recurrent widths and depths for 400M, 1.3B and 7B",
+      "sequence lengths 2048, 4096 and 8192",
+      "8192 tokens per complete optimizer step",
+      "BF16 autocast forward, loss, backward, clipping and AdamW",
+      "forward and reverse measurement orders",
+      "vocabulary size 32000",
+      "pure-Hawk all-recurrent residual blocks",
+      "parallel D-to-D_RNN branches, width-4 depthwise convolution, multiplicative join and expansion-3 gated MLP",
+      "paper embedding scaling disabled and final projection initialization variance 2/N"
+    ],
+    "important_difference": "one H800 instead of model-parallel TPU-v3 pods; the 7B lower-bound memory requirement exceeds HBM before activations"
+  },
+  "precision": {
+    "resident_master_parameters": "FP32",
+    "matrix_and_activation_compute": "BF16 autocast",
+    "recurrent_accumulation": "FP32",
+    "optimizer_moments": "FP32 AdamW"
+  },
+  "official_recurrentgemma_commit": "2efa84dac0e68e63547a27a18fa943c98f1c312e",
+  "architecture_audit": [
+    {
+      "scale": "400m",
+      "width": 1536,
+      "rnn_width": 2048,
+      "depth": 12,
+      "vocabulary_size": 32000,
+      "official_hawk_contract": {
+        "temporal_blocks": 12,
+        "temporal_pre_norm": "RMSNorm(eps=1e-6, scale initialized to zero and applied as 1+scale)",
+        "recurrent_block": "parallel D->D_RNN x/y projections; width-4 causal depthwise Conv1D then recurrence on x; GeLU on y; multiply; D_RNN->D projection",
+        "channel_block": "RMSNorm then expansion-3 gated GeLU MLP with residual",
+        "embedding": "tied input/output embedding; no sqrt(D) scaling for Griffin/Hawk paper presets",
+        "gate_blocks": 16,
+        "final_projection_initialization_variance_scale": 0.16666666666666666
+      },
+      "common_parameters_per_block": 30700544,
+      "official_rglru_mixer_parameters_per_block": 530432,
+      "canonical_samu_mixer_parameters_per_block": 6148,
+      "only_changed_component": "RG-LRU mixer replaced by canonical SAMU mixer; all listed shell components are identical"
+    },
+    {
+      "scale": "1.3b",
+      "width": 2048,
+      "rnn_width": 2560,
+      "depth": 24,
+      "vocabulary_size": 32000,
+      "official_hawk_contract": {
+        "temporal_blocks": 24,
+        "temporal_pre_norm": "RMSNorm(eps=1e-6, scale initialized to zero and applied as 1+scale)",
+        "recurrent_block": "parallel D->D_RNN x/y projections; width-4 causal depthwise Conv1D then recurrence on x; GeLU on y; multiply; D_RNN->D projection",
+        "channel_block": "RMSNorm then expansion-3 gated GeLU MLP with residual",
+        "embedding": "tied input/output embedding; no sqrt(D) scaling for Griffin/Hawk paper presets",
+        "gate_blocks": 16,
+        "final_projection_initialization_variance_scale": 0.08333333333333333
+      },
+      "common_parameters_per_block": 53515776,
+      "official_rglru_mixer_parameters_per_block": 826880,
+      "canonical_samu_mixer_parameters_per_block": 7684,
+      "only_changed_component": "RG-LRU mixer replaced by canonical SAMU mixer; all listed shell components are identical"
+    },
+    {
+      "scale": "7b",
+      "width": 4096,
+      "rnn_width": 5632,
+      "depth": 32,
+      "vocabulary_size": 32000,
+      "official_hawk_contract": {
+        "temporal_blocks": 32,
+        "temporal_pre_norm": "RMSNorm(eps=1e-6, scale initialized to zero and applied as 1+scale)",
+        "recurrent_block": "parallel D->D_RNN x/y projections; width-4 causal depthwise Conv1D then recurrence on x; GeLU on y; multiply; D_RNN->D projection",
+        "channel_block": "RMSNorm then expansion-3 gated GeLU MLP with residual",
+        "embedding": "tied input/output embedding; no sqrt(D) scaling for Griffin/Hawk paper presets",
+        "gate_blocks": 16,
+        "final_projection_initialization_variance_scale": 0.0625
+      },
+      "common_parameters_per_block": 220281344,
+      "official_rglru_mixer_parameters_per_block": 3981824,
+      "canonical_samu_mixer_parameters_per_block": 16900,
+      "only_changed_component": "RG-LRU mixer replaced by canonical SAMU mixer; all listed shell components are identical"
+    }
+  ],
+  "environment": {
+    "hostname": "autodl-container-092840bd03-81b66308",
+    "gpu": "NVIDIA H800 PCIe",
+    "gpu_total_memory_bytes": 85019590656,
+    "sm_count": 114,
+    "compute_capability": "9.0",
+    "torch": "2.1.2+cu118",
+    "torch_cuda": "11.8"
+  },
+  "fixed_tokens_per_step": 8192,
+  "selected_scan_backends": {
+    "400m": {
+      "samu": "chunk16",
+      "rglru": "chunk32"
+    },
+    "1.3b": {
+      "samu": "chunk16",
+      "rglru": "chunk32"
+    },
+    "7b": {
+      "samu": "chunk16",
+      "rglru": "chunk32"
+    }
+  },
+  "records": [
+    {
+      "scale": "400m",
+      "config": {
+        "vocab_size": 32000,
+        "width": 1536,
+        "rnn_width": 2048,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.16666666666666666
+      },
+      "architecture": "samu",
+      "selected_scan_backend": "chunk16",
+      "parameters": 417633840,
+      "minimum_fp32_parameter_gradient_adam_bytes": 6682141440,
+      "status": "measured",
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 176.37332947924733,
+          "tokens_per_second": 46446.93176790031,
+          "peak_allocated_bytes": 21541498368,
+          "samples_ms": [
+            175.6289917975664,
+            175.66302325576544,
+            176.76917184144258,
+            175.95204804092646,
+            176.21380556374788,
+            175.77929329127073,
+            175.93986727297306,
+            176.64632946252823,
+            177.07257438451052,
+            176.8067916855216,
+            178.02895046770573,
+            176.29369348287582,
+            176.7214173451066,
+            177.17934679239988
+          ],
+          "measurement_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 177.26772092282772,
+          "tokens_per_second": 46212.58713855937,
+          "peak_allocated_bytes": 21541203456,
+          "samples_ms": [
+            177.0486794412136,
+            176.97652988135815,
+            176.89864244312048,
+            177.5551764294505,
+            177.55199316889048,
+            176.99667159467936,
+            177.2848591208458,
+            177.72488668560982,
+            177.4518182501197,
+            177.4231167510152,
+            177.87365708500147,
+            177.9032265767455,
+            177.46376246213913,
+            177.48676240444183
+          ],
+          "measurement_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 176.474055275321,
+          "tokens_per_second": 46420.42133173334,
+          "peak_allocated_bytes": 21541056000,
+          "samples_ms": [
+            175.9810782968998,
+            176.20760761201382,
+            176.23035050928593,
+            176.00029706954956,
+            176.23442504554987,
+            176.30882747471333,
+            176.38450302183628,
+            176.66203249245882,
+            176.99075676500797,
+            176.62094626575708,
+            176.7177600413561,
+            176.96387134492397,
+            176.80209875106812,
+            176.58620979636908
+          ],
+          "measurement_passes": 2
+        }
+      ]
+    },
+    {
+      "scale": "400m",
+      "config": {
+        "vocab_size": 32000,
+        "width": 1536,
+        "rnn_width": 2048,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.16666666666666666
+      },
+      "architecture": "rglru",
+      "selected_scan_backend": "chunk32",
+      "parameters": 423925248,
+      "minimum_fp32_parameter_gradient_adam_bytes": 6782803968,
+      "status": "measured",
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 226.7361283302307,
+          "tokens_per_second": 36130.104453705455,
+          "peak_allocated_bytes": 28472010240,
+          "samples_ms": [
+            226.24250687658787,
+            226.50887072086334,
+            226.58727131783962,
+            226.56151093542576,
+            226.4871457591653,
+            226.52146499603987,
+            226.4952389523387,
+            226.77691094577312,
+            226.87271051108837,
+            226.96338593959808,
+            227.0018896088004,
+            227.180453017354,
+            227.21635457128286,
+            226.85898933559656
+          ],
+          "measurement_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 227.42827655747533,
+          "tokens_per_second": 36020.14720420981,
+          "peak_allocated_bytes": 28471715328,
+          "samples_ms": [
+            227.32427343726158,
+            227.28589363396168,
+            227.35348902642727,
+            227.25526336580515,
+            227.53058932721615,
+            227.44663711637259,
+            227.37599071115255,
+            227.49630454927683,
+            227.43385285139084,
+            227.50837169587612,
+            227.5030640885234,
+            227.98850294202566,
+            227.45753172785044,
+            227.76113264262676
+          ],
+          "measurement_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 222.98236330971122,
+          "tokens_per_second": 36738.33158105749,
+          "peak_allocated_bytes": 27666261504,
+          "samples_ms": [
+            222.74725325405598,
+            222.8151960298419,
+            222.69053850322962,
+            222.57292550057173,
+            222.67814353108406,
+            222.68949542194605,
+            222.8975770995021,
+            223.3591452240944,
+            223.63105416297913,
+            223.27418811619282,
+            223.06682355701923,
+            223.01256749778986,
+            223.34981989115477,
+            223.01461175084114
+          ],
+          "measurement_passes": 2
+        }
+      ]
+    },
+    {
+      "scale": "1.3b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 2048,
+        "rnn_width": 2560,
+        "depth": 24,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.08333333333333333
+      },
+      "architecture": "samu",
+      "selected_scan_backend": "chunk16",
+      "parameters": 1350101088,
+      "minimum_fp32_parameter_gradient_adam_bytes": 21601617408,
+      "status": "measured",
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 480.08669121190906,
+          "tokens_per_second": 17063.584869058726,
+          "peak_allocated_bytes": 53684000256,
+          "samples_ms": [
+            479.12896517664194,
+            480.0840299576521,
+            479.329532943666,
+            478.9481507614255,
+            479.04130443930626,
+            479.92416843771935,
+            480.0465991720557,
+            480.38793355226517,
+            480.84384948015213,
+            481.3631037250161,
+            481.78134951740503,
+            481.05057422071695,
+            480.65872490406036,
+            480.656998232007
+          ],
+          "measurement_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 482.25455917418003,
+          "tokens_per_second": 16986.879323708425,
+          "peak_allocated_bytes": 53683262976,
+          "samples_ms": [
+            482.48439468443394,
+            482.9969061538577,
+            482.0977635681629,
+            481.6482290625572,
+            481.9758888334036,
+            481.73004668205976,
+            482.8525288030505,
+            482.41135478019714,
+            482.39194694906473,
+            481.7158253863454,
+            482.2738962247968,
+            483.93874801695347,
+            482.7698692679405,
+            482.9899128526449
+          ],
+          "measurement_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 479.3943306431174,
+          "tokens_per_second": 17088.228784454463,
+          "peak_allocated_bytes": 53682894336,
+          "samples_ms": [
+            479.3748492375016,
+            479.0734155103564,
+            479.3598558753729,
+            479.62159663438797,
+            480.54522555321455,
+            479.4513415545225,
+            479.7686403617263,
+            479.33731973171234,
+            478.9892481639981,
+            479.1269535198808,
+            479.50027603656054,
+            480.0087185576558,
+            479.31781224906445,
+            479.6847142279148
+          ],
+          "measurement_passes": 2
+        }
+      ]
+    },
+    {
+      "scale": "1.3b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 2048,
+        "rnn_width": 2560,
+        "depth": 24,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.08333333333333333
+      },
+      "architecture": "rglru",
+      "selected_scan_backend": "chunk32",
+      "parameters": 1369761792,
+      "minimum_fp32_parameter_gradient_adam_bytes": 21916188672,
+      "status": "measured",
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 605.1670829765499,
+          "tokens_per_second": 13536.75741864076,
+          "peak_allocated_bytes": 71066469888,
+          "samples_ms": [
+            603.2791417092085,
+            603.5765558481216,
+            603.2050335779786,
+            603.6843378096819,
+            603.9573466405272,
+            604.4347425922751,
+            603.4884238615632,
+            605.8926498517394,
+            606.1456445604563,
+            607.7560288831592,
+            606.4258050173521,
+            608.0334652215242,
+            606.7576101049781,
+            607.8735617920756
+          ],
+          "measurement_passes": 2
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 606.5608360804617,
+          "tokens_per_second": 13505.652710676019,
+          "peak_allocated_bytes": 71065732608,
+          "samples_ms": [
+            605.3887121379375,
+            604.9019787460566,
+            606.1783703044057,
+            606.841467320919,
+            605.6471774354577,
+            606.7426642403007,
+            606.1519123613834,
+            606.9673495367169,
+            606.5860828384757,
+            606.8528685718775,
+            606.96975979954,
+            607.2354931384325,
+            606.9706743583083,
+            608.0597508698702
+          ],
+          "measurement_passes": 2
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "status": "measured",
+          "order_balanced_median_step_ms": 594.5524601265788,
+          "tokens_per_second": 13778.430919713868,
+          "peak_allocated_bytes": 69052098048,
+          "samples_ms": [
+            594.1470954567194,
+            594.4554023444653,
+            594.8503306135535,
+            594.8877185583115,
+            595.6739550456405,
+            594.8994886130095,
+            595.0650414451957,
+            594.6010444313288,
+            593.867271207273,
+            593.1292595341802,
+            594.3082813173532,
+            594.2172016948462,
+            593.613282777369,
+            594.917232170701
+          ],
+          "measurement_passes": 2
+        }
+      ]
+    },
+    {
+      "measurement_pass": "analytical_hbm_preflight",
+      "scale": "7b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 4096,
+        "rnn_width": 5632,
+        "depth": 32,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.0625
+      },
+      "architecture": "samu",
+      "selected_scan_backend": "chunk16",
+      "parameters": 7180619904,
+      "minimum_fp32_parameter_gradient_adam_bytes": 114889918464,
+      "status": "not_runnable_minimum_optimizer_state_exceeds_hbm",
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        }
+      ]
+    },
+    {
+      "measurement_pass": "analytical_hbm_preflight",
+      "scale": "7b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 4096,
+        "rnn_width": 5632,
+        "depth": 32,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.0625
+      },
+      "architecture": "rglru",
+      "selected_scan_backend": "chunk32",
+      "parameters": 7307497472,
+      "minimum_fp32_parameter_gradient_adam_bytes": 116919959552,
+      "status": "not_runnable_minimum_optimizer_state_exceeds_hbm",
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        }
+      ]
+    }
+  ],
+  "measurement_passes": [
+    {
+      "measurement_pass": "forward",
+      "scale": "400m",
+      "config": {
+        "vocab_size": 32000,
+        "width": 1536,
+        "rnn_width": 2048,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.16666666666666666
+      },
+      "architecture": "samu",
+      "selected_scan_backend": "chunk16",
+      "parameters": 417633840,
+      "minimum_fp32_parameter_gradient_adam_bytes": 6682141440,
+      "status": "measured_or_attempted",
+      "shared_initialization": {
+        "tensors": 170,
+        "parameters": 417560064
+      },
+      "rows": [
+        {
+          "status": "measured",
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 175.93986727297306,
+          "tokens_per_second": 46561.3628506949,
+          "peak_allocated_bytes": 21541498368,
+          "samples_ms": [
+            175.6289917975664,
+            175.66302325576544,
+            176.76917184144258,
+            175.95204804092646,
+            176.21380556374788,
+            175.77929329127073,
+            175.93986727297306
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 177.0486794412136,
+          "tokens_per_second": 46269.76053057788,
+          "peak_allocated_bytes": 21541203456,
+          "samples_ms": [
+            177.0486794412136,
+            176.97652988135815,
+            176.89864244312048,
+            177.5551764294505,
+            177.55199316889048,
+            176.99667159467936,
+            177.2848591208458
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 176.23035050928593,
+          "tokens_per_second": 46484.61502985178,
+          "peak_allocated_bytes": 21541056000,
+          "samples_ms": [
+            175.9810782968998,
+            176.20760761201382,
+            176.23035050928593,
+            176.00029706954956,
+            176.23442504554987,
+            176.30882747471333,
+            176.38450302183628
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "forward",
+      "scale": "400m",
+      "config": {
+        "vocab_size": 32000,
+        "width": 1536,
+        "rnn_width": 2048,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.16666666666666666
+      },
+      "architecture": "rglru",
+      "selected_scan_backend": "chunk32",
+      "parameters": 423925248,
+      "minimum_fp32_parameter_gradient_adam_bytes": 6782803968,
+      "status": "measured_or_attempted",
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "status": "measured",
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 226.50887072086334,
+          "tokens_per_second": 36166.35398838465,
+          "peak_allocated_bytes": 28472010240,
+          "samples_ms": [
+            226.24250687658787,
+            226.50887072086334,
+            226.58727131783962,
+            226.56151093542576,
+            226.4871457591653,
+            226.52146499603987,
+            226.4952389523387
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 227.35348902642727,
+          "tokens_per_second": 36031.99596839164,
+          "peak_allocated_bytes": 28471715328,
+          "samples_ms": [
+            227.32427343726158,
+            227.28589363396168,
+            227.35348902642727,
+            227.25526336580515,
+            227.53058932721615,
+            227.44663711637259,
+            227.37599071115255
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 222.69053850322962,
+          "tokens_per_second": 36786.47532607764,
+          "peak_allocated_bytes": 27666261504,
+          "samples_ms": [
+            222.74725325405598,
+            222.8151960298419,
+            222.69053850322962,
+            222.57292550057173,
+            222.67814353108406,
+            222.68949542194605,
+            222.8975770995021
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "forward",
+      "scale": "1.3b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 2048,
+        "rnn_width": 2560,
+        "depth": 24,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.08333333333333333
+      },
+      "architecture": "rglru",
+      "selected_scan_backend": "chunk32",
+      "parameters": 1369761792,
+      "minimum_fp32_parameter_gradient_adam_bytes": 21916188672,
+      "status": "measured_or_attempted",
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "status": "measured",
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 603.5765558481216,
+          "tokens_per_second": 13572.429082320683,
+          "peak_allocated_bytes": 71066469888,
+          "samples_ms": [
+            603.2791417092085,
+            603.5765558481216,
+            603.2050335779786,
+            603.6843378096819,
+            603.9573466405272,
+            604.4347425922751,
+            603.4884238615632
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 606.1519123613834,
+          "tokens_per_second": 13514.763927884778,
+          "peak_allocated_bytes": 71065732608,
+          "samples_ms": [
+            605.3887121379375,
+            604.9019787460566,
+            606.1783703044057,
+            606.841467320919,
+            605.6471774354577,
+            606.7426642403007,
+            606.1519123613834
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 594.8877185583115,
+          "tokens_per_second": 13770.665865909976,
+          "peak_allocated_bytes": 69052098048,
+          "samples_ms": [
+            594.1470954567194,
+            594.4554023444653,
+            594.8503306135535,
+            594.8877185583115,
+            595.6739550456405,
+            594.8994886130095,
+            595.0650414451957
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "forward",
+      "scale": "1.3b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 2048,
+        "rnn_width": 2560,
+        "depth": 24,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.08333333333333333
+      },
+      "architecture": "samu",
+      "selected_scan_backend": "chunk16",
+      "parameters": 1350101088,
+      "minimum_fp32_parameter_gradient_adam_bytes": 21601617408,
+      "status": "measured_or_attempted",
+      "shared_initialization": {
+        "tensors": 338,
+        "parameters": 1349916672
+      },
+      "rows": [
+        {
+          "status": "measured",
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 479.329532943666,
+          "tokens_per_second": 17090.53884014023,
+          "peak_allocated_bytes": 53684000256,
+          "samples_ms": [
+            479.12896517664194,
+            480.0840299576521,
+            479.329532943666,
+            478.9481507614255,
+            479.04130443930626,
+            479.92416843771935,
+            480.0465991720557
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 482.0977635681629,
+          "tokens_per_second": 16992.404070428234,
+          "peak_allocated_bytes": 53683262976,
+          "samples_ms": [
+            482.48439468443394,
+            482.9969061538577,
+            482.0977635681629,
+            481.6482290625572,
+            481.9758888334036,
+            481.73004668205976,
+            482.8525288030505
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 479.4513415545225,
+          "tokens_per_second": 17086.196846251638,
+          "peak_allocated_bytes": 53682894336,
+          "samples_ms": [
+            479.3748492375016,
+            479.0734155103564,
+            479.3598558753729,
+            479.62159663438797,
+            480.54522555321455,
+            479.4513415545225,
+            479.7686403617263
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "1.3b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 2048,
+        "rnn_width": 2560,
+        "depth": 24,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.08333333333333333
+      },
+      "architecture": "rglru",
+      "selected_scan_backend": "chunk32",
+      "parameters": 1369761792,
+      "minimum_fp32_parameter_gradient_adam_bytes": 21916188672,
+      "status": "measured_or_attempted",
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "status": "measured",
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 594.2172016948462,
+          "tokens_per_second": 13786.20473563287,
+          "peak_allocated_bytes": 69052098048,
+          "samples_ms": [
+            594.6010444313288,
+            593.867271207273,
+            593.1292595341802,
+            594.3082813173532,
+            594.2172016948462,
+            593.613282777369,
+            594.917232170701
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 606.96975979954,
+          "tokens_per_second": 13496.553770167262,
+          "peak_allocated_bytes": 71065732608,
+          "samples_ms": [
+            606.9673495367169,
+            606.5860828384757,
+            606.8528685718775,
+            606.96975979954,
+            607.2354931384325,
+            606.9706743583083,
+            608.0597508698702
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 606.7576101049781,
+          "tokens_per_second": 13501.272771152655,
+          "peak_allocated_bytes": 71066469888,
+          "samples_ms": [
+            605.8926498517394,
+            606.1456445604563,
+            607.7560288831592,
+            606.4258050173521,
+            608.0334652215242,
+            606.7576101049781,
+            607.8735617920756
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "1.3b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 2048,
+        "rnn_width": 2560,
+        "depth": 24,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.08333333333333333
+      },
+      "architecture": "samu",
+      "selected_scan_backend": "chunk16",
+      "parameters": 1350101088,
+      "minimum_fp32_parameter_gradient_adam_bytes": 21601617408,
+      "status": "measured_or_attempted",
+      "shared_initialization": {
+        "tensors": 338,
+        "parameters": 1349916672
+      },
+      "rows": [
+        {
+          "status": "measured",
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 479.33731973171234,
+          "tokens_per_second": 17090.26120600229,
+          "peak_allocated_bytes": 53682894336,
+          "samples_ms": [
+            479.33731973171234,
+            478.9892481639981,
+            479.1269535198808,
+            479.50027603656054,
+            480.0087185576558,
+            479.31781224906445,
+            479.6847142279148
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 482.41135478019714,
+          "tokens_per_second": 16981.35816834691,
+          "peak_allocated_bytes": 53683262976,
+          "samples_ms": [
+            482.41135478019714,
+            482.39194694906473,
+            481.7158253863454,
+            482.2738962247968,
+            483.93874801695347,
+            482.7698692679405,
+            482.9899128526449
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 480.84384948015213,
+          "tokens_per_second": 17036.715783838143,
+          "peak_allocated_bytes": 53684000256,
+          "samples_ms": [
+            480.38793355226517,
+            480.84384948015213,
+            481.3631037250161,
+            481.78134951740503,
+            481.05057422071695,
+            480.65872490406036,
+            480.656998232007
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "400m",
+      "config": {
+        "vocab_size": 32000,
+        "width": 1536,
+        "rnn_width": 2048,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.16666666666666666
+      },
+      "architecture": "samu",
+      "selected_scan_backend": "chunk16",
+      "parameters": 417633840,
+      "minimum_fp32_parameter_gradient_adam_bytes": 6682141440,
+      "status": "measured_or_attempted",
+      "shared_initialization": {
+        "tensors": 170,
+        "parameters": 417560064
+      },
+      "rows": [
+        {
+          "status": "measured",
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 176.7177600413561,
+          "tokens_per_second": 46356.40468780773,
+          "peak_allocated_bytes": 21541056000,
+          "samples_ms": [
+            176.66203249245882,
+            176.99075676500797,
+            176.62094626575708,
+            176.7177600413561,
+            176.96387134492397,
+            176.80209875106812,
+            176.58620979636908
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 177.48676240444183,
+          "tokens_per_second": 46155.55486517221,
+          "peak_allocated_bytes": 21541203456,
+          "samples_ms": [
+            177.72488668560982,
+            177.4518182501197,
+            177.4231167510152,
+            177.87365708500147,
+            177.9032265767455,
+            177.46376246213913,
+            177.48676240444183
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 176.8067916855216,
+          "tokens_per_second": 46333.06176705444,
+          "peak_allocated_bytes": 21541498368,
+          "samples_ms": [
+            176.64632946252823,
+            177.07257438451052,
+            176.8067916855216,
+            178.02895046770573,
+            176.29369348287582,
+            176.7214173451066,
+            177.17934679239988
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "reverse",
+      "scale": "400m",
+      "config": {
+        "vocab_size": 32000,
+        "width": 1536,
+        "rnn_width": 2048,
+        "depth": 12,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.16666666666666666
+      },
+      "architecture": "rglru",
+      "selected_scan_backend": "chunk32",
+      "parameters": 423925248,
+      "minimum_fp32_parameter_gradient_adam_bytes": 6782803968,
+      "status": "measured_or_attempted",
+      "shared_initialization": {
+        "reference": "all"
+      },
+      "rows": [
+        {
+          "status": "measured",
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "tokens_per_step": 8192,
+          "median_step_ms": 223.27418811619282,
+          "tokens_per_second": 36690.31368613397,
+          "peak_allocated_bytes": 27666261504,
+          "samples_ms": [
+            223.3591452240944,
+            223.63105416297913,
+            223.27418811619282,
+            223.06682355701923,
+            223.01256749778986,
+            223.34981989115477,
+            223.01461175084114
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "tokens_per_step": 8192,
+          "median_step_ms": 227.5030640885234,
+          "tokens_per_second": 36008.30623016322,
+          "peak_allocated_bytes": 28471715328,
+          "samples_ms": [
+            227.49630454927683,
+            227.43385285139084,
+            227.50837169587612,
+            227.5030640885234,
+            227.98850294202566,
+            227.45753172785044,
+            227.76113264262676
+          ]
+        },
+        {
+          "status": "measured",
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "tokens_per_step": 8192,
+          "median_step_ms": 226.96338593959808,
+          "tokens_per_second": 36093.9275120796,
+          "peak_allocated_bytes": 28472010240,
+          "samples_ms": [
+            226.77691094577312,
+            226.87271051108837,
+            226.96338593959808,
+            227.0018896088004,
+            227.180453017354,
+            227.21635457128286,
+            226.85898933559656
+          ]
+        }
+      ]
+    },
+    {
+      "measurement_pass": "analytical_hbm_preflight",
+      "scale": "7b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 4096,
+        "rnn_width": 5632,
+        "depth": 32,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.0625
+      },
+      "architecture": "samu",
+      "selected_scan_backend": "chunk16",
+      "parameters": 7180619904,
+      "minimum_fp32_parameter_gradient_adam_bytes": 114889918464,
+      "status": "not_runnable_minimum_optimizer_state_exceeds_hbm",
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        }
+      ]
+    },
+    {
+      "measurement_pass": "analytical_hbm_preflight",
+      "scale": "7b",
+      "config": {
+        "vocab_size": 32000,
+        "width": 4096,
+        "rnn_width": 5632,
+        "depth": 32,
+        "mlp_expansion": 3,
+        "num_gate_blocks": 16,
+        "conv_width": 4,
+        "train_sequence_length": 256,
+        "train_batch_size": 32,
+        "embedding_scale_by_sqrt_dim": false,
+        "final_w_init_variance_scale": 0.0625
+      },
+      "architecture": "rglru",
+      "selected_scan_backend": "chunk32",
+      "parameters": 7307497472,
+      "minimum_fp32_parameter_gradient_adam_bytes": 116919959552,
+      "status": "not_runnable_minimum_optimizer_state_exceeds_hbm",
+      "rows": [
+        {
+          "sequence_length": 2048,
+          "batch_size": 4,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        },
+        {
+          "sequence_length": 4096,
+          "batch_size": 2,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        },
+        {
+          "sequence_length": 8192,
+          "batch_size": 1,
+          "status": "not_runnable_minimum_optimizer_state_exceeds_hbm"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "dataset": "enwik8",
+  "source": "http://mattmahoney.net/dc/enwik8.zip",
+  "uncompressed_sha256": "2b49720ec4d78c3c9fabaee6e4179a5e997302b3a70029f30f2d582218c024a8",
+  "uncompressed_bytes": 100000000,
+  "tokenization": "one vocabulary symbol per original byte; the byte values are mapped one-to-one through Latin-1 only so the existing character loader preserves all 100,000,000 positions",
+  "vocabulary_size": 205,
+  "split": {
+    "train_bytes": 90000000,
+    "validation_bytes": 5000000,
+    "test_bytes": 5000000
+  },
+  "training_protocol": {
+    "sequence_length": 256,
+    "batch_size": 32,
+    "tokens_per_update": 8192,
+    "updates": 3000,
+    "seeds": [17, 29, 43],
+    "checkpoint_selection": "lowest validation bits per byte; test evaluated once after selection"
+  }
+}

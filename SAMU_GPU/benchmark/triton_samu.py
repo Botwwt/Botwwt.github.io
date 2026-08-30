@@ -102,7 +102,7 @@ def pack_samu_parameters(p: SamuParameters, dtype: torch.dtype = torch.bfloat16,
         sin_theta=torch.sin(p.theta).float().contiguous(),
         chunk_cos_theta={size: torch.cos(size * p.theta).float().contiguous() for size in (8, 16, 32)},
         chunk_sin_theta={size: torch.sin(size * p.theta).float().contiguous() for size in (8, 16, 32)},
-        gamma=torch.sqrt((1.0 - torch.exp(-2.0 * p.nu)).clamp_min(1e-8)).float().contiguous(),
+        gamma=(torch.sqrt(1.0 - torch.exp(-2.0 * p.nu)) + 1.0e-8).float().contiguous(),
         padded_width=padded,
         bounded_poly_safe=bounded_poly_safe,
         use_bounded_poly=use_bounded_poly,
@@ -145,18 +145,17 @@ def _exp_small_negative(x):
 
 @triton.jit
 def _rho_taylor_coefficients(nu, gamma):
-    """Degree-4 coefficients without another parameter load.
+    """Degree-4 coefficients formed once outside the token loop.
 
-    gamma^2 = 1-exp(-2nu), hence exp(-nu)=sqrt(1-gamma^2).  This
-    reconstructs the constant coefficient from an array already resident in
-    the recurrence kernel and forms the remaining static coefficients once per
-    program, outside its time loop.
+    Canonical SAMU adds epsilon after the square root in ``gamma``, so gamma
+    cannot be inverted to recover the base radius exactly.  The mode-wise
+    ``nu`` value is already resident here; use it directly.
     """
 
     nu2 = nu * nu
     nu3 = nu2 * nu
     nu4 = nu2 * nu2
-    rho0 = tl.sqrt(tl.maximum(1.0 - gamma * gamma, 0.0))
+    rho0 = tl.exp(-nu)
     return (
         rho0,
         -nu * rho0,
