@@ -38,12 +38,24 @@ from triton_training_scan import (
     real_scan,
     real_scan_with_last,
     samu_scan,
+    samu_tiled_serial_scan,
     samu_scan_precomputed_decay,
     samu_chunk_scan,
+    samu_training_scan_dispatch,
     samu_scan_with_last,
     samu_decode,
     samu_decode_blocked,
 )
+from triton_fused_rglru_training import fused_rglru_scan
+from triton_samu_controller import (
+    formal_samu_controller_recompute,
+    formal_samu_coordinates,
+    formal_samu_coordinates_forward_cache,
+    reference_controller_projection_recompute,
+    reference_forward_triton_backward,
+    shared_controller_projection,
+)
+from triton_samu_affine_warp_scan import samu_affine_tile_scan
 from triton_rglru import pack_rglru, rglru_triton_decode, rglru_triton_serial
 
 
@@ -194,6 +206,7 @@ class RGLRUMixer(nn.Module):
         self._inference_packed = None
         self._decode_backend = "fused"
         self._decode_num_warps = 2
+        self._fused_training_block_size = 64
         self.scan_backend = "auto"
 
     def _terms(self, x):
@@ -211,17 +224,51 @@ class RGLRUMixer(nn.Module):
         return a.to(x.dtype), write.to(x.dtype)
 
     def forward(self, x, return_cache: bool = False):
-        a, write = self._terms(x)
         backend = self.scan_backend
+        fused_block_size = self._fused_training_block_size
         if backend == "auto":
-            # Complete-step H800 sweep: short small-width batches favor the
-            # state-stationary scan; long sequences and wider states favor an
-            # exact 32-token two-level scan.
-            backend = (
-                "triton"
-                if x.shape[1] < 1024 and self.width < 512
-                else "chunk32"
+            batch, length, width = x.shape
+            # The O(C) grouped affine hierarchy is profitable once there are
+            # enough K=16 chunks.  Keep the lower-launch chunk path for small
+            # or non-production shapes.  Block choices are H800 Gate-3 results.
+            if x.dtype == torch.bfloat16 and length >= 2048:
+                backend = "fused_grouped_prefix32_hierarchical_chunk16"
+                if length >= 16384:
+                    fused_block_size = 128 if width >= 1536 else 256
+                else:
+                    fused_block_size = 256 if width > 2048 else 128
+            else:
+                backend = "fused_serial" if length < 16 else "fused_chunk16"
+        hierarchical_prefix = (
+            backend.startswith("fused_hierarchical_chunk")
+            or (backend.startswith("fused_grouped_prefix")
+                and "hierarchical_chunk" in backend)
+        )
+        if (backend == "fused_serial" or backend.startswith("fused_chunk")
+                or hierarchical_prefix):
+            gate_x_logit = self.input_gate(x)
+            gate_a_logit = self.a_gate(x)
+            chunk_size = 0 if backend == "fused_serial" else int(
+                backend.rsplit("chunk", 1)[1]
             )
+            prefix_group_size = next(
+                (size for size in (32, 64, 128)
+                 if f"grouped_prefix{size}" in backend),
+                0,
+            )
+            output, last = fused_rglru_scan(
+                x,
+                gate_x_logit,
+                gate_a_logit,
+                self.a_param,
+                chunk_size=chunk_size,
+                block_size=fused_block_size,
+                reset_first=True,
+                hierarchical_prefix=hierarchical_prefix,
+                prefix_group_size=prefix_group_size,
+            )
+            return output, last if return_cache else None
+        a, write = self._terms(x)
         if return_cache:
             output, cache = real_scan_with_last(a, write)
         elif backend == "triton":
@@ -251,6 +298,11 @@ class RGLRUMixer(nn.Module):
 
     def set_scan_backend(self, backend: str) -> None:
         self.scan_backend = backend
+
+    def set_fused_training_block_size(self, block_size: int) -> None:
+        if block_size not in (32, 64, 128, 256):
+            raise ValueError(block_size)
+        self._fused_training_block_size = block_size
 
     def prepare_inference(self):
         self._inference_packed = pack_rglru(self)
@@ -322,6 +374,11 @@ class SAMUMixer(nn.Module):
         self._inference_fused = False
         self._decode_backend = "auto"
         self._inference_pack = None
+        self._tiled_training_block_size = 128
+        # Exact FP32 projection with fused low-rank coordinate backward is the
+        # latency default. The reference and cache-saving variants remain
+        # explicit debugging / memory-pressure choices.
+        self._controller_projection_dtype = "fp32_fused_coords"
         # H800 dispatch measured on complete steps: the state-stationary scan
         # wins for short, batch-rich sequences; the exact 16-token chunk scan
         # wins once the time axis is long enough to supply the missing
@@ -333,11 +390,57 @@ class SAMUMixer(nn.Module):
         # exactly equivalent to appending a constant 1 and applying the two
         # normalized direction vectors separately, while avoiding the
         # augmented [B,L,D+1] tensor and a second projection launch.
+        if self._controller_projection_dtype == "fp32_cache_recompute":
+            return formal_samu_controller_recompute(
+                x, self.phase_direction, self.radial_direction,
+                self.phase_amplitude, self.radial_amplitude, self.modes,
+            )
         directions = torch.stack((self.phase_direction, self.radial_direction))
         directions = F.normalize(directions.float(), dim=1)
-        projected = F.linear(
-            x.float(), directions[:, :-1], directions[:, -1]
-        )
+        if self._controller_projection_dtype in (
+                "fp32_triton_backward", "fp32_cache_save"):
+            projected = reference_forward_triton_backward(
+                x,
+                directions[:, :-1].contiguous(),
+                directions[:, -1].contiguous(),
+            )
+        elif self._controller_projection_dtype == "fp32_recompute":
+            projected = reference_controller_projection_recompute(
+                x,
+                directions[:, :-1].contiguous(),
+                directions[:, -1].contiguous(),
+            )
+        elif self._controller_projection_dtype in (
+                "triton_fp32", "triton_fp32_rounded"):
+            projected = shared_controller_projection(
+                x,
+                directions[:, :-1].contiguous(),
+                directions[:, -1].contiguous(),
+            )
+            if self._controller_projection_dtype == "triton_fp32_rounded":
+                projected = projected.to(x.dtype).float()
+        elif self._controller_projection_dtype == "bf16":
+            # The controller has only two outputs.  Casting its tiny normalized
+            # weight/bias avoids a logical full-size x.float() allocation and
+            # lets the projection use the production BF16 activation boundary.
+            # Keep the two projected controls in FP32 for their nonlinear math.
+            projected = F.linear(
+                x,
+                directions[:, :-1].to(x.dtype),
+                directions[:, -1].to(x.dtype),
+            ).float()
+        else:
+            projected = F.linear(
+                x.float(), directions[:, :-1], directions[:, -1]
+            )
+            if self._controller_projection_dtype == "fp32_rounded":
+                projected = projected.to(x.dtype).float()
+        if self._controller_projection_dtype in (
+                "fp32_cache_save", "fp32_fused_coords"):
+            return formal_samu_coordinates(
+                projected, self.phase_amplitude, self.radial_amplitude,
+                self.modes,
+            )
         phase_coordinate = torch.tanh(projected[..., 0])
         radial_raw = torch.tanh(projected[..., 1])
         radial_coordinate = radial_raw / (1.0 + radial_raw.square())
@@ -357,15 +460,97 @@ class SAMUMixer(nn.Module):
         return eta, delta, write_r.to(x.dtype), write_i.to(x.dtype)
 
     def forward(self, x, return_cache: bool = False):
-        eta, delta, write_r, write_i = self._scan_inputs(x)
         backend = self.scan_backend
         if backend == "auto":
-            backend = "chunk16" if x.shape[1] >= 1024 else "triton"
+            batch, length, width = x.shape
+            if x.dtype == torch.bfloat16 and not return_cache:
+                if batch >= 4 and length <= 2048:
+                    backend = "fused_output_fused_write_shared_sfu_chunk32"
+                elif batch == 1 and length >= 65536:
+                    backend = (
+                        "fused_output_fused_write_shared_sfu_"
+                        "serial_forward_prefix_grouped_prefix64_"
+                        "hierarchical_chunk32"
+                    )
+                elif batch == 1 and (
+                    length >= 16384 or (length >= 8192 and width >= 2048)
+                ):
+                    backend = (
+                        "fused_output_fused_write_shared_sfu_"
+                        "grouped_prefix64_hierarchical_chunk32"
+                    )
+                elif batch == 1 and length >= 4096:
+                    backend = "fused_output_fused_write_shared_sfu_chunk32"
+                else:
+                    backend = "chunk16" if length >= 1024 else "triton"
+            else:
+                backend = "chunk16" if length >= 1024 else "triton"
+        fused_write = "fused_write" in backend and not return_cache
+        fused_controller_backward = (
+            "fused_controller_bwd" in backend and fused_write
+        )
+        controller_backward_cache = None
+        packed_output = None
+        if fused_write:
+            # The chunk kernels generate gamma*x in registers and return its
+            # exact input/nu gradients, so neither state-sized write tensor is
+            # created in HBM on this path.
+            if fused_controller_backward:
+                # The recurrent autograd function owns the low-rank
+                # controller backward, so do not retain x.float() or a second
+                # state-sized controller input-gradient buffer.
+                with torch.no_grad():
+                    directions = F.normalize(
+                        torch.stack((self.phase_direction,
+                                     self.radial_direction)).float(),
+                        dim=1,
+                    )
+                    projected = F.linear(
+                        x.float(), directions[:, :-1], directions[:, -1]
+                    )
+                    eta, delta, phase_coordinate, radial_raw = (
+                        formal_samu_coordinates_forward_cache(
+                            projected, self.phase_amplitude,
+                            self.radial_amplitude, self.modes,
+                        )
+                    )
+                controller_backward_cache = (
+                    self.phase_direction, self.radial_direction,
+                    self.phase_amplitude, self.radial_amplitude,
+                    phase_coordinate, radial_raw,
+                )
+            else:
+                eta, delta = self._controls(x)
+            write_r = write_i = x.new_empty((0,))
+        else:
+            eta, delta, write_r, write_i = self._scan_inputs(x)
         if return_cache:
-            out_r, out_i, last_r, last_i = samu_scan_with_last(
-                eta, delta, self.nu_log, self.theta_log, write_r, write_i
-            )
+            if self.modes <= 512:
+                out_r, out_i, last_r, last_i = samu_scan_with_last(
+                    eta, delta, self.nu_log, self.theta_log, write_r, write_i
+                )
+            else:
+                out_r, out_i, last_r, last_i = samu_tiled_serial_scan(
+                    eta, delta, self.nu_log, self.theta_log, write_r, write_i,
+                    block_size=self._tiled_training_block_size,
+                )
             cache = (last_r, last_i)
+        elif backend.startswith("affine_tile_s"):
+            configuration = backend.removeprefix("affine_tile_s")
+            steps_text, mode_and_warps = configuration.split("_m", 1)
+            mode_text, warps_text = mode_and_warps.split("_w", 1)
+            out_r, out_i, _, _ = samu_affine_tile_scan(
+                eta, delta, self.nu_log, self.theta_log, write_r, write_i,
+                steps=int(steps_text), mode_block=int(mode_text),
+                num_warps=int(warps_text),
+            )
+            cache = None
+        elif backend == "tiled_serial":
+            out_r, out_i, _, _ = samu_tiled_serial_scan(
+                eta, delta, self.nu_log, self.theta_log, write_r, write_i,
+                block_size=self._tiled_training_block_size,
+            )
+            cache = None
         elif backend == "triton":
             if self.modes <= 512:
                 out_r, out_i = samu_scan(
@@ -394,12 +579,47 @@ class SAMUMixer(nn.Module):
                 eta, delta, self.nu_log, self.theta_log, write_r, write_i
             )
             cache = None
-        elif backend.startswith("chunk"):
-            chunk_size = int(backend.removeprefix("chunk"))
-            out_r, out_i = samu_chunk_scan(
-                eta, delta, self.nu_log, self.theta_log,
-                write_r, write_i, chunk_size,
+        elif "chunk" in backend and backend.rsplit("chunk", 1)[1].isdigit():
+            hierarchical_prefix = "hierarchical" in backend
+            precompute_shared = "shared_sfu" in backend
+            compressed_transition = "compressed" in backend
+            atomic_shared = "atomic" in backend
+            two_stage_spectral = "spectral2" in backend
+            precompute_spectral = "spectral_cache" in backend
+            backward_chunk_group = 2 if "replayg2" in backend else 1
+            fused_output_relu = "fused_output" in backend
+            prefix_group_size = next(
+                (size for size in (32, 64, 128)
+                 if f"grouped_prefix{size}" in backend),
+                0,
             )
+            if "serial_forward_prefix" in backend and prefix_group_size:
+                prefix_group_size = -prefix_group_size
+            compact_control_cache = "cache" in self._controller_projection_dtype
+            chunk_size = int(backend.rsplit("chunk", 1)[1])
+            scan_output = samu_training_scan_dispatch(
+                eta, delta, self.nu_log, self.theta_log,
+                write_r, write_i, chunk_size=chunk_size,
+                hierarchical_prefix=hierarchical_prefix,
+                precompute_shared=precompute_shared,
+                compressed_transition=compressed_transition,
+                atomic_shared=atomic_shared,
+                two_stage_spectral=two_stage_spectral,
+                compact_control_cache=compact_control_cache,
+                precompute_spectral=precompute_spectral,
+                raw_x=x if fused_write else None,
+                fused_write=fused_write,
+                backward_chunk_group=backward_chunk_group,
+                fused_output_relu=fused_output_relu,
+                prefix_group_size=prefix_group_size,
+                controller_backward_cache=controller_backward_cache,
+                reset_first=True,
+                block_size=self._tiled_training_block_size,
+            )
+            if fused_output_relu:
+                packed_output = scan_output
+            else:
+                out_r, out_i = scan_output
             cache = None
         else:
             nu, theta = torch.exp(self.nu_log), torch.exp(self.theta_log)
@@ -429,11 +649,27 @@ class SAMUMixer(nn.Module):
             )
         # Canonical SAMU/RTU layers expose the concatenated real state through
         # ReLU before the surrounding multiplicative output branch.
-        output = torch.cat((out_r, out_i), dim=-1).relu()
+        output = (packed_output if packed_output is not None
+                  else torch.cat((out_r, out_i), dim=-1).relu())
         return output, cache
 
     def set_scan_backend(self, backend: str) -> None:
         self.scan_backend = backend
+
+    def set_tiled_training_block_size(self, block_size: int) -> None:
+        if block_size not in (32, 64, 128, 256):
+            raise ValueError(block_size)
+        self._tiled_training_block_size = block_size
+
+    def set_controller_projection_dtype(self, dtype: str) -> None:
+        if dtype not in (
+            "fp32", "bf16", "triton_fp32",
+            "fp32_rounded", "triton_fp32_rounded", "fp32_recompute",
+            "fp32_triton_backward", "fp32_cache_save",
+            "fp32_cache_recompute", "fp32_fused_coords",
+        ):
+            raise ValueError(dtype)
+        self._controller_projection_dtype = dtype
 
     def prepare_inference(self):
         self._inference_fused = True

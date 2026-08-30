@@ -7,10 +7,12 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
 const requiredCommit = "2efa84dac0e68e63547a27a18fa943c98f1c312e";
 const html = await readFile(join(root, "index.html"), "utf8");
-if (!/src\/app\.js\?v=20260830-5/.test(html)) failures.push("entry module is not cache-versioned");
-if (!/styles\/course\.css\?v=20260830-5/.test(html)) failures.push("report stylesheet is not cache-versioned");
+if (!/src\/app\.js\?v=20260831-1/.test(html)) failures.push("entry module is not cache-versioned");
+if (!/styles\/course\.css\?v=20260831-1/.test(html)) failures.push("report stylesheet is not cache-versioned");
 const load = async name => JSON.parse(await readFile(join(root, "benchmark_results_small_model", name), "utf8"));
+const loadGpu = async name => JSON.parse(await readFile(join(root, "results", "gpu_optimization", name), "utf8"));
 const finite = value => Number.isFinite(Number(value));
+const close = (actual, expected, tolerance = 0.002) => Math.abs(Number(actual) - expected) <= tolerance;
 
 if (lessons.length !== 16) failures.push(`expected 16 detailed report sections, found ${lessons.length}`);
 for (const target of ["summary", "evidence", "training", "inference", "report", "sources"]) {
@@ -29,8 +31,8 @@ for (const asset of localAssets) {
 
 const appModule = await readFile(join(root, "src", "app.js"), "utf8");
 const analysisModule = await readFile(join(root, "src", "complete-analysis.js"), "utf8");
-if (!/complete-analysis\.js\?v=20260830-5/.test(appModule)) failures.push("analysis module is not cache-versioned");
-if (!/advantage-figures\.js\?v=20260830-5/.test(analysisModule)) failures.push("figure module is not cache-versioned");
+if (!/complete-analysis\.js\?v=20260831-1/.test(appModule)) failures.push("analysis module is not cache-versioned");
+if (!/advantage-figures\.js\?v=20260831-1/.test(analysisModule)) failures.push("figure module is not cache-versioned");
 
 const [environment, correctness, officialBlock, equationAudit, deviceScan,
   backendAblation, paperScale, inference, roofline] = await Promise.all([
@@ -39,6 +41,18 @@ const [environment, correctness, officialBlock, equationAudit, deviceScan,
   load("training_on_device_complete.json"), load("paper_scale_backend_ablation.json"),
   load("paper_scale_h800.json"), load("paper_scale_inference_h800.json"),
   load("h800_roofline_decode.json"),
+]);
+
+const [finalMixer, finalBlock, finalOptimizer, veryLong, hybrid65, hybrid131,
+  fattori, acceleratedScan] = await Promise.all([
+  loadGpu("selected_dispatch_grouped_k32_h800.json"),
+  loadGpu("block_dispatch_grouped_k32_h800.json"),
+  loadGpu("optimizer_step_grouped_k32_h800.json"),
+  loadGpu("selected_dispatch_very_long_hybrid_h800_v2.json"),
+  loadGpu("samu_hybrid_prefix64_65536_d1024_correctness_v2.json"),
+  loadGpu("samu_hybrid_prefix64_131072_d1024_correctness_v2.json"),
+  loadGpu("public_fattori_h800.json"),
+  loadGpu("public_accelerated_scan_h800.json"),
 ]);
 
 if (!String(environment.gpu || "").includes("H800")) failures.push(`unexpected GPU ${environment.gpu}`);
@@ -117,6 +131,49 @@ for (const architecture of ["samu", "rglru"]) {
   }
 }
 
+const mixerExpected = [
+  [4, 2048, 2048, "rglru", 2.553], [4, 2048, 2048, "samu", 1.924],
+  [1, 8192, 2560, "rglru", 3.130], [1, 8192, 2560, "samu", 2.265],
+  [1, 32768, 1024, "rglru", 4.853], [1, 32768, 1024, "samu", 3.041],
+  [1, 32768, 2048, "rglru", 8.763], [1, 32768, 2048, "samu", 5.238],
+];
+for (const [batch, length, width, architecture, expected] of mixerExpected) {
+  const row = finalMixer.rows.find(item => item.shape.batch === batch && item.shape.length === length && item.shape.width === width && item.architecture === architecture);
+  if (!row || !close(row.forward_backward?.median_ms, expected)) failures.push(`final mixer mismatch ${architecture}/B${batch}/L${length}/D${width}`);
+  if ((row?.forward_backward?.samples_ms || []).length !== 10) failures.push(`final mixer does not retain ten samples ${architecture}/B${batch}/L${length}/D${width}`);
+}
+for (const [caseName, rgExpected, samuExpected] of [
+  ["state2048_short", 15.764, 14.699], ["state2560_medium", 20.746, 19.544],
+  ["state1024_long", 24.120, 22.276], ["400m_block_long", 43.202, 39.949],
+]) {
+  const item = finalBlock.cases.find(row => row.case === caseName);
+  const rg = item?.rows?.find(row => row.architecture === "rglru");
+  const samu = item?.rows?.find(row => row.architecture === "samu");
+  if (!close(rg?.forward_backward?.median_ms, rgExpected) || !close(samu?.forward_backward?.median_ms, samuExpected)) failures.push(`final block mismatch ${caseName}`);
+}
+for (const [caseName, rgExpected, samuExpected] of [
+  ["state2048_short", 24.808, 23.728], ["state2560_medium", 34.394, 33.101],
+  ["400m_block_long", 48.997, 45.796],
+]) {
+  const item = finalOptimizer.cases.find(row => row.case === caseName);
+  const rg = item?.rows?.find(row => row.architecture === "rglru");
+  const samu = item?.rows?.find(row => row.architecture === "samu");
+  if (!close(rg?.optimizer_step?.median_ms, rgExpected) || !close(samu?.optimizer_step?.median_ms, samuExpected)) failures.push(`final optimizer mismatch ${caseName}`);
+}
+for (const [length, rgExpected, samuExpected] of [[65536, 9.154, 6.666], [131072, 17.712, 13.163]]) {
+  const rg = veryLong.rows.find(row => row.shape.length === length && row.architecture === "rglru");
+  const samu = veryLong.rows.find(row => row.shape.length === length && row.architecture === "samu");
+  if (!close(rg?.forward_backward?.median_ms, rgExpected) || !close(samu?.forward_backward?.median_ms, samuExpected)) failures.push(`very-long mismatch L${length}`);
+}
+if (!hybrid65.passed || !hybrid131.passed || hybrid65.rows?.[0]?.output?.relative_l2 !== 0 || hybrid131.rows?.[0]?.output?.relative_l2 !== 0) failures.push("very-long hybrid correctness gate failed");
+const fattoriOriginal = fattori.rows.find(row => row.implementation === "fattori_original");
+const oursRestricted = fattori.rows.find(row => row.implementation === "ours_restricted");
+if (!fattori.source_diff_empty || !close(fattoriOriginal?.forward_backward?.median_ms, 4.535) || !close(oursRestricted?.forward_backward?.median_ms, 2.260)) failures.push("Fattori reproduction mismatch");
+const hippogriff = acceleratedScan.rows.find(row => row.implementation === "hippogriff_accelerated_scan");
+const lingua = acceleratedScan.rows.find(row => row.implementation === "lingua_original_wrapper");
+const oursChunk32 = acceleratedScan.rows.find(row => row.implementation === "ours_materialized_chunk32");
+if (!close(hippogriff?.forward_backward?.median_ms, 0.710) || !close(lingua?.forward_backward?.median_ms, 0.736) || !close(oursChunk32?.forward_backward?.median_ms, 0.858)) failures.push("scan-only public baseline mismatch");
+
 if (!finite(roofline.measured_copy_bandwidth?.median_gb_per_second)) failures.push("missing measured H800 copy bandwidth");
 if (!finite(roofline.measured_bf16_gemm?.median_tflops_per_second)) failures.push("missing measured H800 BF16 GEMM throughput");
 if (!finite(roofline.measured_roofline?.ridge_flops_per_byte)) failures.push("missing measured H800 roofline ridge point");
@@ -129,6 +186,9 @@ const visibleText = [html, await readFile(join(root, "README.md"), "utf8"),
   await readFile(join(root, "GRIFFIN_PROTOCOL_STATUS.md"), "utf8"),
   await readFile(join(root, "src", "lessons.js"), "utf8"),
   await readFile(join(root, "src", "complete-analysis.js"), "utf8")].join("\n");
+for (const required of ["最终 H800 训练后端", "24.6%", "40.2%", "慢 12.4%", "Fattori", "pure scan primitive 最快"]) {
+  if (!visibleText.includes(required)) failures.push(`missing final backend copy: ${required}`);
+}
 if (/mamba/i.test(visibleText)) failures.push("visible report still mentions Mamba");
 if (/RTX 3090|3090 实测/i.test(visibleText)) failures.push("visible report still labels the experiment as RTX 3090");
 if (/验证集训练曲线|测试集 BPB|enwik8 三随机种子|训练质量/.test(visibleText)) failures.push("visible report still contains the removed quality-training track");

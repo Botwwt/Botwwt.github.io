@@ -126,14 +126,55 @@ export const lessons = [
       <div class="term-note"><b>为什么分块不总是更快</b><p>顺序扫描只需一次递推内核；分块扫描要额外保存摘要和分块入口，并启动三个递推内核。长序列获得更多并行度，短序列却可能被额外读写和启动时间抵消，所以切换点必须在目标 GPU 上实测。</p></div>`,
   },
   {
-    title: "预填充和单步解码需要不同内核",
-    context: ["预填充", "单步解码", "计时边界"],
-    lead: "预填充一次处理整段输入，单步解码每次只处理一个新词元；两者不能用同一条性能结论。",
+    title: "最终 H800 训练后端：按形状调度，而不是一种扫描",
+    context: ["strengthened RG‑LRU", "SAMU 专用路径", "Pareto 区域"],
+    lead: "当前结论来自 correctness gate 之后的最终 dispatch：SAMU 在主要短、宽中序列和长序列形状上更快、更省已分配显存，但在 8K、D=1024 仍会输给 strengthened RG‑LRU。",
     body: `
-      <p><b>预填充</b>是根据完整提示序列建立状态缓存。它有较大的 B×L 矩阵乘法，也有较长时间轴，适合 Tensor Core 投影和分块扫描。<b>单步解码</b>每次只有 L=1，时间轴不能并行；主要成本变成权重读取、状态读写、特殊函数和内核启动。</p>
-      ${math(String.raw`\text{预填充}=\text{一次 BF16 投影}+\text{递推扫描}`)}
-      ${math(String.raw`\text{单步解码}=\text{当前词元投影}+\text{一次状态更新}`)}
-      <p>“打包投影”表示把写入和两个控制器的输出列拼成一次矩阵乘法；“分块摘要”表示用一对仿射参数概括一段词元；“分块入口”表示该段开始前的真实状态；“局部回放”表示拿到入口状态后在该段内重新递推并写出所有结果。这些词在页面中不再以英文缩写代替解释。</p>`,
+      <div class="term-note"><b>先固定结论边界</b><p>以下是单张 NVIDIA H800 PCIe 80 GB 上的训练后端结果。BF16 输入/输出、FP32 递推 carry；编译不计时；每个正式点预热 3 次、执行两轮相反顺序计时，每轮保留 5 个样本。性能主表是独立序列、首词元重置、无序列内部 reset；reset/packed sequence 自动回退到精确 canonical 路径。随机输入只证明算子与系统性能，不证明收敛或任务指标。</p></div>
+      <p><b>SAMU 的正式 controller 数学没有为了速度改变。</b>投影方向仍归一化，signed amplitude 仍从零初始化，H/mode scaling、<i>q(r)=r/(1+r²)</i> 和 amplitude 为零时精确退化到 RTU 的性质全部保留。</p>
+      <div class="advantage-list">
+        <div><b>共享特殊函数与在线转移</b><p>每个词元只生成 <i>E=exp(c)</i>、<i>C=cos(d)</i>、<i>S=sin(d)</i>，所有模态复用。内核在寄存器中把它们与静态 <i>ν、θ</i> 组合，不把 <code>lambda_r/lambda_i [B,L,M]</code> 写入 HBM。</p></div>
+        <div><b>精确 complex-affine hierarchy</b><p>每个 chunk 先形成 <i>T(h)=λh+b</i> 摘要，再执行 group-local prefix、outer prefix 和 local correction。这里的 “grouped” 只表示相邻 chunk summary 的执行分组，不分组控制、模态或参数，也不改变 SAMU 方程。</p></div>
+        <div><b>反向真正镜像前向</b><p>reverse scan 使用共轭转移，保持非交换复数仿射组合的左右顺序；K=32 replay 在寄存器中重建转移。长 D=2048 profiler 中，逐步优化把 summed backward CUDA event time 从 6.265 ms 降到 3.777 ms。</p></div>
+        <div><b>低秩 controller 梯度归约</b><p>mode tile 只输出每个词元的两个 shared-control gradient partial，再以 deterministic FP32 两阶段归约从 <code>[B,L,N_tiles,2]</code> 得到 <code>[B,L,2]</code>，不物化 <code>[B,L,M]</code> controller-gradient tensor。</p></div>
+      </div>
+      ${math(String.raw`\begin{aligned}
+      \lambda_{t,m}&=\exp(-\nu_m E_t)\left[(\cos\theta_m C_t-\sin\theta_m S_t)+i(\sin\theta_m C_t+\cos\theta_m S_t)\right],\\
+      (\lambda_2,b_2)\circ(\lambda_1,b_1)&=(\lambda_2\lambda_1,\;\lambda_2b_1+b_2),\\
+      \text{backward transition}&=\overline{\lambda_t}.
+      \end{aligned}`, "复数仿射组合满足结合律但不满足交换律；前向、反向和 partial chunk 都按原始词元顺序验证。")}
+      <div class="profile-table-wrap"><table class="profile-table architecture-table"><thead><tr><th>形状区域</th><th>SAMU 最终路径</th><th>strengthened RG‑LRU</th></tr></thead><tbody>
+        <tr><td><code>B≥4, L≤2048</code></td><td>shared-SFU + fused write/output + serial prefix，K=32</td><td>grouped real-affine prefix 32，K=16</td></tr>
+        <tr><td><code>B=1, L=8192, D&lt;2048</code></td><td>serial prefix，K=32</td><td>grouped real-affine prefix 32，K=16</td></tr>
+        <tr><td><code>B=1, L=8192, D≥2048</code></td><td>grouped complex-affine prefix 64，K=32</td><td>grouped real-affine prefix 32，K=16</td></tr>
+        <tr><td><code>B=1, 16384≤L&lt;65536</code></td><td>grouped complex-affine prefix 64，K=32</td><td>grouped real-affine prefix 32，K=16</td></tr>
+        <tr><td><code>B=1, L≥65536</code></td><td>serial forward prefix + grouped conjugate reverse 64，K=32</td><td>grouped real-affine prefix 32，K=16</td></tr>
+      </tbody></table></div>
+      <h4>完整 mixer：gate/controller preparation + recurrence + 全部反向</h4>
+      <div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>(B,L,D)</th><th>RG F+B</th><th>SAMU F+B</th><th>SAMU 延迟优势</th><th>SAMU peak allocated 降幅</th></tr></thead><tbody>
+        <tr><td>4, 2048, 2048</td><td>2.553 ms</td><td>1.924 ms</td><td><b>24.6%</b></td><td>22.0%</td></tr>
+        <tr><td>1, 8192, 2560</td><td>3.130 ms</td><td>2.265 ms</td><td><b>27.6%</b></td><td>22.0%</td></tr>
+        <tr><td>1, 32768, 1024</td><td>4.853 ms</td><td>3.041 ms</td><td><b>37.3%</b></td><td>23.4%</td></tr>
+        <tr><td>1, 32768, 2048</td><td>8.763 ms</td><td>5.238 ms</td><td><b>40.2%</b></td><td>23.5%</td></tr>
+      </tbody></table></div>
+      <p>这不是“所有形状都赢”。固定 <code>B=1,L=8192,D=1024</code> 时，正确的 serial-K32 dispatch 是 1.801 ms，RG‑LRU 是 1.603 ms，SAMU <b>慢 12.4%</b>。固定 <code>D=1024</code> 后，SAMU 到 L=32768 才跨入明显优势区；严格 very-long correctness gate 后，L=65536/131072 的优势为 27.2%/25.7%，而不是早期 full-group 候选曾显示但未通过阈值的约 43%。</p>
+      <div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>层级</th><th>短</th><th>中</th><th>长</th><th>400M-width 长</th></tr></thead><tbody>
+        <tr><td>完整 recurrent block F+B</td><td>6.8% faster</td><td>5.8% faster</td><td>7.6% faster</td><td>7.5% faster</td></tr>
+        <tr><td>optimizer step</td><td>4.4% faster</td><td>3.8% faster</td><td>—</td><td>6.5% faster</td></tr>
+      </tbody></table></div>
+      <p>mixer 优势进入含公共 convolution、projection、normalization 和 output layer 的 recurrent block 后会被稀释，但仍保留。optimizer-step 的 peak allocated 在三种已测形状都下降；peak reserved 受 allocator 影响，400M-width 长形状反而高 1.3%，因此不能写成所有显存指标都下降。</p>
+      <h4>strengthened RG‑LRU 做了什么，以及公开库对比</h4>
+      <p>主对手始终是当前最强合法 canonical RG‑LRU：两张官方 block-diagonal gate projection 之后，gate activation、transition、write 和 recurrence 融合；支持 reset-aware K=8/16/32/64 exact chunk forward/backward、partial chunk、nonzero <i>h₀</i> 与梯度、clipped sqrt backward、BF16 边界与 FP32 recurrence、反向重算和 <i>a_param</i> reduction；最终再加入 O(C) 的 grouped real-affine forward/reverse hierarchy。SAMU 的结果没有通过退回旧 baseline 获得。</p>
+      <div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>公开实现与口径</th><th>F+B 中位数</th><th>能支持的结论</th></tr></thead><tbody>
+        <tr><td>我们的 strengthened canonical RG‑LRU，完整受限 no-reset 路径</td><td><b>2.260 ms</b></td><td>在同一受限 contract 下约为 Fattori 的 2.0× 速度</td></tr>
+        <tr><td>Fattori <code>hawk-pytorch</code> 原仓库，完整受限 no-reset 路径</td><td>4.535 ms</td><td>称为开源 Hawk/RG‑LRU 实现，不称为“官方实现”</td></tr>
+        <tr><td>accelerated-scan / Hippogriff，pure scan-only</td><td><b>0.710 ms</b></td><td>当前 pure scan 排名最快</td></tr>
+        <tr><td>Lingua wrapper，pure scan-only</td><td>0.736 ms</td><td>与 Hippogriff 调用同一 accelerated-scan CUDA kernel</td></tr>
+        <tr><td>我们的 generic chunk32，pure scan-only</td><td>0.858 ms</td><td>不能声称我们的 pure scan primitive 最快</td></tr>
+      </tbody></table></div>
+      <p>Google/Hugging Face RecurrentGemma 用于数学与 correctness 对照，不进入高性能主排名。Lingua/Hippogriff 的完整 gate geometry、reset/initial-state contract 与 canonical RG‑LRU 不同，所以只比较它们未修改官方仓库代码的 scan-only 路径。准确说法是：<b>在本次测过、且使用相同完整 no-reset contract 的公开 RG‑LRU 实现中，我们的实现最快</b>；这不等于所有仓库、所有硬件和所有 scan-only primitive 的全局最优。</p>
+      <div class="term-note"><b>通过 gate 才进入 dispatch</b><p>compressed G/D 有精确闭式并降低 summary 存储，但 compressed + grouped K32 的 BF16 输出相对误差 6.38e-6 超过预先声明的 5e-6，因此不是默认；FP32 atomic shared reduction 没有更快且非 bitwise deterministic；two-stage spectral reduction、static spectral cache 均未提速；BF16 fused controller backward 的 direction gradient 约 2e-3；K=64 编译未得到合法结果。我们没有在看到结果后放宽阈值。</p></div>
+      <p class="figure-source-line">完整解释与边界：<a href="docs/SAMU_FINAL_H800_REPORT.md">最终 H800 报告</a>、<a href="docs/OUR_RGLRU_GPU_AUDIT.md">strengthened RG‑LRU 审计</a>。原始计时：<a href="results/gpu_optimization/selected_dispatch_grouped_k32_h800.json">mixer</a>、<a href="results/gpu_optimization/block_dispatch_grouped_k32_h800.json">recurrent block</a>、<a href="results/gpu_optimization/optimizer_step_grouped_k32_h800.json">optimizer step</a>、<a href="results/gpu_optimization/selected_dispatch_very_long_hybrid_h800_v2.json">very-long</a>、<a href="results/gpu_optimization/public_fattori_h800.json">Fattori</a>、<a href="results/gpu_optimization/public_accelerated_scan_h800.json">accelerated-scan/Lingua</a>。</p>`,
   },
   {
     title: "RG‑LRU 的官方方程和实现边界",

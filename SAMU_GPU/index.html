@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="SAMU 与按 Griffin/RecurrentGemma 官方方程实现的 RG-LRU 在 NVIDIA H800 上进行训练和推理系统对比。">
+  <meta name="description" content="SAMU 与 strengthened canonical RG-LRU 在 NVIDIA H800 上的训练、推理与 shape-dependent GPU backend 对比。">
   <title>SAMU GPU · 与 RG-LRU 的公平对比</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles/base.css?v=20260830-5">
-  <link rel="stylesheet" href="styles/course.css?v=20260830-5">
+  <link rel="stylesheet" href="styles/base.css?v=20260831-1">
+  <link rel="stylesheet" href="styles/course.css?v=20260831-1">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 </head>
@@ -40,6 +40,7 @@
       <div class="section-kicker"><span class="evidence measured">H800 实测</span><span id="headline-env">正在读取实验环境…</span></div>
       <h2 id="headline-title">先看完整模型，再解释速度来自哪里</h2>
       <div class="result-strip" id="headline-results" aria-live="polite"><div class="headline-result skeleton">正在读取 400M 训练步…</div><div class="headline-result skeleton">正在读取 1.3B 训练步…</div><div class="headline-result skeleton">正在读取完整模型推理…</div></div>
+      <a class="backend-update-card" href="#lesson-6"><span>2026-08-31 · strengthened-baseline update</span><b>最终训练 dispatch：mixer 主测快 24.6%–40.2%，recurrent block 快 5.8%–7.6%，optimizer step 快 3.8%–6.5%</b><small>同时保留反例：B=1、L=8192、D=1024 时 SAMU 慢 12.4%。查看 SAMU 专用 complex-affine/reverse backend、强化 RG-LRU 和公开库边界 →</small></a>
     </section>
 
     <section class="architecture-delta" id="advantage" aria-labelledby="advantage-title">
@@ -116,14 +117,16 @@
     </section>
 
     <section class="wide-section sources-section" id="sources" aria-labelledby="sources-title">
-      <div class="wide-heading"><div><p class="part-label">论文、官方实现与原始结果</p><h2 id="sources-title">每个结论都能回到代码和数据</h2></div><p>RG-LRU 的数学语义来自 Griffin 论文与固定版本的 RecurrentGemma；CUDA 网格、分块大小和内存布局是面向 H800 的实现。页面只报告 SAMU 与 RG-LRU，不加入第三种模型的性能结果。</p></div>
+      <div class="wide-heading"><div><p class="part-label">论文、官方实现与原始结果</p><h2 id="sources-title">每个结论都能回到代码和数据</h2></div><p>RG-LRU 的数学语义来自 Griffin 论文与固定版本的 RecurrentGemma；CUDA 网格、分块大小和内存布局是面向 H800 的实现。主排名只比较 SAMU 与 strengthened canonical RG-LRU；其他公开库只在明确标出的可比 contract 中出现。</p></div>
       <div class="source-columns"><div><h3>官方资料</h3><ul class="source-list">
         <li><a href="https://arxiv.org/abs/2402.19427">Griffin 论文与附录</a></li>
         <li><a href="https://github.com/google-deepmind/recurrentgemma/tree/2efa84dac0e68e63547a27a18fa943c98f1c312e">RecurrentGemma 固定版本</a></li>
         <li><a href="https://github.com/google-deepmind/recurrentgemma/blob/2efa84dac0e68e63547a27a18fa943c98f1c312e/recurrentgemma/jax/scan.py">RG-LRU 官方 Pallas 扫描与自定义反向</a></li>
       </ul></div><div><h3>本项目代码与数据</h3><ul class="source-list">
         <li><a href="benchmark/run_small_model_study.py">Hawk 模型骨架与训练、解码计时基础实现</a></li>
-        <li><a href="benchmark/triton_training_scan.py">前向与反向 Triton 扫描内核</a></li>
+        <li><a href="benchmark/triton_training_scan.py">SAMU shared-SFU、complex-affine hierarchy 与 conjugate reverse 内核</a></li>
+        <li><a href="benchmark/triton_fused_rglru_training.py">strengthened canonical RG-LRU 融合与 grouped affine 内核</a></li>
+        <li><a href="benchmark/run_selected_dispatch_comparison.py">最终 shape dispatch mixer 复测脚本</a></li>
         <li><a href="benchmark/triton_rglru.py">RG-LRU CUDA 对照内核</a></li>
         <li><a href="benchmark_results_small_model/training_equation_audit.json">官方方程与分块梯度审计</a></li>
         <li><a href="benchmark_results_small_model/training_on_device_complete.json">设备端扫描后端原始结果</a></li>
@@ -132,11 +135,16 @@
         <li><a href="benchmark_results_small_model/paper_scale_h800.json">Griffin 表 2 尺度训练结果</a></li>
         <li><a href="benchmark_results_small_model/h800_roofline_decode.json">H800 屋顶线与解码字节模型</a></li>
         <li><a href="benchmark_results_small_model/paper_scale_inference_h800.json">1.3B 配置完整模型推理结果</a></li>
+        <li><a href="docs/SAMU_FINAL_H800_REPORT.md">最终 strengthened-baseline H800 报告</a></li>
+        <li><a href="docs/OUR_RGLRU_GPU_AUDIT.md">我们的 RG-LRU 后端与 attribution 审计</a></li>
+        <li><a href="results/gpu_optimization/selected_dispatch_grouped_k32_h800.json">最终 mixer dispatch 原始样本</a></li>
+        <li><a href="results/gpu_optimization/public_fattori_h800.json">Fattori 原仓库受限 no-reset 复现</a></li>
+        <li><a href="results/gpu_optimization/public_accelerated_scan_h800.json">accelerated-scan / Lingua scan-only 复现</a></li>
       </ul></div></div>
       <p class="source-note">硬件：NVIDIA H800 PCIe 80GB。RecurrentGemma 固定提交：<code>2efa84dac0e68e63547a27a18fa943c98f1c312e</code>。数据集、软件版本、GPU 型号与计算能力记录在 <a href="benchmark_results_small_model/environment.json">实验环境文件</a> 中。</p>
     </section>
   </main>
   <div id="tooltip" class="tooltip" hidden></div>
-  <script type="module" src="src/app.js?v=20260830-5"></script>
+  <script type="module" src="src/app.js?v=20260831-1"></script>
 </body>
 </html>

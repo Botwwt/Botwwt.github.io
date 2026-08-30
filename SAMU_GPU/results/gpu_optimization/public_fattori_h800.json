@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/fattorib/hawk-pytorch",
+  "commit": "e43239336cf93b6dd79486447150429e472a4b90",
+  "source_file": "/root/autodl-tmp/samu-gpu-prior-art/hawk-pytorch/hawk/scan_fused.py",
+  "source_sha256": "4dd6e0a1044a19d12b731f96602a8ffc6ea73b5b6e6b4727877bcd7dfe046c3d",
+  "source_diff_empty": true,
+  "environment": {
+    "torch": "2.4.1+cu124",
+    "cuda": "12.4",
+    "gpu": "NVIDIA H800 PCIe"
+  },
+  "shape": {
+    "batch": 4,
+    "length": 2048,
+    "width": 2048
+  },
+  "protocol": {
+    "scope": "official block-diagonal gate projections + activation/write/recurrence",
+    "dtype": "BF16 autocast, FP32 recurrent carry",
+    "order": "AB/BA",
+    "compile_excluded": true,
+    "semantic_scope": "restricted no-reset recurrence; secondary comparison only",
+    "primary_canonical_ranking": "NOT COMPARABLE because public Fattori source lacks official reset/write normalization, arbitrary segment resets and initial state"
+  },
+  "correctness": {
+    "contract": "zero initial state, no resets, length>=2, width multiple of 64",
+    "canonical_reset_semantics": "NOT SUPPORTED by the public kernel",
+    "output_max_abs": 0.00048828125,
+    "gradient_errors": {
+      "x": 9.5367431640625e-07,
+      "input_gate_logits": 0.0001220703125,
+      "recurrence_gate_logits": 0.0009765625,
+      "a_param": 0.000534355640411377
+    },
+    "gradient_relative_errors": {
+      "x": 3.372108080110497e-07,
+      "input_gate_logits": 0.0001220703125,
+      "recurrence_gate_logits": 0.0009765625,
+      "a_param": 0.000534355640411377
+    },
+    "passed_restricted_contract": true
+  },
+  "rows": [
+    {
+      "implementation": "fattori_original",
+      "forward": {
+        "samples_ms": [
+          1.9718557596206665,
+          1.9807741045951843,
+          1.9840523600578308,
+          1.9603483378887177,
+          1.958109438419342,
+          1.9621960818767548,
+          1.9450485706329346,
+          1.9761733710765839,
+          1.951415091753006,
+          1.9473806023597717
+        ],
+        "median_ms": 1.9612722098827362,
+        "minimum_ms": 1.9450485706329346,
+        "maximum_ms": 1.9840523600578308,
+        "mean_ms": 1.9637353718280792
+      },
+      "forward_backward": {
+        "samples_ms": [
+          4.543386399745941,
+          4.5276060700416565,
+          4.718799144029617,
+          4.585329443216324,
+          4.526209086179733,
+          4.523616284132004,
+          4.503756761550903,
+          4.6143196523189545,
+          7.7250562608242035,
+          4.520058631896973
+        ],
+        "median_ms": 4.535496234893799,
+        "minimum_ms": 4.503756761550903,
+        "maximum_ms": 7.7250562608242035,
+        "mean_ms": 4.878813773393631
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "order_index": 0,
+          "forward_ms": [
+            1.9718557596206665,
+            1.9807741045951843,
+            1.9840523600578308,
+            1.9603483378887177,
+            1.958109438419342
+          ],
+          "forward_backward_ms": [
+            4.543386399745941,
+            4.5276060700416565,
+            4.718799144029617,
+            4.585329443216324,
+            4.526209086179733
+          ]
+        },
+        {
+          "round": 1,
+          "order_index": 1,
+          "forward_ms": [
+            1.9621960818767548,
+            1.9450485706329346,
+            1.9761733710765839,
+            1.951415091753006,
+            1.9473806023597717
+          ],
+          "forward_backward_ms": [
+            4.523616284132004,
+            4.503756761550903,
+            4.6143196523189545,
+            7.7250562608242035,
+            4.520058631896973
+          ]
+        }
+      ],
+      "peak_allocated_delta_bytes": 335553536
+    },
+    {
+      "implementation": "ours_restricted",
+      "forward": {
+        "samples_ms": [
+          0.9020045399665833,
+          0.8786581456661224,
+          0.8766762912273407,
+          0.8663460612297058,
+          0.8712522685527802,
+          0.878017395734787,
+          0.8702017366886139,
+          0.8669905364513397,
+          0.868476927280426,
+          0.8705258369445801
+        ],
+        "median_ms": 0.8708890527486801,
+        "minimum_ms": 0.8663460612297058,
+        "maximum_ms": 0.9020045399665833,
+        "mean_ms": 0.8749149739742279
+      },
+      "forward_backward": {
+        "samples_ms": [
+          2.280615270137787,
+          2.261284738779068,
+          2.2507570683956146,
+          2.261560410261154,
+          2.2525861859321594,
+          2.2665373980998993,
+          2.257082611322403,
+          2.2590458393096924,
+          2.247340977191925,
+          2.2663213312625885
+        ],
+        "median_ms": 2.26016528904438,
+        "minimum_ms": 2.247340977191925,
+        "maximum_ms": 2.280615270137787,
+        "mean_ms": 2.260313183069229
+      },
+      "rounds": [
+        {
+          "round": 0,
+          "order_index": 1,
+          "forward_ms": [
+            0.9020045399665833,
+            0.8786581456661224,
+            0.8766762912273407,
+            0.8663460612297058,
+            0.8712522685527802
+          ],
+          "forward_backward_ms": [
+            2.280615270137787,
+            2.261284738779068,
+            2.2507570683956146,
+            2.261560410261154,
+            2.2525861859321594
+          ]
+        },
+        {
+          "round": 1,
+          "order_index": 0,
+          "forward_ms": [
+            0.878017395734787,
+            0.8702017366886139,
+            0.8669905364513397,
+            0.868476927280426,
+            0.8705258369445801
+          ],
+          "forward_backward_ms": [
+            2.2665373980998993,
+            2.257082611322403,
+            2.2590458393096924,
+            2.247340977191925,
+            2.2663213312625885
+          ]
+        }
+      ],
+      "peak_allocated_delta_bytes": 385950720
+    }
+  ]
+}

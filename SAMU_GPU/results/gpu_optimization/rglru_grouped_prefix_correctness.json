@@ -1,0 +1,728 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "dtype": "torch.float32",
+      "chunks": 3,
+      "group_size": 32,
+      "output": {
+        "max_abs": 5.960464477539063e-08,
+        "relative_l2": 4.829432143083068e-08,
+        "cosine_similarity": 1.0
+      },
+      "last": {
+        "max_abs": 2.9802322387695312e-08,
+        "relative_l2": 4.25214068400237e-08,
+        "cosine_similarity": 1.0
+      },
+      "gradients": [
+        {
+          "max_abs": 1.7881393432617188e-07,
+          "relative_l2": 6.568411947682762e-08,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 2.9802322387695312e-08,
+          "relative_l2": 7.865230600145878e-08,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 9.313225746154785e-09,
+          "relative_l2": 2.1836177666045842e-07,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 1.862645149230957e-08,
+          "relative_l2": 2.878970803976699e-07,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 1.4901161193847656e-08,
+          "relative_l2": 1.308113439790759e-07,
+          "cosine_similarity": 0.9999999403953552
+        }
+      ],
+      "hillis_steele": {
+        "output": {
+          "max_abs": 5.960464477539063e-08,
+          "relative_l2": 4.829432143083068e-08,
+          "cosine_similarity": 1.0
+        },
+        "last": {
+          "max_abs": 2.9802322387695312e-08,
+          "relative_l2": 4.25214068400237e-08,
+          "cosine_similarity": 1.0
+        },
+        "gradients": [
+          {
+            "max_abs": 1.7881393432617188e-07,
+            "relative_l2": 6.568411947682762e-08,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 2.9802322387695312e-08,
+            "relative_l2": 7.865230600145878e-08,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 9.313225746154785e-09,
+            "relative_l2": 2.1836177666045842e-07,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 1.862645149230957e-08,
+            "relative_l2": 2.878970803976699e-07,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 1.4901161193847656e-08,
+            "relative_l2": 1.308113439790759e-07,
+            "cosine_similarity": 0.9999999403953552
+          }
+        ]
+      },
+      "comparison_to_hillis_steele": {
+        "output": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0
+        },
+        "last": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0
+        },
+        "gradients": [
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 0.9999998807907104
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 0.9999998807907104
+          }
+        ]
+      }
+    },
+    {
+      "dtype": "torch.float32",
+      "chunks": 33,
+      "group_size": 32,
+      "output": {
+        "max_abs": 1.1920928955078125e-07,
+        "relative_l2": 4.857867352825451e-08,
+        "cosine_similarity": 1.0
+      },
+      "last": {
+        "max_abs": 2.9802322387695312e-08,
+        "relative_l2": 3.870693632279654e-08,
+        "cosine_similarity": 1.0
+      },
+      "gradients": [
+        {
+          "max_abs": 2.384185791015625e-07,
+          "relative_l2": 6.672480168390393e-08,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 5.960464477539063e-08,
+          "relative_l2": 7.814558955487882e-08,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 1.862645149230957e-08,
+          "relative_l2": 1.9930287464831054e-07,
+          "cosine_similarity": 1.0000001192092896
+        },
+        {
+          "max_abs": 7.450580596923828e-08,
+          "relative_l2": 2.608676368254237e-07,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 2.9802322387695312e-08,
+          "relative_l2": 3.061075517507561e-07,
+          "cosine_similarity": 1.0
+        }
+      ],
+      "hillis_steele": {
+        "output": {
+          "max_abs": 1.1920928955078125e-07,
+          "relative_l2": 4.857867352825451e-08,
+          "cosine_similarity": 1.0
+        },
+        "last": {
+          "max_abs": 2.9802322387695312e-08,
+          "relative_l2": 3.870693632279654e-08,
+          "cosine_similarity": 1.0
+        },
+        "gradients": [
+          {
+            "max_abs": 2.384185791015625e-07,
+            "relative_l2": 6.672480168390393e-08,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 5.960464477539063e-08,
+            "relative_l2": 7.814558955487882e-08,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 1.862645149230957e-08,
+            "relative_l2": 1.9930287464831054e-07,
+            "cosine_similarity": 1.0000001192092896
+          },
+          {
+            "max_abs": 7.450580596923828e-08,
+            "relative_l2": 2.608676368254237e-07,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 2.9802322387695312e-08,
+            "relative_l2": 3.061075517507561e-07,
+            "cosine_similarity": 1.0
+          }
+        ]
+      },
+      "comparison_to_hillis_steele": {
+        "output": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 0.9999998211860657
+        },
+        "last": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0
+        },
+        "gradients": [
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0000001192092896
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0000001192092896
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 0.9999999403953552
+          }
+        ]
+      }
+    },
+    {
+      "dtype": "torch.float32",
+      "chunks": 65,
+      "group_size": 64,
+      "output": {
+        "max_abs": 8.940696716308594e-08,
+        "relative_l2": 4.8761350512904755e-08,
+        "cosine_similarity": 1.0
+      },
+      "last": {
+        "max_abs": 5.960464477539063e-08,
+        "relative_l2": 5.231919786297112e-08,
+        "cosine_similarity": 0.9999999403953552
+      },
+      "gradients": [
+        {
+          "max_abs": 1.7881393432617188e-07,
+          "relative_l2": 6.69567938871296e-08,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 4.470348358154297e-08,
+          "relative_l2": 7.805738988508892e-08,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 2.60770320892334e-08,
+          "relative_l2": 1.9873380097124027e-07,
+          "cosine_similarity": 1.0
+        },
+        {
+          "max_abs": 1.1920928955078125e-07,
+          "relative_l2": 2.972374772980402e-07,
+          "cosine_similarity": 1.0000001192092896
+        },
+        {
+          "max_abs": 2.2351741790771484e-08,
+          "relative_l2": 1.4797554115375533e-07,
+          "cosine_similarity": 1.0
+        }
+      ],
+      "hillis_steele": {
+        "output": {
+          "max_abs": 8.940696716308594e-08,
+          "relative_l2": 4.8761350512904755e-08,
+          "cosine_similarity": 1.0
+        },
+        "last": {
+          "max_abs": 5.960464477539063e-08,
+          "relative_l2": 5.231919786297112e-08,
+          "cosine_similarity": 0.9999999403953552
+        },
+        "gradients": [
+          {
+            "max_abs": 1.7881393432617188e-07,
+            "relative_l2": 6.69567938871296e-08,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 4.470348358154297e-08,
+            "relative_l2": 7.805738988508892e-08,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 2.60770320892334e-08,
+            "relative_l2": 1.9873380097124027e-07,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 1.1920928955078125e-07,
+            "relative_l2": 2.972374772980402e-07,
+            "cosine_similarity": 1.0000001192092896
+          },
+          {
+            "max_abs": 2.2351741790771484e-08,
+            "relative_l2": 1.4797554115375533e-07,
+            "cosine_similarity": 1.0
+          }
+        ]
+      },
+      "comparison_to_hillis_steele": {
+        "output": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0
+        },
+        "last": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 0.9999999403953552
+        },
+        "gradients": [
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "chunks": 3,
+      "group_size": 32,
+      "output": {
+        "max_abs": 0.0,
+        "relative_l2": 0.0,
+        "cosine_similarity": 1.0000001192092896
+      },
+      "last": {
+        "max_abs": 7.450580596923828e-09,
+        "relative_l2": 4.51723680683358e-09,
+        "cosine_similarity": 0.9999999403953552
+      },
+      "gradients": [
+        {
+          "max_abs": 0.0078125,
+          "relative_l2": 0.002494098851457238,
+          "cosine_similarity": 0.9999968409538269
+        },
+        {
+          "max_abs": 0.001953125,
+          "relative_l2": 0.002540301764383912,
+          "cosine_similarity": 0.9999967813491821
+        },
+        {
+          "max_abs": 0.000244140625,
+          "relative_l2": 0.003493854310363531,
+          "cosine_similarity": 0.9999939203262329
+        },
+        {
+          "max_abs": 0.0002154707908630371,
+          "relative_l2": 0.0024533721152693033,
+          "cosine_similarity": 0.9999970197677612
+        },
+        {
+          "max_abs": 3.725290298461914e-09,
+          "relative_l2": 4.155268840122517e-08,
+          "cosine_similarity": 1.0
+        }
+      ],
+      "hillis_steele": {
+        "output": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0000001192092896
+        },
+        "last": {
+          "max_abs": 7.450580596923828e-09,
+          "relative_l2": 4.51723680683358e-09,
+          "cosine_similarity": 0.9999999403953552
+        },
+        "gradients": [
+          {
+            "max_abs": 0.0078125,
+            "relative_l2": 0.002494098851457238,
+            "cosine_similarity": 0.9999968409538269
+          },
+          {
+            "max_abs": 0.001953125,
+            "relative_l2": 0.002540301764383912,
+            "cosine_similarity": 0.9999967813491821
+          },
+          {
+            "max_abs": 0.000244140625,
+            "relative_l2": 0.003493854310363531,
+            "cosine_similarity": 0.9999939203262329
+          },
+          {
+            "max_abs": 0.0002154707908630371,
+            "relative_l2": 0.0024533721152693033,
+            "cosine_similarity": 0.9999970197677612
+          },
+          {
+            "max_abs": 3.725290298461914e-09,
+            "relative_l2": 4.155268840122517e-08,
+            "cosine_similarity": 1.0
+          }
+        ]
+      },
+      "comparison_to_hillis_steele": {
+        "output": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0000001192092896
+        },
+        "last": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 0.9999999403953552
+        },
+        "gradients": [
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 0.9999998807907104
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 0.9999999403953552
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0000001192092896
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "chunks": 33,
+      "group_size": 32,
+      "output": {
+        "max_abs": 0.000244140625,
+        "relative_l2": 6.488969575002557e-06,
+        "cosine_similarity": 1.0000001192092896
+      },
+      "last": {
+        "max_abs": 3.725290298461914e-09,
+        "relative_l2": 2.632760010001789e-09,
+        "cosine_similarity": 1.0
+      },
+      "gradients": [
+        {
+          "max_abs": 0.0078125,
+          "relative_l2": 0.0025890818797051907,
+          "cosine_similarity": 0.9999966621398926
+        },
+        {
+          "max_abs": 0.0009765625,
+          "relative_l2": 0.002543505746871233,
+          "cosine_similarity": 0.9999967813491821
+        },
+        {
+          "max_abs": 0.000244140625,
+          "relative_l2": 0.00308253918774426,
+          "cosine_similarity": 0.999995231628418
+        },
+        {
+          "max_abs": 0.0006566308438777924,
+          "relative_l2": 0.001935248146764934,
+          "cosine_similarity": 0.9999980926513672
+        },
+        {
+          "max_abs": 3.725290298461914e-09,
+          "relative_l2": 3.207783905168071e-08,
+          "cosine_similarity": 1.0000001192092896
+        }
+      ],
+      "hillis_steele": {
+        "output": {
+          "max_abs": 0.000244140625,
+          "relative_l2": 6.488969575002557e-06,
+          "cosine_similarity": 1.0000001192092896
+        },
+        "last": {
+          "max_abs": 3.725290298461914e-09,
+          "relative_l2": 2.632760010001789e-09,
+          "cosine_similarity": 1.0
+        },
+        "gradients": [
+          {
+            "max_abs": 0.0078125,
+            "relative_l2": 0.0025890818797051907,
+            "cosine_similarity": 0.9999966621398926
+          },
+          {
+            "max_abs": 0.0009765625,
+            "relative_l2": 0.002543505746871233,
+            "cosine_similarity": 0.9999967813491821
+          },
+          {
+            "max_abs": 0.000244140625,
+            "relative_l2": 0.00308253918774426,
+            "cosine_similarity": 0.999995231628418
+          },
+          {
+            "max_abs": 0.0006566308438777924,
+            "relative_l2": 0.001935248146764934,
+            "cosine_similarity": 0.9999980926513672
+          },
+          {
+            "max_abs": 3.725290298461914e-09,
+            "relative_l2": 3.207783905168071e-08,
+            "cosine_similarity": 1.0000001192092896
+          }
+        ]
+      },
+      "comparison_to_hillis_steele": {
+        "output": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0000001192092896
+        },
+        "last": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0
+        },
+        "gradients": [
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 0.9999998807907104
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 0.9999998807907104
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0000001192092896
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0000001192092896
+          }
+        ]
+      }
+    },
+    {
+      "dtype": "torch.bfloat16",
+      "chunks": 65,
+      "group_size": 64,
+      "output": {
+        "max_abs": 0.00048828125,
+        "relative_l2": 9.227526788890827e-06,
+        "cosine_similarity": 0.9999999403953552
+      },
+      "last": {
+        "max_abs": 1.4901161193847656e-08,
+        "relative_l2": 9.659260946648374e-09,
+        "cosine_similarity": 1.0000001192092896
+      },
+      "gradients": [
+        {
+          "max_abs": 0.00390625,
+          "relative_l2": 0.0025634753983467817,
+          "cosine_similarity": 0.9999967813491821
+        },
+        {
+          "max_abs": 0.0009765625,
+          "relative_l2": 0.0025324285961687565,
+          "cosine_similarity": 0.9999968409538269
+        },
+        {
+          "max_abs": 0.000244140625,
+          "relative_l2": 0.0031871949322521687,
+          "cosine_similarity": 0.9999949336051941
+        },
+        {
+          "max_abs": 0.0009581372141838074,
+          "relative_l2": 0.0021987229119986296,
+          "cosine_similarity": 0.9999974966049194
+        },
+        {
+          "max_abs": 1.862645149230957e-09,
+          "relative_l2": 2.2811617483853297e-08,
+          "cosine_similarity": 1.0000001192092896
+        }
+      ],
+      "hillis_steele": {
+        "output": {
+          "max_abs": 0.00048828125,
+          "relative_l2": 9.227526788890827e-06,
+          "cosine_similarity": 0.9999999403953552
+        },
+        "last": {
+          "max_abs": 1.4901161193847656e-08,
+          "relative_l2": 9.659260946648374e-09,
+          "cosine_similarity": 1.0000001192092896
+        },
+        "gradients": [
+          {
+            "max_abs": 0.00390625,
+            "relative_l2": 0.0025634753983467817,
+            "cosine_similarity": 0.9999967813491821
+          },
+          {
+            "max_abs": 0.0009765625,
+            "relative_l2": 0.0025324285961687565,
+            "cosine_similarity": 0.9999968409538269
+          },
+          {
+            "max_abs": 0.000244140625,
+            "relative_l2": 0.0031871949322521687,
+            "cosine_similarity": 0.9999949336051941
+          },
+          {
+            "max_abs": 0.0009581372141838074,
+            "relative_l2": 0.0021987229119986296,
+            "cosine_similarity": 0.9999974966049194
+          },
+          {
+            "max_abs": 1.862645149230957e-09,
+            "relative_l2": 2.2811617483853297e-08,
+            "cosine_similarity": 1.0000001192092896
+          }
+        ]
+      },
+      "comparison_to_hillis_steele": {
+        "output": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 0.9999999403953552
+        },
+        "last": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0000001192092896
+        },
+        "gradients": [
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0000001192092896
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0000001192092896
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 0.9999999403953552
+          },
+          {
+            "max_abs": 0.0,
+            "relative_l2": 0.0,
+            "cosine_similarity": 1.0000001192092896
+          }
+        ]
+      }
+    }
+  ],
+  "sequential_reference_passed": true,
+  "regression_to_hillis_steele_passed": true,
+  "passed": true
+}

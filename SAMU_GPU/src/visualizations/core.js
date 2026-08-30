@@ -1,4 +1,4 @@
-import {css, fitCanvas, roundedRect} from "../animation-controller.js?v=20260830-5";
+import {css, fitCanvas, roundedRect} from "../animation-controller.js?v=20260831-1";
 
 const line = (ctx, a, b, color, width = 2) => {
   ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b);

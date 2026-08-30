@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "reference": "serial exact chunk-prefix K=32 with identical fused paths",
+  "candidate": "grouped64 complex-affine prefix K=32",
+  "thresholds_predeclared": {
+    "output_relative_l2": 5e-06,
+    "input_gradient_relative_l2": 5e-05,
+    "parameter_gradient_relative_l2": 0.001,
+    "minimum_cosine_similarity": 0.99999
+  },
+  "rows": [
+    {
+      "shape": {
+        "batch": 1,
+        "length": 65536,
+        "width": 130
+      },
+      "dtype": "torch.float32",
+      "chunks": 2048,
+      "prefix_groups": 32,
+      "output": {
+        "max_abs": 1.6689300537109375e-06,
+        "relative_l2": 2.4137731813311802e-08,
+        "cosine_similarity": 1.0
+      },
+      "input_gradient": {
+        "max_abs": 1.430511474609375e-06,
+        "relative_l2": 3.531391712385812e-08,
+        "cosine_similarity": 1.0
+      },
+      "parameter_gradients": {
+        "nu_log": {
+          "max_abs": 0.000335693359375,
+          "relative_l2": 7.215697337414895e-07,
+          "cosine_similarity": 1.0
+        },
+        "theta_log": {
+          "max_abs": 0.015625,
+          "relative_l2": 2.0028240044211998e-07,
+          "cosine_similarity": 1.000000238418579
+        },
+        "phase_direction": {
+          "max_abs": 3.0517578125e-05,
+          "relative_l2": 3.451596342074481e-07,
+          "cosine_similarity": 1.0
+        },
+        "radial_direction": {
+          "max_abs": 1.430511474609375e-06,
+          "relative_l2": 2.2871827809467504e-07,
+          "cosine_similarity": 1.0
+        },
+        "phase_amplitude": {
+          "max_abs": 6.103515625e-05,
+          "relative_l2": 1.538643061849143e-07,
+          "cosine_similarity": 1.0
+        },
+        "radial_amplitude": {
+          "max_abs": 3.814697265625e-06,
+          "relative_l2": 9.660073629902399e-08,
+          "cosine_similarity": 1.0
+        }
+      }
+    },
+    {
+      "shape": {
+        "batch": 1,
+        "length": 65536,
+        "width": 130
+      },
+      "dtype": "torch.bfloat16",
+      "chunks": 2048,
+      "prefix_groups": 32,
+      "output": {
+        "max_abs": 0.0078125,
+        "relative_l2": 5.8392433857079595e-06,
+        "cosine_similarity": 1.0
+      },
+      "input_gradient": {
+        "max_abs": 0.015625,
+        "relative_l2": 1.7327562090940773e-05,
+        "cosine_similarity": 1.0
+      },
+      "parameter_gradients": {
+        "nu_log": {
+          "max_abs": 0.002044677734375,
+          "relative_l2": 2.1282455691107316e-06,
+          "cosine_similarity": 0.9999999403953552
+        },
+        "theta_log": {
+          "max_abs": 0.3125,
+          "relative_l2": 7.421154464282154e-07,
+          "cosine_similarity": 0.9999998807907104
+        },
+        "phase_direction": {
+          "max_abs": 0.0836801528930664,
+          "relative_l2": 0.00010870560072362423,
+          "cosine_similarity": 0.9999998807907104
+        },
+        "radial_direction": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0
+        },
+        "phase_amplitude": {
+          "max_abs": 0.00115966796875,
+          "relative_l2": 1.1588126653805375e-06,
+          "cosine_similarity": 1.0
+        },
+        "radial_amplitude": {
+          "max_abs": 7.62939453125e-06,
+          "relative_l2": 4.3922815962105233e-07,
+          "cosine_similarity": 1.0
+        }
+      }
+    },
+    {
+      "shape": {
+        "batch": 1,
+        "length": 131072,
+        "width": 130
+      },
+      "dtype": "torch.bfloat16",
+      "chunks": 4096,
+      "prefix_groups": 64,
+      "output": {
+        "max_abs": 0.0078125,
+        "relative_l2": 7.492391887353733e-06,
+        "cosine_similarity": 0.9999999403953552
+      },
+      "input_gradient": {
+        "max_abs": 0.015625,
+        "relative_l2": 3.660556467366405e-05,
+        "cosine_similarity": 1.0
+      },
+      "parameter_gradients": {
+        "nu_log": {
+          "max_abs": 0.002227783203125,
+          "relative_l2": 2.5308017939096317e-06,
+          "cosine_similarity": 1.0
+        },
+        "theta_log": {
+          "max_abs": 1.25,
+          "relative_l2": 3.7083336223986407e-07,
+          "cosine_similarity": 0.9999999403953552
+        },
+        "phase_direction": {
+          "max_abs": 0.6674957275390625,
+          "relative_l2": 0.0001906239049276337,
+          "cosine_similarity": 1.0
+        },
+        "radial_direction": {
+          "max_abs": 0.0,
+          "relative_l2": 0.0,
+          "cosine_similarity": 1.0
+        },
+        "phase_amplitude": {
+          "max_abs": 0.004150390625,
+          "relative_l2": 1.2546414609460044e-06,
+          "cosine_similarity": 1.0
+        },
+        "radial_amplitude": {
+          "max_abs": 1.9073486328125e-06,
+          "relative_l2": 7.214642891995027e-07,
+          "cosine_similarity": 1.0
+        }
+      }
+    }
+  ],
+  "passed": false
+}

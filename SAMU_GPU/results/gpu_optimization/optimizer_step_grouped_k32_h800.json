@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "protocol": {
+    "scope": "complete recurrent block forward, input/parameter backward and optimizer update",
+    "optimizer": "torch.optim.AdamW(fused=True), states initialized before timing",
+    "dtype": "BF16 autocast, FP32 parameters and recurrent carry",
+    "order": "AB/BA",
+    "compile_and_optimizer_state_initialization_excluded": true
+  },
+  "environment": {
+    "torch": "2.1.2+cu118",
+    "cuda": "11.8",
+    "gpu": "NVIDIA H800 PCIe"
+  },
+  "cases": [
+    {
+      "case": "state2048_short",
+      "batch": 4,
+      "length": 2048,
+      "config": {
+        "width": 2048,
+        "rnn_width": 2048,
+        "depth": 1
+      },
+      "rows": [
+        {
+          "architecture": "rglru",
+          "backend": "fused_grouped_prefix32_hierarchical_chunk16",
+          "controller": null,
+          "optimizer_step": {
+            "samples_ms": [
+              24.802595376968384,
+              24.760689586400986,
+              24.909019470214844,
+              24.78039637207985,
+              24.81362223625183,
+              24.837687611579895,
+              24.88834038376808,
+              24.7415229678154,
+              25.14628693461418,
+              24.76516366004944
+            ],
+            "median_ms": 24.808108806610107,
+            "mean_ms": 24.84453245997429,
+            "std_ms": 0.11311406258685083,
+            "mad_ms": 0.045182183384895325,
+            "minimum_ms": 24.7415229678154,
+            "maximum_ms": 25.14628693461418
+          },
+          "baseline_allocated_bytes": 1550969856,
+          "baseline_reserved_bytes": 1606418432,
+          "peak_allocated_bytes": 3240378880,
+          "peak_reserved_bytes": 3533701120,
+          "peak_allocated_delta_bytes": 1689409024,
+          "peak_reserved_delta_bytes": 1927282688,
+          "parameters": 50896896
+        },
+        {
+          "architecture": "samu",
+          "backend": "fused_output_fused_write_shared_sfu_chunk32",
+          "controller": "fp32_fused_coords",
+          "optimizer_step": {
+            "samples_ms": [
+              23.90008047223091,
+              23.812387138605118,
+              27.717124670743942,
+              23.708980530500412,
+              23.75074476003647,
+              23.745745420455933,
+              23.709382861852646,
+              23.682843893766403,
+              23.697882890701294,
+              23.701224476099014
+            ],
+            "median_ms": 23.72756414115429,
+            "mean_ms": 24.142639711499214,
+            "std_ms": 1.1931383498276134,
+            "mad_ms": 0.028010457754135132,
+            "minimum_ms": 23.682843893766403,
+            "maximum_ms": 27.717124670743942
+          },
+          "baseline_allocated_bytes": 1553065472,
+          "baseline_reserved_bytes": 1608515584,
+          "peak_allocated_bytes": 3107467776,
+          "peak_reserved_bytes": 3391094784,
+          "peak_allocated_delta_bytes": 1554402304,
+          "peak_reserved_delta_bytes": 1782579200,
+          "parameters": 50372612
+        }
+      ]
+    },
+    {
+      "case": "state2560_medium",
+      "batch": 1,
+      "length": 8192,
+      "config": {
+        "width": 2560,
+        "rnn_width": 2560,
+        "depth": 1
+      },
+      "rows": [
+        {
+          "architecture": "rglru",
+          "backend": "fused_grouped_prefix32_hierarchical_chunk16",
+          "controller": null,
+          "optimizer_step": {
+            "samples_ms": [
+              34.89868715405464,
+              34.41610559821129,
+              34.375760704278946,
+              34.394122660160065,
+              34.395188093185425,
+              34.39483046531677,
+              34.394003450870514,
+              34.393176436424255,
+              34.232962876558304,
+              34.20514240860939
+            ],
+            "median_ms": 34.39406305551529,
+            "mean_ms": 34.40999798476696,
+            "std_ms": 0.17736235146927282,
+            "mad_ms": 0.009713694453239441,
+            "minimum_ms": 34.20514240860939,
+            "maximum_ms": 34.89868715405464
+          },
+          "baseline_allocated_bytes": 2368228352,
+          "baseline_reserved_bytes": 2975858688,
+          "peak_allocated_bytes": 4454044672,
+          "peak_reserved_bytes": 5073010688,
+          "peak_allocated_delta_bytes": 2085816320,
+          "peak_reserved_delta_bytes": 2097152000,
+          "parameters": 79513600
+        },
+        {
+          "architecture": "samu",
+          "backend": "fused_output_fused_write_shared_sfu_grouped_prefix64_hierarchical_chunk32",
+          "controller": "fp32_fused_coords",
+          "optimizer_step": {
+            "samples_ms": [
+              33.11343118548393,
+              33.14533457159996,
+              33.158283680677414,
+              33.10021385550499,
+              33.10203552246094,
+              33.1009104847908,
+              33.08708593249321,
+              33.04758295416832,
+              33.05135667324066,
+              33.07086229324341
+            ],
+            "median_ms": 33.100562170147896,
+            "mean_ms": 33.09770971536636,
+            "std_ms": 0.03422670100505065,
+            "mad_ms": 0.021588057279586792,
+            "minimum_ms": 33.04758295416832,
+            "maximum_ms": 33.158283680677414
+          },
+          "baseline_allocated_bytes": 2372733440,
+          "baseline_reserved_bytes": 2894069760,
+          "peak_allocated_bytes": 4331364352,
+          "peak_reserved_bytes": 4987027456,
+          "peak_allocated_delta_bytes": 1958630912,
+          "peak_reserved_delta_bytes": 2092957696,
+          "parameters": 78694404
+        }
+      ]
+    },
+    {
+      "case": "400m_block_long",
+      "batch": 1,
+      "length": 32768,
+      "config": {
+        "width": 1536,
+        "rnn_width": 2048,
+        "depth": 12
+      },
+      "rows": [
+        {
+          "architecture": "rglru",
+          "backend": "fused_grouped_prefix32_hierarchical_chunk16",
+          "controller": null,
+          "optimizer_step": {
+            "samples_ms": [
+              49.09336939454079,
+              49.62151125073433,
+              48.90861362218857,
+              49.49595034122467,
+              48.72525855898857,
+              48.7661212682724,
+              49.08457025885582,
+              48.89741539955139,
+              49.16488751769066,
+              48.675503581762314
+            ],
+            "median_ms": 48.996591940522194,
+            "mean_ms": 49.04332011938095,
+            "std_ms": 0.3018094814017261,
+            "mad_ms": 0.19938312470912933,
+            "minimum_ms": 48.675503581762314,
+            "maximum_ms": 49.62151125073433
+          },
+          "baseline_allocated_bytes": 1137675264,
+          "baseline_reserved_bytes": 2315255808,
+          "peak_allocated_bytes": 6113490944,
+          "peak_reserved_bytes": 7251951616,
+          "peak_allocated_delta_bytes": 4975815680,
+          "peak_reserved_delta_bytes": 4936695808,
+          "parameters": 31230976
+        },
+        {
+          "architecture": "samu",
+          "backend": "fused_output_fused_write_shared_sfu_grouped_prefix64_hierarchical_chunk32",
+          "controller": "fp32_fused_coords",
+          "optimizer_step": {
+            "samples_ms": [
+              45.50177976489067,
+              46.13611847162247,
+              45.72005197405815,
+              45.22400349378586,
+              45.79009488224983,
+              46.27338796854019,
+              45.80125957727432,
+              45.38346827030182,
+              45.82751542329788,
+              45.99413648247719
+            ],
+            "median_ms": 45.79567722976208,
+            "mean_ms": 45.76518163084984,
+            "std_ms": 0.31049831403069067,
+            "mad_ms": 0.24617835879325867,
+            "minimum_ms": 45.22400349378586,
+            "maximum_ms": 46.27338796854019
+          },
+          "baseline_allocated_bytes": 1140831744,
+          "baseline_reserved_bytes": 1914699776,
+          "peak_allocated_bytes": 5713881088,
+          "peak_reserved_bytes": 6916407296,
+          "peak_allocated_delta_bytes": 4573049344,
+          "peak_reserved_delta_bytes": 5001707520,
+          "parameters": 30706692
+        }
+      ]
+    }
+  ]
+}

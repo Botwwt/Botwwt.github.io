@@ -21,6 +21,11 @@
 .headline-result.winner-other b { color: var(--rglru); }
 .skeleton { color: var(--muted); }
 .fairness-inline { margin: 1rem 0 0; max-width: 850px; color: var(--muted); font-size: .8rem; }
+.backend-update-card { display: grid; gap: .35rem; margin-top: 1.4rem; padding: 1.05rem 1.15rem; border-left: 3px solid var(--state); background: color-mix(in srgb, var(--state) 6%, var(--panel)); color: var(--ink); text-decoration: none; }
+.backend-update-card:hover { background: color-mix(in srgb, var(--state) 10%, var(--panel)); }
+.backend-update-card span { color: var(--state); font: 600 .67rem/1.4 var(--mono); letter-spacing: .025em; text-transform: uppercase; }
+.backend-update-card b { max-width: 980px; font-size: 1rem; line-height: 1.45; }
+.backend-update-card small { max-width: 980px; color: var(--muted); font-size: .78rem; line-height: 1.55; }
 
 .architecture-delta { padding: 6rem clamp(1.2rem, 5vw, 6rem); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--state) 3%, var(--paper)); }
 .delta-heading { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr); column-gap: 4rem; max-width: 1280px; margin: 0 auto 2.5rem; }
