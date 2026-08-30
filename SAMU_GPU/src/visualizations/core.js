@@ -1,4 +1,4 @@
-import {css, fitCanvas, roundedRect} from "../animation-controller.js?v=20260830-3";
+import {css, fitCanvas, roundedRect} from "../animation-controller.js?v=20260830-4";
 
 const line = (ctx, a, b, color, width = 2) => {
   ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b);
@@ -75,8 +75,30 @@ export function initArchitecture() {
       ctx.fillStyle = paper; ctx.fill(); ctx.strokeStyle = lineColor; ctx.stroke();
       label(ctx, "+", x, y + 4, ink, 13);
     };
-    const dashedArrow = (from, to, color) => {
-      ctx.save(); ctx.setLineDash([7, 6]); arrow(ctx, from, to, color, 1.4); ctx.restore();
+    const routedArrow = (points, color, width = 1.35, dashed = false) => {
+      if (points.length < 2) return;
+      ctx.save();
+      ctx.lineCap = "square";
+      ctx.lineJoin = "miter";
+      if (dashed) ctx.setLineDash([7, 6]);
+      ctx.beginPath();
+      ctx.moveTo(...points[0]);
+      points.slice(1).forEach(point => ctx.lineTo(...point));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const end = points.at(-1), previous = points.at(-2);
+      const angle = Math.atan2(end[1] - previous[1], end[0] - previous[0]);
+      const size = 6;
+      ctx.beginPath();
+      ctx.moveTo(...end);
+      ctx.lineTo(end[0] - Math.cos(angle - .48) * size, end[1] - Math.sin(angle - .48) * size);
+      ctx.lineTo(end[0] - Math.cos(angle + .48) * size, end[1] - Math.sin(angle + .48) * size);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
     };
 
     panelBox(26, 38, 220, 440, "Hawk 残差块", "重复堆叠 N 层");
@@ -86,17 +108,15 @@ export function initArchitecture() {
     block(72, 211, 128, 42, "RMSNorm", write);
     block(61, 129, 150, 58, "门控前馈块", motion, "Gated MLP");
     residual(136, 101);
-    arrow(ctx, [136, 468], [136, 430], lineColor);
-    arrow(ctx, [136, 388], [136, 364], lineColor);
-    arrow(ctx, [136, 306], [136, 287], lineColor);
-    arrow(ctx, [136, 269], [136, 253], lineColor);
-    arrow(ctx, [136, 211], [136, 187], lineColor);
-    arrow(ctx, [136, 129], [136, 110], lineColor);
-    arrow(ctx, [136, 92], [136, 60], lineColor);
-    line(ctx, [46, 451], [46, 278], lineColor, 1.1);
-    line(ctx, [46, 278], [127, 278], lineColor, 1.1);
-    line(ctx, [46, 278], [46, 101], lineColor, 1.1);
-    line(ctx, [46, 101], [127, 101], lineColor, 1.1);
+    routedArrow([[136, 468], [136, 430]], lineColor);
+    routedArrow([[136, 388], [136, 364]], lineColor);
+    routedArrow([[136, 306], [136, 287]], lineColor);
+    routedArrow([[136, 269], [136, 253]], lineColor);
+    routedArrow([[136, 211], [136, 187]], lineColor);
+    routedArrow([[136, 129], [136, 110]], lineColor);
+    routedArrow([[136, 92], [136, 60]], lineColor);
+    routedArrow([[136, 451], [48, 451], [48, 278], [127, 278]], lineColor, 1.15);
+    routedArrow([[136, 269], [48, 269], [48, 101], [127, 101]], lineColor, 1.15);
     label(ctx, "输入", 136, 496, muted, 10);
     label(ctx, "输出", 136, 28, muted, 10);
 
@@ -106,14 +126,13 @@ export function initArchitecture() {
     block(437, 189, 82, 34, "Linear", motion);
     junction(423, 111);
     block(382, 58, 82, 34, "Linear", motion);
-    arrow(ctx, [423, 248], [423, 229], lineColor);
-    line(ctx, [423, 229], [367, 229], lineColor, 1.2);
-    line(ctx, [423, 229], [478, 229], lineColor, 1.2);
-    arrow(ctx, [367, 229], [367, 223], lineColor);
-    arrow(ctx, [367, 189], [367, 171], lineColor);
-    arrow(ctx, [367, 137], [414, 111], lineColor);
-    arrow(ctx, [478, 189], [432, 111], lineColor);
-    arrow(ctx, [423, 102], [423, 92], lineColor);
+    line(ctx, [423, 248], [423, 229], lineColor, 1.2);
+    routedArrow([[423, 229], [367, 229], [367, 223]], lineColor, 1.2);
+    routedArrow([[423, 229], [478, 229], [478, 223]], lineColor, 1.2);
+    routedArrow([[367, 189], [367, 171]], lineColor);
+    routedArrow([[367, 137], [367, 111], [414, 111]], lineColor);
+    routedArrow([[478, 189], [478, 111], [432, 111]], lineColor);
+    routedArrow([[423, 102], [423, 92]], lineColor);
 
     panelBox(586, 38, 348, 440, "SAMU 递推混合块", "对应 Griffin 架构中的 RG-LRU 位置");
     block(618, 382, 92, 38, "Linear", motion, "输出门分支");
@@ -123,23 +142,23 @@ export function initArchitecture() {
     block(793, 232, 126, 54, "SAMU", state, "复数模态状态更新");
     junction(760, 186);
     block(714, 105, 92, 38, "Linear", motion, "输出投影");
-    label(ctx, "共享控制 cₜ、dₜ", 856, 218, state, 9.5);
+    label(ctx, "共享控制 cₜ、dₜ", 770, 263, state, 9.5, "right");
     label(ctx, "Griffin 基线在此使用 RG-LRU", 760, 454, muted, 9.5);
-    arrow(ctx, [760, 465], [760, 430], lineColor);
-    line(ctx, [760, 430], [664, 430], lineColor, 1.2);
-    line(ctx, [760, 430], [856, 430], lineColor, 1.2);
-    arrow(ctx, [664, 430], [664, 420], lineColor);
-    arrow(ctx, [664, 382], [664, 356], lineColor);
-    arrow(ctx, [664, 318], [751, 186], lineColor);
-    arrow(ctx, [856, 382], [856, 358], lineColor);
-    arrow(ctx, [856, 310], [856, 286], lineColor);
-    arrow(ctx, [793, 259], [769, 186], lineColor);
-    arrow(ctx, [760, 177], [760, 143], lineColor);
-    arrow(ctx, [760, 105], [760, 76], lineColor);
+    line(ctx, [760, 465], [760, 430], lineColor, 1.2);
+    routedArrow([[760, 430], [664, 430], [664, 420]], lineColor, 1.2);
+    routedArrow([[760, 430], [856, 430], [856, 420]], lineColor, 1.2);
+    routedArrow([[664, 382], [664, 356]], lineColor);
+    routedArrow([[664, 318], [664, 186], [751, 186]], lineColor);
+    routedArrow([[856, 382], [856, 358]], lineColor);
+    routedArrow([[856, 310], [856, 286]], lineColor);
+    routedArrow([[856, 232], [856, 186], [769, 186]], lineColor);
+    routedArrow([[776, 259], [793, 259]], state, 1.25);
+    routedArrow([[760, 177], [760, 143]], lineColor);
+    routedArrow([[760, 105], [760, 76]], lineColor);
     label(ctx, "输出", 760, 66, muted, 10);
 
-    dashedArrow([211, 158], [292, 158], motion);
-    dashedArrow([211, 335], [586, 335], dynamic);
+    routedArrow([[211, 158], [292, 158]], motion, 1.4, true);
+    routedArrow([[211, 335], [586, 335]], dynamic, 1.4, true);
     label(ctx, "展开", 251, 146, motion, 9.5);
     label(ctx, "展开", 394, 323, dynamic, 9.5);
     ctx.restore();

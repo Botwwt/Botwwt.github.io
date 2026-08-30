@@ -7,8 +7,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
 const requiredCommit = "2efa84dac0e68e63547a27a18fa943c98f1c312e";
 const html = await readFile(join(root, "index.html"), "utf8");
-if (!/src\/app\.js\?v=20260830-3/.test(html)) failures.push("entry module is not cache-versioned");
-if (!/styles\/course\.css\?v=20260830-3/.test(html)) failures.push("report stylesheet is not cache-versioned");
+if (!/src\/app\.js\?v=20260830-4/.test(html)) failures.push("entry module is not cache-versioned");
+if (!/styles\/course\.css\?v=20260830-4/.test(html)) failures.push("report stylesheet is not cache-versioned");
 const load = async name => JSON.parse(await readFile(join(root, "benchmark_results_small_model", name), "utf8"));
 const finite = value => Number.isFinite(Number(value));
 
@@ -29,8 +29,8 @@ for (const asset of localAssets) {
 
 const appModule = await readFile(join(root, "src", "app.js"), "utf8");
 const analysisModule = await readFile(join(root, "src", "complete-analysis.js"), "utf8");
-if (!/complete-analysis\.js\?v=20260830-3/.test(appModule)) failures.push("analysis module is not cache-versioned");
-if (!/advantage-figures\.js\?v=20260830-3/.test(analysisModule)) failures.push("figure module is not cache-versioned");
+if (!/complete-analysis\.js\?v=20260830-4/.test(appModule)) failures.push("analysis module is not cache-versioned");
+if (!/advantage-figures\.js\?v=20260830-4/.test(analysisModule)) failures.push("figure module is not cache-versioned");
 
 const [environment, correctness, officialBlock, equationAudit, deviceScan,
   backendAblation, paperScale, inference, roofline] = await Promise.all([
