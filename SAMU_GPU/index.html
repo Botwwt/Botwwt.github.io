@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles/base.css?v=20260830-4">
-  <link rel="stylesheet" href="styles/course.css?v=20260830-4">
+  <link rel="stylesheet" href="styles/base.css?v=20260830-5">
+  <link rel="stylesheet" href="styles/course.css?v=20260830-5">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 </head>
@@ -43,7 +43,7 @@
     </section>
 
     <section class="architecture-delta" id="advantage" aria-labelledby="advantage-title">
-      <div class="delta-heading"><p class="part-label">比较边界</p><h2 id="advantage-title">双方共享完整语言模型骨架，只替换递推混合器</h2><p>这一步解决旧表里参数相差八倍的问题。词嵌入、归一化、两条输入分支、因果深度卷积、输出投影和门控前馈网络完全相同；SAMU 与 RG-LRU 只在如何生成状态转移、如何更新状态这两处不同。</p></div>
+      <div class="delta-heading"><p class="part-label">比较边界</p><h2 id="advantage-title">双方共享完整语言模型骨架，只替换递推混合器</h2><p>词嵌入、归一化、两条输入分支、因果深度卷积、输出投影和门控前馈网络完全相同；SAMU 与 RG-LRU 只在如何生成状态转移、如何更新状态这两处不同。</p></div>
       <div class="pipeline-compare">
         <div class="pipeline-row samu-row"><span class="pipeline-name">SAMU</span><span>复用现有输入分支<br><small>前后各一半构成复数写入</small></span><i>→</i><span>一次生成两个共享控制量</span><i>→</i><span>旋转并衰减全部复数模态</span></div>
         <div class="pipeline-row rglru-row"><span class="pipeline-name">RG-LRU-16</span><span>复用同一输入分支<br><small>作为实数状态的候选写入</small></span><i>→</i><span>两组 16 块对角线性门</span><i>→</i><span>逐通道衰减并加入新写入</span></div>
@@ -52,7 +52,7 @@
         <div><b>共同采用的片上顺序扫描</b><p>一个 CUDA 程序负责一个批次和一小段状态通道。它沿时间轴顺序更新，把当前状态一直保存在寄存器中，避免每个时间步都往显存读写整份状态。</p></div>
         <div><b>共同采用的自定义反向传播</b><p>反向阶段从序列末尾向前走，把状态梯度保存在寄存器中，同时计算转移和写入的梯度。这与 RecurrentGemma 的 Pallas 自定义梯度语义一致。</p></div>
         <div><b>SAMU 的结构机会</b><p>全部模态共享两个随词元变化的坐标，所以动态控制计算不会随状态宽度线性展开。状态越宽，这一差异越有机会抵消复数乘法的额外成本。</p></div>
-        <div><b>不能省略的成本</b><p>每个复数模态仍需两维实数状态、一次旋转和一次缩放。页面按相同 FP32 状态字节比较，不把一个复数误算成一个实数。</p></div>
+        <div><b>复数状态的实际开销</b><p>一个复数模态包含实部和虚部，会占用两个 FP32 数值。比较时，SAMU 与 RG-LRU 的状态缓存保持同样大小；SAMU 每步还要完成一次缩放和一次二维旋转。</p></div>
       </div>
     </section>
 
@@ -137,6 +137,6 @@
     </section>
   </main>
   <div id="tooltip" class="tooltip" hidden></div>
-  <script type="module" src="src/app.js?v=20260830-4"></script>
+  <script type="module" src="src/app.js?v=20260830-5"></script>
 </body>
 </html>

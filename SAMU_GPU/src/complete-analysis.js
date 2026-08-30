@@ -1,4 +1,4 @@
-import {renderAdvantageFigures} from "./advantage-figures.js?v=20260830-4";
+import {renderAdvantageFigures} from "./advantage-figures.js?v=20260830-5";
 
 const NS = "http://www.w3.org/2000/svg";
 const RESULT_ROOT = "benchmark_results_small_model";
