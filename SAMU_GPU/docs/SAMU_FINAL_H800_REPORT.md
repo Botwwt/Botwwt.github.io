@@ -8,6 +8,13 @@ affine prefix hierarchy.  Compilation is excluded; every formal timing contains
 two counterbalanced rounds, three warmups per round, and five timed samples per
 round.
 
+The current end-to-end scope is one complete mixer, one complete
+`RecurrentBlock`, and the AdamW step for that same single block.  The
+`400M-width` label below denotes the width configuration of one block; it is
+not a current strengthened-baseline measurement of a 12-layer 400M language
+model.  Earlier multi-layer training and generation runs remain historical
+artifacts and are not used in this report's ranking.
+
 `grouped_prefix` in backend names means that adjacent **chunk summaries** are
 composed in execution groups before an outer prefix.  It does not group SAMU
 controls, modes, or parameters and does not change the model equation.
@@ -73,7 +80,8 @@ Sources: [`selected_dispatch_length_scaling_grouped_k32_h800.json`](../results/g
 ## Recurrent block and optimizer step
 
 The block adds shared convolution, projections, normalization, and output
-layers, so the mixer advantage is diluted but remains measurable.
+layers, so the mixer advantage is diluted but remains measurable.  Every row
+in both tables instantiates exactly one complete `RecurrentBlock`.
 
 | Shape | RG block F+B | SAMU block F+B | advantage | RG peak allocated | SAMU peak allocated |
 |---|---:|---:|---:|---:|---:|
@@ -90,9 +98,9 @@ layers, so the mixer advantage is diluted but remains measurable.
 
 The optimizer-step peak reserved deltas are allocator-sensitive.  They are
 1.795/1.660 GiB (RG/SAMU) for short, 1.953/1.949 GiB for medium, and
-4.598/4.658 GiB for 400M long.  Thus SAMU lowers peak allocated memory in all
+4.598/4.658 GiB for the 400M-width single-block case.  Thus SAMU lowers peak allocated memory in all
 three cases, while reserved memory is essentially tied and is 1.3% higher in
-the 400M-long sample.
+the 400M-width single-block sample.
 
 Sources: [`block_dispatch_grouped_k32_h800.json`](../results/gpu_optimization/block_dispatch_grouped_k32_h800.json) and
 [`optimizer_step_grouped_k32_h800.json`](../results/gpu_optimization/optimizer_step_grouped_k32_h800.json).
@@ -173,9 +181,10 @@ SAMU recurrence work.  Source:
   D2048, with extra scratch.
 - **Static spectral cache:** neutral at medium/D2048 and about 1.7% slower at
   long D1024.
-- **Fused controller backward or BF16 controller projection:** FP32 is close,
-  but BF16 direction gradients are around `2e-3` relative error.  The exact
-  FP32 controller remains selected.
+- **BF16 controller projection/accumulation:** direction gradients are around
+  `2e-3` relative error.  The selected fused-coordinates controller keeps its
+  normalization, direction-gradient projection, and reductions in FP32 and
+  retains the compact p/r cache required by the formal derivative.
 - **K=64 complex replay:** Triton compilation was repeatedly terminated before
   a valid runtime result.  K=32 remains selected.
 - **Full grouped forward at 65K/131K:** failed the predeclared wide-state BF16
@@ -190,8 +199,8 @@ low-rank coherent control: shared token special functions, on-the-fly mode
 transitions, a complex affine hierarchy, lower prefix scratch, and low-rank
 controller-gradient intermediates translate into lower mixer latency and peak
 allocated memory for the primary short, medium-wide, and long regions.  They
-also translate into 3.8--6.5% optimizer-step and 5.8--7.6% block wins on the
-measured selected shapes.  They do not establish that SAMU wins every shape,
+also translate into 3.8--6.5% one-block optimizer-step and 5.8--7.6% one-block
+wins on the measured selected shapes.  They do not establish that SAMU wins every shape,
 that its pure scan primitive is the fastest, or that random operator benchmarks
 prove model quality.  The current evidence is one H800, one software stack,
 and exact operator/block execution; training quality and multi-GPU scaling are

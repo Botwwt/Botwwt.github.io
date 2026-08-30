@@ -1,212 +1,202 @@
 import {access, readFile} from "node:fs/promises";
 import {dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import {lessons} from "../src/lessons.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const gpuRoot = join(root, "results", "gpu_optimization");
 const failures = [];
-const requiredCommit = "2efa84dac0e68e63547a27a18fa943c98f1c312e";
-const html = await readFile(join(root, "index.html"), "utf8");
-if (!/src\/app\.js\?v=20260831-1/.test(html)) failures.push("entry module is not cache-versioned");
-if (!/styles\/course\.css\?v=20260831-1/.test(html)) failures.push("report stylesheet is not cache-versioned");
-const load = async name => JSON.parse(await readFile(join(root, "benchmark_results_small_model", name), "utf8"));
-const loadGpu = async name => JSON.parse(await readFile(join(root, "results", "gpu_optimization", name), "utf8"));
+const check = (condition, message) => { if (!condition) failures.push(message); };
 const finite = value => Number.isFinite(Number(value));
-const close = (actual, expected, tolerance = 0.002) => Math.abs(Number(actual) - expected) <= tolerance;
+const close = (actual, expected, tolerance = 0.002) => finite(actual) && Math.abs(Number(actual) - expected) <= tolerance;
+const percentLower = (reference, candidate) => 100 * (Number(reference) - Number(candidate)) / Number(reference);
+const oneDecimal = value => Number(value.toFixed(1));
+const load = async name => JSON.parse(await readFile(join(gpuRoot, name), "utf8"));
+const median = row => row?.forward_backward?.median_ms;
+const byShape = (data, batch, length, width, architecture) => data.rows.find(row =>
+  row.shape.batch === batch && row.shape.length === length && row.shape.width === width && row.architecture === architecture);
 
-if (lessons.length !== 16) failures.push(`expected 16 detailed report sections, found ${lessons.length}`);
-for (const target of ["summary", "evidence", "training", "inference", "report", "sources"]) {
-  if (!html.includes(`href="#${target}"`)) failures.push(`missing navigation target ${target}`);
-  if (!html.includes(`id="${target}"`)) failures.push(`missing section id ${target}`);
+const html = await readFile(join(root, "index.html"), "utf8");
+const script = await readFile(join(root, "src", "final-report.js"), "utf8");
+const css = await readFile(join(root, "styles", "final-report.css"), "utf8");
+
+check(/src\/final-report\.js\?v=20260831-2/.test(html), "final report module is missing or not cache-versioned");
+check(/styles\/final-report\.css\?v=20260831-2/.test(html), "final report stylesheet is missing or not cache-versioned");
+check(!/src\/app\.js|complete-analysis\.js|advantage-figures\.js|lessons\.js/.test(html), "legacy report modules are still mounted");
+for (const target of ["conclusion", "measurements", "backend", "memory", "rglru", "correctness", "lesson-6", "sources"]) {
+  check(html.includes(`href="#${target}"`), `missing navigation target ${target}`);
+  check(html.includes(`id="${target}"`), `missing section id ${target}`);
 }
 
 const localAssets = [...html.matchAll(/(?:href|src)="([^"#]+)"/g)]
   .map(match => match[1])
-  .filter(path => !path.startsWith("http") && !path.startsWith("data:"))
+  .filter(path => !/^(?:https?:|data:|mailto:)/.test(path))
   .map(path => path.split("?")[0]);
 for (const asset of localAssets) {
   try { await access(join(root, asset)); }
   catch { failures.push(`missing local asset ${asset}`); }
 }
 
-const appModule = await readFile(join(root, "src", "app.js"), "utf8");
-const analysisModule = await readFile(join(root, "src", "complete-analysis.js"), "utf8");
-if (!/complete-analysis\.js\?v=20260831-1/.test(appModule)) failures.push("analysis module is not cache-versioned");
-if (!/advantage-figures\.js\?v=20260831-1/.test(analysisModule)) failures.push("figure module is not cache-versioned");
+for (const required of [
+  "24.6%–40.2% faster",
+  "5.8%–7.6% faster",
+  "3.8%–6.5% faster",
+  "12.4% slower",
+  "单个完整 recurrent block",
+  "不是 12/24 层完整语言模型 optimizer step",
+  "grouped” 只表示 chunk summaries 的执行分组",
+  "足以重放 transition，但不足以独立恢复完整 controller derivative",
+  "P<sub>c,m</sub>=exp(−ν<sub>m</sub>G<sub>c</sub>)",
+  "pure scan-only 最快的是 accelerated-scan/Hippogriff",
+  "当前已证明 400M/1.3B 完整模型 optimizer step 更快",
+]) check(html.includes(required), `missing scope-critical copy: ${required}`);
 
-const [environment, correctness, officialBlock, equationAudit, deviceScan,
-  backendAblation, paperScale, inference, roofline] = await Promise.all([
-  load("environment.json"), load("correctness.json"), load("official_hawk_block_audit.json"),
-  load("training_equation_audit.json"),
-  load("training_on_device_complete.json"), load("paper_scale_backend_ablation.json"),
-  load("paper_scale_h800.json"), load("paper_scale_inference_h800.json"),
-  load("h800_roofline_decode.json"),
+for (const stale of [
+  /src\/app\.js/,
+  /paper_scale_inference_h800\.json/,
+  /完整模型生成/,
+  /400M\s*\/\s*1\.3B 多层完整模型训练与生成属于当前/,
+  /65K\/131K 仍有约 43% 优势[^<]*可以/,
+  /SAMU 在所有形状都比 RG-LRU 快[^<]*证明/,
+]) check(!stale.test(html), `stale or unsupported visible claim remains: ${stale}`);
+
+check(/--viz-series-1/.test(css) && /\.paper-figure/.test(css) && /\.scientific-chart/.test(css), "scientific report styling is incomplete");
+check(/<title>complete mixer F\+B latency<\/title>/.test(script), "mixer chart lacks an accessible title");
+check(/<title>D=1024 length crossover<\/title>/.test(script), "length chart lacks an accessible title");
+check(/<title>L=32768 width scaling<\/title>/.test(script), "width chart lacks an accessible title");
+check(/minimum_ms/.test(script) && /maximum_ms/.test(script), "figures do not render measured dispersion");
+check(/selected_dispatch_very_long_hybrid_h800_v2\.json/.test(script), "very-long chart is not bound to the strict hybrid result");
+check(/group\.shape\.length === 32768/.test(script), "length chart may be using rejected 65K/131K full-group rows");
+
+const [mixer, counterexample, length, veryLong, width, block, optimizer, launches, fattori, scanOnly,
+  hybrid65, hybrid131, rejectedLong, compressed] = await Promise.all([
+  load("selected_dispatch_grouped_k32_h800.json"),
+  load("selected_dispatch_l8192_d1024_serial_k32_h800.json"),
+  load("selected_dispatch_length_scaling_grouped_k32_h800.json"),
+  load("selected_dispatch_very_long_hybrid_h800_v2.json"),
+  load("selected_dispatch_width_scaling_extra_grouped_k32_h800.json"),
+  load("block_dispatch_grouped_k32_h800.json"),
+  load("optimizer_step_grouped_k32_h800.json"),
+  load("selected_dispatch_launches_grouped_k32_h800.json"),
+  load("public_fattori_h800.json"),
+  load("public_accelerated_scan_h800.json"),
+  load("samu_hybrid_prefix64_65536_d1024_correctness_v2.json"),
+  load("samu_hybrid_prefix64_131072_d1024_correctness_v2.json"),
+  load("samu_grouped_k32_long_correctness.json"),
+  load("samu_compressed_grouped_k32_correctness.json"),
 ]);
-
-const [finalMixer, finalBlock, finalOptimizer, veryLong, hybrid65, hybrid131,
-  fattori, acceleratedScan] = await Promise.all([
-  loadGpu("selected_dispatch_grouped_k32_h800.json"),
-  loadGpu("block_dispatch_grouped_k32_h800.json"),
-  loadGpu("optimizer_step_grouped_k32_h800.json"),
-  loadGpu("selected_dispatch_very_long_hybrid_h800_v2.json"),
-  loadGpu("samu_hybrid_prefix64_65536_d1024_correctness_v2.json"),
-  loadGpu("samu_hybrid_prefix64_131072_d1024_correctness_v2.json"),
-  loadGpu("public_fattori_h800.json"),
-  loadGpu("public_accelerated_scan_h800.json"),
-]);
-
-if (!String(environment.gpu || "").includes("H800")) failures.push(`unexpected GPU ${environment.gpu}`);
-if (environment.official_recurrentgemma_commit !== requiredCommit) failures.push("environment uses the wrong RecurrentGemma commit");
-if (!officialBlock.passed) failures.push("official Hawk block audit failed");
-if (officialBlock.official_commit !== requiredCommit) failures.push("official Hawk block audit uses the wrong commit");
-if (!officialBlock.decode_consistency?.passed) failures.push("full-sequence versus token-decode audit failed");
-for (const [architecture, backend] of [["samu", "packed"], ["rglru", "fused"], ["rglru", "bmm"]]) {
-  if (!(officialBlock.decode_consistency?.rows || []).some(row => row.architecture === architecture && row.decode_backend === backend && row.passed)) {
-    failures.push(`missing passing decode audit ${architecture}/${backend}`);
-  }
-}
-if (!equationAudit.passed || !equationAudit.official_rglru_training?.passed) failures.push("official RG-LRU equation/training audit failed");
-if (equationAudit.official_rglru_training?.reference_commit !== requiredCommit) failures.push("RG-LRU training audit uses the wrong commit");
-for (const [name, row] of Object.entries(correctness)) {
-  if (!["output_max_abs", "gradient_max_abs", "grad_a_max_abs", "state_max_abs"].some(key => finite(row[key]))) {
-    failures.push(`correctness row ${name} has no numerical error`);
-  }
-}
-for (const name of ["samu_decode_bfloat16", "rglru_decode_bfloat16", "rglru_decode_bmm_bfloat16"]) {
-  if (!correctness[name] || !finite(correctness[name].output_max_abs) || !finite(correctness[name].state_max_abs)) {
-    failures.push(`missing one-step decode correctness row ${name}`);
-  }
-}
-
-for (const method of [
-  "samu_framework_linear_reference", "samu_linear", "samu_chunk32",
-  "samu_associative_bf16_reference", "samu_associative_fp32_reference",
-  "rglru_framework_linear_reference", "rglru_linear", "rglru_chunk32",
-  "rglru_associative_bf16_reference", "rglru_associative_fp32_reference",
-]) {
-  for (const length of [2048, 4096, 8192, 16384]) {
-    if (!(deviceScan.summary || []).some(row => row.method === method && row.length === length)) {
-      failures.push(`missing device-scan ${method} at L=${length}`);
-    }
-  }
-}
-
-for (const scale of ["400m", "1.3b"]) {
-  for (const architecture of ["samu", "rglru"]) {
-    for (const backend of ["triton", "framework_eager", "associative_bf16", "associative_fp32", "chunk16", "chunk32"]) {
-      if (!(backendAblation.rows || []).some(row => row.scale === scale && row.architecture === architecture && row.backend === backend)) {
-        failures.push(`missing backend ablation ${scale}/${architecture}/${backend}`);
-      }
-    }
-    const record = (paperScale.records || []).find(row => row.scale === scale && row.architecture === architecture);
-    if (!record) failures.push(`missing paper-scale record ${scale}/${architecture}`);
-    for (const length of [2048, 4096, 8192]) {
-      const row = record?.rows?.find(item => item.sequence_length === length);
-      if (row?.status !== "measured" || !finite(row.order_balanced_median_step_ms)) {
-        failures.push(`missing measured paper-scale step ${scale}/${architecture}/L${length}`);
-      }
-    }
-  }
-}
-if (paperScale.official_recurrentgemma_commit !== requiredCommit) failures.push("paper-scale training uses the wrong commit");
-
-if (inference.status !== "complete") failures.push(`paper-scale inference is not complete: ${inference.status}`);
-if (inference.official_recurrentgemma_commit !== requiredCommit) failures.push("paper-scale inference uses the wrong commit");
-if ((inference.measurement_passes || []).length !== 4) failures.push(`expected four pass/architecture inference records, found ${(inference.measurement_passes || []).length}`);
-for (const passName of ["AB", "BA"]) {
-  for (const architecture of ["samu", "rglru"]) {
-    const pass = (inference.measurement_passes || []).find(row => row.measurement_pass === passName && row.architecture === architecture);
-    if (!pass) failures.push(`missing inference pass ${passName}/${architecture}`);
-    if ((pass?.batch_search || []).length !== 11) failures.push(`${passName}/${architecture} does not contain all eleven batch probes`);
-  }
-}
-for (const architecture of ["samu", "rglru"]) {
-  for (const prompt of [0, 4096]) for (const length of [128, 256, 512, 1024, 2048, 4096]) {
-    const row = (inference.rows || []).find(item => item.architecture === architecture && item.workload === "continuous_decode_latency" && item.prompt_length === prompt && item.decode_length === length);
-    if (!row || row.measurement_passes !== 2 || !finite(row.median_ms)) failures.push(`missing counterbalanced latency ${architecture}/P${prompt}/L${length}`);
-  }
-  for (const length of [512, 1024, 2048, 4096]) {
-    const row = (inference.rows || []).find(item => item.architecture === architecture && item.workload === "maximum_throughput" && item.decode_length === length);
-    if (!row || !finite(row.tokens_per_second)) failures.push(`missing completed maximum-throughput trajectory ${architecture}/L${length}`);
-  }
-}
 
 const mixerExpected = [
-  [4, 2048, 2048, "rglru", 2.553], [4, 2048, 2048, "samu", 1.924],
-  [1, 8192, 2560, "rglru", 3.130], [1, 8192, 2560, "samu", 2.265],
-  [1, 32768, 1024, "rglru", 4.853], [1, 32768, 1024, "samu", 3.041],
-  [1, 32768, 2048, "rglru", 8.763], [1, 32768, 2048, "samu", 5.238],
+  [4, 2048, 2048, 2.553, 1.924, 24.6, 22.0, 50, 70],
+  [1, 8192, 2560, 3.130, 2.265, 27.6, 22.0, 50, 74],
+  [1, 32768, 1024, 4.853, 3.041, 37.3, 23.4, 51, 73],
+  [1, 32768, 2048, 8.763, 5.238, 40.2, 23.5, 51, 73],
 ];
-for (const [batch, length, width, architecture, expected] of mixerExpected) {
-  const row = finalMixer.rows.find(item => item.shape.batch === batch && item.shape.length === length && item.shape.width === width && item.architecture === architecture);
-  if (!row || !close(row.forward_backward?.median_ms, expected)) failures.push(`final mixer mismatch ${architecture}/B${batch}/L${length}/D${width}`);
-  if ((row?.forward_backward?.samples_ms || []).length !== 10) failures.push(`final mixer does not retain ten samples ${architecture}/B${batch}/L${length}/D${width}`);
+for (const [batch, sequence, state, rgExpected, samuExpected, speedExpected, memoryExpected, rgLaunches, samuLaunches] of mixerExpected) {
+  const rg = byShape(mixer, batch, sequence, state, "rglru");
+  const samu = byShape(mixer, batch, sequence, state, "samu");
+  check(close(median(rg), rgExpected) && close(median(samu), samuExpected), `mixer mismatch B${batch}/L${sequence}/D${state}`);
+  check(oneDecimal(percentLower(median(rg), median(samu))) === speedExpected, `mixer speedup mismatch B${batch}/L${sequence}/D${state}`);
+  check(oneDecimal(percentLower(rg?.peak_allocated_delta_bytes, samu?.peak_allocated_delta_bytes)) === memoryExpected,
+    `mixer allocated-memory reduction mismatch B${batch}/L${sequence}/D${state}`);
+  check(rg?.forward_backward?.samples_ms?.length === 10 && samu?.forward_backward?.samples_ms?.length === 10,
+    `mixer row does not retain ten timed samples B${batch}/L${sequence}/D${state}`);
+  const launchRg = byShape(launches, batch, sequence, state, "rglru");
+  const launchSamu = byShape(launches, batch, sequence, state, "samu");
+  check(launchRg?.cuda_kernel_events === rgLaunches && launchSamu?.cuda_kernel_events === samuLaunches,
+    `launch count mismatch B${batch}/L${sequence}/D${state}`);
 }
+
+const counterRg = byShape(counterexample, 1, 8192, 1024, "rglru");
+const counterSamu = byShape(counterexample, 1, 8192, 1024, "samu");
+check(close(median(counterRg), 1.603) && close(median(counterSamu), 1.801), "8K/D1024 counterexample mismatch");
+check(oneDecimal(percentLower(median(counterRg), median(counterSamu))) === -12.4, "8K/D1024 counterexample percentage mismatch");
+
+const length32Rg = byShape(length, 1, 32768, 1024, "rglru");
+const length32Samu = byShape(length, 1, 32768, 1024, "samu");
+check(close(median(length32Rg), 4.844) && close(median(length32Samu), 3.051), "32K length-scaling mismatch");
+for (const [sequence, rgExpected, samuExpected] of [[65536, 9.154, 6.666], [131072, 17.712, 13.163]]) {
+  const rg = byShape(veryLong, 1, sequence, 1024, "rglru");
+  const samu = byShape(veryLong, 1, sequence, 1024, "samu");
+  check(close(median(rg), rgExpected) && close(median(samu), samuExpected), `strict very-long mismatch L${sequence}`);
+}
+check(oneDecimal(percentLower(median(byShape(veryLong, 1, 65536, 1024, "rglru")), median(byShape(veryLong, 1, 65536, 1024, "samu")))) === 27.2,
+  "65K strict-dispatch percentage mismatch");
+check(oneDecimal(percentLower(median(byShape(veryLong, 1, 131072, 1024, "rglru")), median(byShape(veryLong, 1, 131072, 1024, "samu")))) === 25.7,
+  "131K strict-dispatch percentage mismatch");
+
+for (const [state, rgExpected, samuExpected] of [[1536, 6.969, 4.123], [2560, 11.073, 6.637]]) {
+  const rg = byShape(width, 1, 32768, state, "rglru");
+  const samu = byShape(width, 1, 32768, state, "samu");
+  check(close(median(rg), rgExpected) && close(median(samu), samuExpected), `width scaling mismatch D${state}`);
+}
+
 for (const [caseName, rgExpected, samuExpected] of [
-  ["state2048_short", 15.764, 14.699], ["state2560_medium", 20.746, 19.544],
-  ["state1024_long", 24.120, 22.276], ["400m_block_long", 43.202, 39.949],
+  ["state2048_short", 15.764, 14.699],
+  ["state2560_medium", 20.746, 19.544],
+  ["state1024_long", 24.120, 22.276],
+  ["400m_block_long", 43.202, 39.949],
 ]) {
-  const item = finalBlock.cases.find(row => row.case === caseName);
+  const item = block.cases.find(row => row.case === caseName);
   const rg = item?.rows?.find(row => row.architecture === "rglru");
   const samu = item?.rows?.find(row => row.architecture === "samu");
-  if (!close(rg?.forward_backward?.median_ms, rgExpected) || !close(samu?.forward_backward?.median_ms, samuExpected)) failures.push(`final block mismatch ${caseName}`);
+  check(close(median(rg), rgExpected) && close(median(samu), samuExpected), `one-block mismatch ${caseName}`);
 }
+check(JSON.stringify(block.cases.map(item => {
+  const rg = item.rows.find(row => row.architecture === "rglru");
+  const samu = item.rows.find(row => row.architecture === "samu");
+  return oneDecimal(percentLower(median(rg), median(samu)));
+})) === JSON.stringify([6.8, 5.8, 7.6, 7.5]), "one-block speedup vector mismatch");
+
 for (const [caseName, rgExpected, samuExpected] of [
-  ["state2048_short", 24.808, 23.728], ["state2560_medium", 34.394, 33.101],
+  ["state2048_short", 24.808, 23.728],
+  ["state2560_medium", 34.394, 33.101],
   ["400m_block_long", 48.997, 45.796],
 ]) {
-  const item = finalOptimizer.cases.find(row => row.case === caseName);
+  const item = optimizer.cases.find(row => row.case === caseName);
   const rg = item?.rows?.find(row => row.architecture === "rglru");
   const samu = item?.rows?.find(row => row.architecture === "samu");
-  if (!close(rg?.optimizer_step?.median_ms, rgExpected) || !close(samu?.optimizer_step?.median_ms, samuExpected)) failures.push(`final optimizer mismatch ${caseName}`);
+  check(close(rg?.optimizer_step?.median_ms, rgExpected) && close(samu?.optimizer_step?.median_ms, samuExpected), `one-block optimizer mismatch ${caseName}`);
 }
-for (const [length, rgExpected, samuExpected] of [[65536, 9.154, 6.666], [131072, 17.712, 13.163]]) {
-  const rg = veryLong.rows.find(row => row.shape.length === length && row.architecture === "rglru");
-  const samu = veryLong.rows.find(row => row.shape.length === length && row.architecture === "samu");
-  if (!close(rg?.forward_backward?.median_ms, rgExpected) || !close(samu?.forward_backward?.median_ms, samuExpected)) failures.push(`very-long mismatch L${length}`);
+check(JSON.stringify(optimizer.cases.map(item => {
+  const rg = item.rows.find(row => row.architecture === "rglru");
+  const samu = item.rows.find(row => row.architecture === "samu");
+  return oneDecimal(percentLower(rg.optimizer_step.median_ms, samu.optimizer_step.median_ms));
+})) === JSON.stringify([4.4, 3.8, 6.5]), "one-block optimizer speedup vector mismatch");
+
+for (const [state, samuParameters, rgParameters] of [[1024, 3076, 134144], [2048, 6148, 530432], [2560, 7684, 826880]]) {
+  const source = state === 2560 ? byShape(mixer, 1, 8192, state, "samu") : byShape(mixer, 1, 32768, state, "samu");
+  const reference = state === 2560 ? byShape(mixer, 1, 8192, state, "rglru") : byShape(mixer, 1, 32768, state, "rglru");
+  check(source?.parameters === samuParameters && reference?.parameters === rgParameters, `mixer parameter count mismatch D${state}`);
 }
-if (!hybrid65.passed || !hybrid131.passed || hybrid65.rows?.[0]?.output?.relative_l2 !== 0 || hybrid131.rows?.[0]?.output?.relative_l2 !== 0) failures.push("very-long hybrid correctness gate failed");
+
+check(hybrid65.passed && hybrid131.passed, "strict very-long hybrid correctness gate did not pass");
+check(hybrid65.rows?.[0]?.output?.relative_l2 === 0 && hybrid131.rows?.[0]?.output?.relative_l2 === 0,
+  "strict very-long hybrid output is not bitwise identical");
+check(rejectedLong.passed === false, "rejected full-group very-long result is unexpectedly marked passed");
+check(compressed.passed === false, "compressed grouped interaction is unexpectedly marked passed");
+check(close(compressed.rows?.[1]?.output?.relative_l2, 6.375004431902198e-6, 1e-12), "compressed grouped rejection metric mismatch");
+
 const fattoriOriginal = fattori.rows.find(row => row.implementation === "fattori_original");
 const oursRestricted = fattori.rows.find(row => row.implementation === "ours_restricted");
-if (!fattori.source_diff_empty || !close(fattoriOriginal?.forward_backward?.median_ms, 4.535) || !close(oursRestricted?.forward_backward?.median_ms, 2.260)) failures.push("Fattori reproduction mismatch");
-const hippogriff = acceleratedScan.rows.find(row => row.implementation === "hippogriff_accelerated_scan");
-const lingua = acceleratedScan.rows.find(row => row.implementation === "lingua_original_wrapper");
-const oursChunk32 = acceleratedScan.rows.find(row => row.implementation === "ours_materialized_chunk32");
-if (!close(hippogriff?.forward_backward?.median_ms, 0.710) || !close(lingua?.forward_backward?.median_ms, 0.736) || !close(oursChunk32?.forward_backward?.median_ms, 0.858)) failures.push("scan-only public baseline mismatch");
-
-if (!finite(roofline.measured_copy_bandwidth?.median_gb_per_second)) failures.push("missing measured H800 copy bandwidth");
-if (!finite(roofline.measured_bf16_gemm?.median_tflops_per_second)) failures.push("missing measured H800 BF16 GEMM throughput");
-if (!finite(roofline.measured_roofline?.ridge_flops_per_byte)) failures.push("missing measured H800 roofline ridge point");
-for (const architecture of ["samu", "rglru"]) {
-  if (!(roofline.paper_scale_decode_accounting?.[architecture]?.fixed_batch_latency || []).length) failures.push(`missing decode byte accounting for ${architecture}`);
-}
-
-const visibleText = [html, await readFile(join(root, "README.md"), "utf8"),
-  await readFile(join(root, "BENCHMARK_METHODOLOGY.md"), "utf8"),
-  await readFile(join(root, "GRIFFIN_PROTOCOL_STATUS.md"), "utf8"),
-  await readFile(join(root, "src", "lessons.js"), "utf8"),
-  await readFile(join(root, "src", "complete-analysis.js"), "utf8")].join("\n");
-for (const required of ["最终 H800 训练后端", "24.6%", "40.2%", "慢 12.4%", "Fattori", "pure scan primitive 最快"]) {
-  if (!visibleText.includes(required)) failures.push(`missing final backend copy: ${required}`);
-}
-if (/mamba/i.test(visibleText)) failures.push("visible report still mentions Mamba");
-if (/RTX 3090|3090 实测/i.test(visibleText)) failures.push("visible report still labels the experiment as RTX 3090");
-if (/验证集训练曲线|测试集 BPB|enwik8 三随机种子|训练质量/.test(visibleText)) failures.push("visible report still contains the removed quality-training track");
-if (/7B|7b|容量边界|显存不足/.test(visibleText)) failures.push("visible report still contains the removed large-model capacity track");
-if (/旧微基准中的额外大投影|先通过官方方程与整块实现审计|这里统计逻辑值的数量/.test(visibleText)) failures.push("visible report still contains user-removed copy");
-if (/这一步解决旧表里参数相差八倍的问题|每个复数模态仍需两维实数状态/.test(visibleText)) failures.push("visible report still contains the previous wording");
-if (/id="correctness-audit"/.test(html)) failures.push("removed correctness audit block is still mounted");
+check(fattori.source_diff_empty && close(median(fattoriOriginal), 4.535) && close(median(oursRestricted), 2.260), "Fattori restricted reproduction mismatch");
+const hippogriff = scanOnly.rows.find(row => row.implementation === "hippogriff_accelerated_scan");
+const lingua = scanOnly.rows.find(row => row.implementation === "lingua_original_wrapper");
+const oursChunk32 = scanOnly.rows.find(row => row.implementation === "ours_materialized_chunk32");
+check(close(median(hippogriff), 0.710) && close(median(lingua), 0.736) && close(median(oursChunk32), 0.858), "public scan-only reproduction mismatch");
 
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exit(1);
 }
+
 console.log(JSON.stringify({
-  sections: lessons.length,
-  assets: localAssets.length,
-  deviceScanRows: deviceScan.summary.length,
-  backendRows: backendAblation.rows.length,
-  paperScaleRecords: paperScale.records.filter(record => ["400m", "1.3b"].includes(record.scale)).length,
-  inferencePasses: inference.measurement_passes.length,
-  inferenceRows: inference.rows.length,
+  reportVersion: "2026-08-31-2",
+  sections: 8,
+  localAssets: localAssets.length,
+  primaryMixerRows: mixer.rows.length,
+  mixerSamplesPerRow: 10,
+  oneBlockCases: block.cases.length,
+  oneBlockOptimizerCases: optimizer.cases.length,
+  strictVeryLongRows: veryLong.rows.length,
+  rejectedCandidatesRetained: ["full-group very-long", "compressed grouped K32"],
 }, null, 2));
