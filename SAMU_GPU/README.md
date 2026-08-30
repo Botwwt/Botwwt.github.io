@@ -15,11 +15,11 @@
 当前包含四条互不替代的主测：
 
 1. 附录图 8(a)：B=8、1024 个实状态量、L=2K/4K/8K/16K，比较框架逐步循环、自定义片上顺序扫描、精确分块扫描与 BF16/FP32 结合扫描。
-2. 图 3：按 Griffin 表 2 的 400M、1.3B、7B 宽度与层数运行；L=2K/4K/8K，每步固定 8192 个词元，记录完整训练步与峰值显存。400M/1.3B 先在独立样本上为双方选择最快的精确 GPU 后端，再以新样本按正序和逆序复测。默认使用 32K 词表。
-3. 附录图 8(b)：按表 2 的 400M、1.3B、7B 配置，只更换递推扫描后端，记录完整优化器步骤；PyTorch 逐步路径只作为官方语义参考，不作为架构主对手；7B 若超过 80GB 则记录精确容量边界。
+2. 图 3：按 Griffin 表 2 的 400M 与 1.3B 宽度和层数运行；L=2K/4K/8K，每步固定 8192 个词元，记录完整训练步与峰值显存。双方先在独立样本上选择最快的精确 GPU 后端，再以新样本按正序和逆序复测。默认使用 32K 词表。
+3. 附录图 8(b)：按表 2 的 400M 与 1.3B 配置，只更换递推扫描后端，记录完整优化器步骤；PyTorch 逐步路径只作为官方语义参考，不作为架构主对手。
 4. 第 5 节：1.3B 配置完整模型，宽度 2048、递推宽度 2560、24 层、32K 词表；B=16、空提示/4K 提示、连续生成 128–4096 步；吞吐在预先声明的 B=1–512 候选中完成 512–4096 步整条轨迹。
 
-SAMU 与 RG‑LRU 都有 FP32 状态驻留的 Triton 前向、反向和融合解码路径。系统训练输入使用随机词元提供固定算子形状；它不产生准确率、损失或收敛结论。单卡规模轨道真实运行可分配的 400M/1.3B 完整优化器步骤；7B 先以参数、梯度和 Adam 状态的严格下界判断容量。详细边界见 [GRIFFIN_PROTOCOL_STATUS.md](GRIFFIN_PROTOCOL_STATUS.md)。
+SAMU 与 RG‑LRU 都有 FP32 状态驻留的 Triton 前向、反向和融合解码路径。系统训练输入使用随机词元提供固定算子形状；它不产生准确率、损失或收敛结论。单卡规模轨道真实运行 400M/1.3B 完整优化器步骤。详细协议见 [GRIFFIN_PROTOCOL_STATUS.md](GRIFFIN_PROTOCOL_STATUS.md)。
 
 ## 运行
 
@@ -50,7 +50,7 @@ python run_paper_scale_inference_h800.py \
 - `benchmark/run_small_model_study.py`：Hawk 模型骨架与训练、解码计时基础实现。
 - `benchmark/run_paper_scale_backend_ablation.py`：表 2 规模下图 8(b) 的完整模型扫描后端矩阵。
 - `benchmark/audit_official_hawk_block.py`：固定官方提交与本实现的逐组件参数量、整块前向和末状态数值审计。
-- `benchmark/run_paper_scale_h800.py`：400M/1.3B/7B 表 2 形状的单卡完整训练步与容量审计。
+- `benchmark/run_paper_scale_h800.py`：400M/1.3B 表 2 形状的单卡完整训练步骤。
 - `benchmark/run_paper_scale_inference_h800.py`：1.3B 配置的完整模型连续生成与批量搜索。
 - `benchmark/run_h800_roofline_and_decode.py`：H800 实测复制带宽、BF16 矩阵吞吐和第 5 节字节模型。
 - `benchmark/run_canonical_griffin_axes.py`：第 4、5 节实验轴主测。

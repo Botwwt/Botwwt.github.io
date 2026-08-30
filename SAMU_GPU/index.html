@@ -17,7 +17,7 @@
   <a class="skip-link" href="#report">跳到汇报正文</a>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="SAMU GPU 首页"><span class="brand-mark">S</span><span>SAMU GPU</span></a>
-    <nav aria-label="主导航"><a href="#summary">结果</a><a href="#training">训练</a><a href="#inference">推理</a><a href="#report">实现说明</a><a href="#sources">依据</a></nav>
+    <nav aria-label="主导航"><a href="#summary">结果</a><a href="#evidence">结构证据</a><a href="#training">训练</a><a href="#inference">推理</a><a href="#report">实现说明</a><a href="#sources">依据</a></nav>
     <button class="theme-toggle" id="theme-toggle" aria-label="切换深浅主题">◐</button>
   </header>
 
@@ -58,8 +58,20 @@
       <div class="resource-table-wrap" id="correctness-audit"><p>正在读取官方方程与整块数值审计…</p></div>
     </section>
 
+    <section class="wide-section evidence-atlas" id="evidence" aria-labelledby="evidence-title">
+      <div class="wide-heading"><div><p class="part-label">结构优势与系统效果分开报告</p><h2 id="evidence-title">SAMU 的优势在哪里，最终传递了多少</h2></div><p>下面五幅图分别回答动态控制规模、递推参数、扫描速度、完整训练和完整推理。解析推导与 H800 实测使用不同标记；所有实测点都来自页面公开的原始记录，并保留运行顺序、样本数和分位数。</p></div>
+      <div class="journal-grid">
+        <figure class="journal-figure"><div class="journal-head"><span class="figure-letter">a</span><div><span class="evidence derived">结构推导</span><h3>每个词元的动态控制量</h3></div></div><svg class="journal-svg" id="control-scaling-chart" role="img" aria-label="RG-LRU 与 SAMU 动态控制量随递推宽度的变化"></svg><figcaption>RG‑LRU 的输入门和保留门合计产生 <i>2D</i> 个通道级动态值；SAMU 始终产生两个共享控制量。这里统计逻辑值的数量，不把它直接冒充实际 HBM 流量。</figcaption></figure>
+        <figure class="journal-figure"><div class="journal-head"><span class="figure-letter">b</span><div><span class="evidence derived">结构推导</span><h3>每层递推混合器参数</h3></div></div><svg class="journal-svg" id="mixer-parameter-chart" role="img" aria-label="400M 与 1.3B 配置中递推混合器参数量"></svg><figcaption>只比较被替换的递推混合器。公共输入投影、卷积、输出投影和前馈网络不计入本图，因此图注同时给出完整模型参数差距，防止把局部比例误写成整模比例。</figcaption></figure>
+        <figure class="journal-figure journal-wide"><div class="journal-head"><span class="figure-letter">c</span><div><span class="evidence measured">H800 实测</span><h3>共享控制传递到完整训练步的效果</h3></div></div><svg class="journal-svg tall" id="training-evidence-chart" role="img" aria-label="SAMU 完整训练加速与峰值显存减少"></svg><figcaption>400M 与 1.3B 完整模型；每点固定 8192 个词元，包含前向、交叉熵、反向、梯度裁剪和 AdamW。加速误差线使用 14 个步骤样本的 P10–P90 保守组合，显存为计时窗口内峰值已分配量。</figcaption></figure>
+        <figure class="journal-figure"><div class="journal-head"><span class="figure-letter">d</span><div><span class="evidence measured">H800 实测</span><h3>投影后的精确前向扫描</h3></div></div><svg class="journal-svg" id="scan-evidence-chart" role="img" aria-label="SAMU 与 RG-LRU 投影后精确分块扫描延迟"></svg><figcaption>B=8、1024 个实状态量、L=2K–16K。双方都使用 32 词元精确分块，计时只覆盖投影后的递推扫描。正序与逆序各运行一轮，误差线是两轮原始样本的 P10–P90 包络。</figcaption></figure>
+        <figure class="journal-figure"><div class="journal-head"><span class="figure-letter">e</span><div><span class="evidence measured">H800 实测</span><h3>完整生成中的收益边界</h3></div></div><svg class="journal-svg" id="decode-evidence-chart" role="img" aria-label="空提示与 4K 提示下完整模型的平均单步生成延迟"></svg><figcaption>B=16、1.3B 配置、24 个完整递推块与 32K 词表；每点合并正序与逆序共 6 条完整轨迹，带状区间为 P10–P95。空提示和 4K 提示只改变固定大小缓存中的数值，不改变逐词计算形状，因此同一架构的两条曲线应接近重合。</figcaption></figure>
+      </div>
+      <p class="figure-source-line">数据来源：图 c 为 <a href="benchmark_results_small_model/paper_scale_h800.json">完整训练原始样本</a>；图 d 为 <a href="benchmark_results_griffin_complete/canonical_griffin_axes.json">扫描双顺序记录</a>；图 e 为 <a href="benchmark_results_small_model/paper_scale_inference_h800.json">完整生成轨迹记录</a>。图 a、b 的公式和参数口径见下方实现说明。</p>
+    </section>
+
     <section class="wide-section evidence-section" id="training" aria-labelledby="training-title">
-      <div class="wide-heading"><div><p class="part-label">对应 Griffin 第 4 节与附录 D</p><h2 id="training-title">设备端高效训练递推模型</h2></div><p>实验严格沿用 Griffin 的系统问题：先隔离扫描实现，再把它装回表 2 的完整 Hawk 模型，最后固定每步 8192 个词元比较 2K、4K、8K 序列。400M 与 1.3B 点均执行全部层、交叉熵、反向传播、梯度裁剪和 AdamW 更新；7B 只报告单卡容量边界。</p></div>
+      <div class="wide-heading"><div><p class="part-label">对应 Griffin 第 4 节与附录 D</p><h2 id="training-title">设备端高效训练递推模型</h2></div><p>实验严格沿用 Griffin 的系统问题：先隔离扫描实现，再把它装回表 2 的完整 Hawk 模型，最后固定每步 8192 个词元比较 2K、4K、8K 序列。400M 与 1.3B 点均执行全部层、交叉熵、反向传播、梯度裁剪和 AdamW 更新。</p></div>
       <div class="method-grid">
         <div><h3>图 8(a)：扫描实现</h3><p>固定 B=8、1024 个实状态量和 L=2K–16K，分别测 PyTorch 逐步参考、片上顺序扫描、精确分块扫描以及 BF16/FP32 结合扫描。</p></div>
         <div><h3>图 8(b)：完整模型后端</h3><p>在 400M 和 1.3B 完整模型中只替换扫描后端，其余层、精度、损失和优化器不变，用来判断扫描内核加速能否传递到完整训练步。</p></div>
@@ -90,14 +102,14 @@
     <section class="wide-section section5-section" id="inference" aria-labelledby="inference-title">
       <div class="wide-heading"><div><p class="part-label">对应 Griffin 第 5 节与附录 F</p><h2 id="inference-title">完整模型推理速度</h2></div><p>推理主结果使用 Griffin 表 2 的 1.3B 配置：模型宽度 2048、递推宽度 2560、24 层和 32K 词表。每个生成步都执行词嵌入、归一化、两条输入投影、因果卷积、递推、输出投影、门控前馈网络、最终归一化、词表投影和下一个词元选择；CUDA Graph 只消除 Python 调度噪声，不省略模型计算。</p></div>
       <div class="method-grid">
-        <div><h3>连续生成延迟</h3><p>固定批量 16，分别从空状态和 4K 提示形成的状态缓存开始，连续生成 128 到 4096 个词元。提示处理时间不混入生成延迟。</p></div>
+        <div><h3>连续生成延迟</h3><p>固定批量 16，分别从空状态和 4K 提示形成的状态缓存开始，连续生成 128 到 4096 个词元。提示只改变固定大小缓存中的数值，不改变后续逐词计算量；提示处理时间不混入生成延迟。</p></div>
         <div><h3>最高完整轨迹吞吐</h3><p>对 512、1K、2K、4K 生成长度，在双方共同的 B=1、4、16、32、64、96、128、192、256、384、512 候选集合中选择最高完整轨迹吞吐。</p></div>
         <div><h3>FP32 状态缓存</h3><p>扫描输出可写成 BF16 供下一层使用，但最后一个递推状态直接以 FP32 写入缓存，不经过 BF16 截断。4K 提示与后续逐词元生成使用相同状态语义。</p></div>
         <div><h3>按批量选择解码路径</h3><p>先在上述全部候选批量上运行 64 步探针，并分别为 SAMU 与 RG-LRU 选择最快的精确解码内核；随后让探针吞吐最高的两个批量完成 512、1K、2K 和 4K 整条轨迹。最终图只从完成整条轨迹的候选中选最高值。</p></div>
       </div>
       <div class="system-result" id="inference-result"><p>正在读取 H800 完整模型生成结果…</p></div>
       <div class="system-chart-grid">
-        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">B=16</span><h3>连续生成整条轨迹延迟</h3></div><span class="protocol">空提示与 4K 提示</span></div><svg id="inference-latency-chart" viewBox="0 0 760 430" role="img" aria-label="完整模型连续生成延迟"></svg><figcaption>4K 提示只用于构造起始状态；提示预填充时间与生成时间分开报告。</figcaption></figure>
+        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">B=16</span><h3>由完整轨迹得到的平均单步延迟</h3></div><span class="protocol">空提示与 4K 提示</span></div><svg id="inference-latency-chart" viewBox="0 0 760 430" role="img" aria-label="完整模型平均单步生成延迟"></svg><figcaption>每个点仍然来自 128–4096 步完整轨迹，只把总时间除以生成步数以便观察逐步成本。4K 提示不会扩大递推状态或局部卷积缓存，所以曲线接近重合是预期结果。</figcaption></figure>
         <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">共同批量候选</span><h3>完整模型最高生成吞吐</h3></div><span class="protocol">512–4096 个词元</span></div><svg id="inference-throughput-chart" viewBox="0 0 760 430" role="img" aria-label="完整模型最高生成吞吐"></svg><figcaption>每一个点都完成整条生成轨迹；不会把单步短探针外推成数千步结果。</figcaption></figure>
       </div>
       <div class="resource-table-wrap" id="resource-table"><p>正在读取 1.3B 配置的参数与缓存规模…</p></div>

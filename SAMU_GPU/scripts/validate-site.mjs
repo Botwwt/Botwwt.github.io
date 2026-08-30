@@ -11,7 +11,7 @@ const load = async name => JSON.parse(await readFile(join(root, "benchmark_resul
 const finite = value => Number.isFinite(Number(value));
 
 if (lessons.length !== 16) failures.push(`expected 16 detailed report sections, found ${lessons.length}`);
-for (const target of ["summary", "training", "inference", "report", "sources"]) {
+for (const target of ["summary", "evidence", "training", "inference", "report", "sources"]) {
   if (!html.includes(`href="#${target}"`)) failures.push(`missing navigation target ${target}`);
   if (!html.includes(`id="${target}"`)) failures.push(`missing section id ${target}`);
 }
@@ -87,10 +87,6 @@ for (const scale of ["400m", "1.3b"]) {
   }
 }
 if (paperScale.official_recurrentgemma_commit !== requiredCommit) failures.push("paper-scale training uses the wrong commit");
-for (const architecture of ["samu", "rglru"]) {
-  const record = (paperScale.records || []).find(row => row.scale === "7b" && row.architecture === architecture);
-  if (!finite(record?.minimum_fp32_parameter_gradient_adam_bytes)) failures.push(`missing 7B capacity bound for ${architecture}`);
-}
 
 if (inference.status !== "complete") failures.push(`paper-scale inference is not complete: ${inference.status}`);
 if (inference.official_recurrentgemma_commit !== requiredCommit) failures.push("paper-scale inference uses the wrong commit");
@@ -122,10 +118,13 @@ for (const architecture of ["samu", "rglru"]) {
 
 const visibleText = [html, await readFile(join(root, "README.md"), "utf8"),
   await readFile(join(root, "BENCHMARK_METHODOLOGY.md"), "utf8"),
-  await readFile(join(root, "src", "lessons.js"), "utf8")].join("\n");
+  await readFile(join(root, "GRIFFIN_PROTOCOL_STATUS.md"), "utf8"),
+  await readFile(join(root, "src", "lessons.js"), "utf8"),
+  await readFile(join(root, "src", "complete-analysis.js"), "utf8")].join("\n");
 if (/mamba/i.test(visibleText)) failures.push("visible report still mentions Mamba");
 if (/RTX 3090|3090 实测/i.test(visibleText)) failures.push("visible report still labels the experiment as RTX 3090");
 if (/验证集训练曲线|测试集 BPB|enwik8 三随机种子|训练质量/.test(visibleText)) failures.push("visible report still contains the removed quality-training track");
+if (/7B|7b|容量边界|显存不足/.test(visibleText)) failures.push("visible report still contains the removed large-model capacity track");
 
 if (failures.length) {
   console.error(failures.join("\n"));
@@ -136,7 +135,7 @@ console.log(JSON.stringify({
   assets: localAssets.length,
   deviceScanRows: deviceScan.summary.length,
   backendRows: backendAblation.rows.length,
-  paperScaleRecords: paperScale.records.length,
+  paperScaleRecords: paperScale.records.filter(record => ["400m", "1.3b"].includes(record.scale)).length,
   inferencePasses: inference.measurement_passes.length,
   inferenceRows: inference.rows.length,
 }, null, 2));

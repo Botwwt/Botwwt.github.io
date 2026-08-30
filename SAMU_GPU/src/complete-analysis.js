@@ -1,9 +1,12 @@
+import {renderAdvantageFigures} from "./advantage-figures.js";
+
 const NS = "http://www.w3.org/2000/svg";
 const RESULT_ROOT = "benchmark_results_small_model";
 const SCAN_RESULT = "benchmark_results_griffin_complete/canonical_griffin_axes.json";
 
 const fmt = (value, digits = 2) => Number(value).toLocaleString("zh-CN", {maximumFractionDigits: digits});
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const chartObservers = new WeakMap();
 
 function svgNode(tag, attributes = {}, text = "") {
   const element = document.createElementNS(NS, tag);
@@ -18,7 +21,7 @@ async function readJSON(path) {
   return response.json();
 }
 
-function lineChart(svg, series, {xLabel, yLabel, yFormat = value => fmt(value)}) {
+function drawLineChart(svg, series, {xLabel, yLabel, yFormat = value => fmt(value)}) {
   if (!svg) return;
   const width = Number(svg.viewBox.baseVal.width) || 760;
   const height = Number(svg.viewBox.baseVal.height) || 430;
@@ -39,14 +42,15 @@ function lineChart(svg, series, {xLabel, yLabel, yFormat = value => fmt(value)})
   maximum += pad;
   const x = value => margin.left + xs.indexOf(value) * (width - margin.left - margin.right) / Math.max(1, xs.length - 1);
   const y = value => height - margin.bottom - (value - minimum) / (maximum - minimum) * (height - margin.top - margin.bottom);
+  svg.append(svgNode("rect", {x: margin.left, y: margin.top, width: width - margin.left - margin.right, height: height - margin.top - margin.bottom, fill: "none", stroke: "var(--line)", "stroke-width": 1, "data-chart-frame": ""}));
 
   for (let index = 0; index <= 5; index += 1) {
     const yy = margin.top + index * (height - margin.top - margin.bottom) / 5;
     const value = maximum + (minimum - maximum) * index / 5;
     svg.append(svgNode("line", {x1: margin.left, y1: yy, x2: width - margin.right, y2: yy, stroke: "var(--line)", "stroke-width": 1}));
-    svg.append(svgNode("text", {x: margin.left - 10, y: yy + 4, "text-anchor": "end", fill: "var(--muted)", "font-size": 10, "font-family": "IBM Plex Mono"}, yFormat(value)));
+    svg.append(svgNode("text", {x: margin.left - 10, y: yy + 4, "text-anchor": "end", fill: "var(--muted)", "font-size": 11, "font-family": "IBM Plex Mono"}, yFormat(value)));
   }
-  xs.forEach(value => svg.append(svgNode("text", {x: x(value), y: height - margin.bottom + 24, "text-anchor": "middle", fill: "var(--muted)", "font-size": 10, "font-family": "IBM Plex Mono"}, fmt(value, 0))));
+  xs.forEach(value => svg.append(svgNode("text", {x: x(value), y: height - margin.bottom + 24, "text-anchor": "middle", fill: "var(--muted)", "font-size": 11, "font-family": "IBM Plex Mono"}, fmt(value, 0))));
 
   series.forEach((item, index) => {
     const ordered = [...item.points].filter(point => Number.isFinite(point.y)).sort((a, b) => a.x - b.x);
@@ -57,10 +61,26 @@ function lineChart(svg, series, {xLabel, yLabel, yFormat = value => fmt(value)})
     const legendX = margin.left + (index % 2) * Math.min(320, (width - margin.left - margin.right) / 2);
     const legendY = height - 34 + Math.floor(index / 2) * 18;
     svg.append(svgNode("line", {x1: legendX, y1: legendY - 4, x2: legendX + 21, y2: legendY - 4, stroke: item.color, "stroke-width": 2.5, "stroke-dasharray": item.dashed ? "5 4" : "none"}));
-    svg.append(svgNode("text", {x: legendX + 28, y: legendY, fill: "var(--muted)", "font-size": 9, "font-family": "IBM Plex Mono"}, item.label));
+    svg.append(svgNode("text", {x: legendX + 28, y: legendY, fill: "var(--muted)", "font-size": 11, "font-family": "IBM Plex Mono"}, item.label));
   });
-  svg.append(svgNode("text", {x: (margin.left + width - margin.right) / 2, y: height - margin.bottom + 50, "text-anchor": "middle", fill: "var(--muted)", "font-size": 10}, xLabel));
-  svg.append(svgNode("text", {x: 17, y: (margin.top + height - margin.bottom) / 2, transform: `rotate(-90 17 ${(margin.top + height - margin.bottom) / 2})`, "text-anchor": "middle", fill: "var(--muted)", "font-size": 10}, yLabel));
+  svg.append(svgNode("text", {x: (margin.left + width - margin.right) / 2, y: height - margin.bottom + 50, "text-anchor": "middle", fill: "var(--muted)", "font-size": 12, class: "axis-title", "data-axis": "x"}, xLabel));
+  svg.append(svgNode("text", {x: 17, y: (margin.top + height - margin.bottom) / 2, transform: `rotate(-90 17 ${(margin.top + height - margin.bottom) / 2})`, "text-anchor": "middle", fill: "var(--muted)", "font-size": 12, class: "axis-title", "data-axis": "y"}, yLabel));
+}
+
+function lineChart(svg, series, options) {
+  if (!svg) return;
+  const originalHeight = Number(svg.viewBox.baseVal.height) || 430;
+  const paint = () => {
+    const width = Math.max(300, Math.floor(svg.getBoundingClientRect().width || 760));
+    svg.setAttribute("viewBox", `0 0 ${width} ${originalHeight}`);
+    drawLineChart(svg, series, options);
+  };
+  paint();
+  if (typeof ResizeObserver !== "undefined" && !chartObservers.has(svg)) {
+    const observer = new ResizeObserver(() => requestAnimationFrame(paint));
+    observer.observe(svg);
+    chartObservers.set(svg, observer);
+  }
 }
 
 function renderScan(data) {
@@ -105,7 +125,7 @@ function renderDeviceScan(data) {
 }
 
 function renderScanBackends(data) {
-  const labels = {"400m": "400M 配置", "1.3b": "1.3B 配置", "7b": "7B 配置"};
+  const labels = {"400m": "400M 配置", "1.3b": "1.3B 配置"};
   const backendLabels = {
     triton: "自定义片上顺序扫描",
     framework_eager: "PyTorch 逐步参考",
@@ -121,19 +141,17 @@ function renderScanBackends(data) {
     const candidates = optimizedBackends.map(backend => measured(scale, architecture, backend)).filter(Boolean);
     const fastest = candidates.sort((a, b) => a.median_step_ms - b.median_step_ms)[0];
     const speedup = reference && fastest ? reference.median_step_ms / fastest.median_step_ms : NaN;
-    return `<tr><td>${labels[scale]}</td><td>${architecture === "samu" ? "SAMU" : "RG-LRU"}</td><td>${reference ? `${fmt(reference.median_step_ms, 2)} ms` : "单卡显存不足"}</td><td>${fastest ? `${backendLabels[fastest.backend]} · ${fmt(fastest.median_step_ms, 2)} ms` : "—"}</td><td>${Number.isFinite(speedup) ? `${fmt(speedup, 2)} 倍` : "—"}</td></tr>`;
+    return `<tr><td>${labels[scale]}</td><td>${architecture === "samu" ? "SAMU" : "RG-LRU"}</td><td>${reference ? `${fmt(reference.median_step_ms, 2)} ms` : "—"}</td><td>${fastest ? `${backendLabels[fastest.backend]} · ${fmt(fastest.median_step_ms, 2)} ms` : "—"}</td><td>${Number.isFinite(speedup) ? `${fmt(speedup, 2)} 倍` : "—"}</td></tr>`;
   })).join("");
-  const rows = ["400m", "1.3b", "7b"].flatMap(scale => ["samu", "rglru"].map(architecture => {
+  const rows = ["400m", "1.3b"].flatMap(scale => ["samu", "rglru"].map(architecture => {
     const cells = Object.keys(backendLabels).map(backend => {
       const row = measured(scale, architecture, backend);
       if (row) return `<td>${fmt(row.median_step_ms, 2)} ms</td>`;
-      const blocked = (data.rows || []).find(item => item.scale === scale && item.architecture === architecture && item.backend === backend);
-      const unavailable = blocked?.status === "out_of_memory" || blocked?.status?.includes("exceeds_hbm");
-      return `<td>${unavailable ? "单卡显存不足" : "—"}</td>`;
+      return `<td>—</td>`;
     }).join("");
     return `<tr><td>${labels[scale]}</td><td>${architecture === "samu" ? "SAMU" : "RG-LRU"}</td>${cells}</tr>`;
   })).join("");
-  document.querySelector("#scan-backend-table").innerHTML = `<h3>从 PyTorch 参考到优化 GPU 实现</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>完整模型配置</th><th>递推单元</th><th>PyTorch 逐步参考</th><th>最快精确 GPU 候选</th><th>实现加速</th></tr></thead><tbody>${engineeringRows}</tbody></table></div><p class="fairness-inline">这里的“实现加速”只说明同一递推方程经过 GPU 内核适配后快了多少，不是 SAMU 相对 RG-LRU 的架构加速。</p><h3>完整训练步只更换扫描后端（B=4，L=2K）</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>完整模型配置</th><th>递推单元</th>${Object.values(backendLabels).map(label => `<th>${label}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div><p class="fairness-inline">每个单元格都包含 32K 词表、完整 Hawk 层、交叉熵、反向传播、梯度裁剪和 AdamW 更新，唯一变化是递推扫描后端。PyTorch 逐步参考为每个时间步建立运算，其中 RG-LRU 路径保持官方 RecurrentGemma 的扫描语义；它主要用于正确性参考，不代表 H800 性能上限。片上顺序扫描在一个 CUDA 程序内沿时间更新；结合扫描先物化各时间步的仿射转移，再以树形前缀合并；16/32 步分块先并行计算块摘要，再传播块边界并回放块内状态。最终架构对比会用独立调优数据为双方选择最快的精确后端，再以新样本计时。7B 若仅参数、梯度和优化器状态的最低驻留量已超过单卡显存，就只报告容量边界。</p>`;
+  document.querySelector("#scan-backend-table").innerHTML = `<h3>从 PyTorch 参考到优化 GPU 实现</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>完整模型配置</th><th>递推单元</th><th>PyTorch 逐步参考</th><th>最快精确 GPU 候选</th><th>实现加速</th></tr></thead><tbody>${engineeringRows}</tbody></table></div><p class="fairness-inline">这里的“实现加速”只说明同一递推方程经过 GPU 内核适配后快了多少，不是 SAMU 相对 RG-LRU 的架构加速。</p><h3>完整训练步只更换扫描后端（B=4，L=2K）</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>完整模型配置</th><th>递推单元</th>${Object.values(backendLabels).map(label => `<th>${label}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div><p class="fairness-inline">每个单元格都包含 32K 词表、完整 Hawk 层、交叉熵、反向传播、梯度裁剪和 AdamW 更新，唯一变化是递推扫描后端。PyTorch 逐步参考为每个时间步建立运算，其中 RG-LRU 路径保持官方 RecurrentGemma 的扫描语义；它主要用于正确性参考，不代表 H800 性能上限。片上顺序扫描在一个 CUDA 程序内沿时间更新；结合扫描先物化各时间步的仿射转移，再以树形前缀合并；16/32 步分块先并行计算块摘要，再传播块边界并回放块内状态。最终架构对比会用独立调优数据为双方选择最快的精确后端，再以新样本计时。</p>`;
 }
 
 function renderCorrectness(officialBlock, equationAudit) {
@@ -178,14 +196,12 @@ function renderTraining(paperScale) {
   const speed400 = speedRange("400m"), speed13 = speedRange("1.3b");
   const memory400SAMU = memoryRange("400m", "samu"), memory400RG = memoryRange("400m", "rglru");
   const memory13SAMU = memoryRange("1.3b", "samu"), memory13RG = memoryRange("1.3b", "rglru");
-  const sevenSAMU = record("7b", "samu"), sevenRG = record("7b", "rglru");
   const describeRange = range => Number.isFinite(range[0])
     ? `SAMU 快 ${fmt(range[0], 2)}–${fmt(range[1], 2)} 倍`
     : "等待结果";
-  document.querySelector("#training-result").innerHTML = `<div class="summary-grid">
+  document.querySelector("#training-result").innerHTML = `<div class="summary-grid two">
     <div><h3>400M 完整优化器步骤</h3><p><strong>${describeRange(speed400)}</strong><br>峰值已分配显存：SAMU ${fmt(memory400SAMU[1], 1)} GiB，RG-LRU ${fmt(memory400RG[0], 1)}–${fmt(memory400RG[1], 1)} GiB。</p></div>
     <div><h3>1.3B 完整优化器步骤</h3><p><strong>${describeRange(speed13)}</strong><br>峰值已分配显存：SAMU ${fmt(memory13SAMU[1], 1)} GiB，RG-LRU ${fmt(memory13RG[0], 1)}–${fmt(memory13RG[1], 1)} GiB。</p></div>
-    <div><h3>7B 单卡容量边界</h3><p><strong>双方都不能在 80 GiB H800 上完成同精度 AdamW 步骤</strong><br>仅 FP32 参数、梯度和两组 Adam 动量就需要 ${fmt(sevenSAMU?.minimum_fp32_parameter_gradient_adam_bytes / 2 ** 30, 1)} / ${fmt(sevenRG?.minimum_fp32_parameter_gradient_adam_bytes / 2 ** 30, 1)} GiB。</p></div>
   </div>`;
 
   const points = (scale, architecture) => measuredRows(scale, architecture).map(row => ({
@@ -203,7 +219,7 @@ function renderTraining(paperScale) {
 
 function renderInference(data) {
   const rows = data.rows || [];
-  const latencyPoints = (architecture, prompt) => rows.filter(row => row.architecture === architecture && row.workload === "continuous_decode_latency" && row.prompt_length === prompt).map(row => ({x: row.decode_length, y: row.median_ms}));
+  const latencyPoints = (architecture, prompt) => rows.filter(row => row.architecture === architecture && row.workload === "continuous_decode_latency" && row.prompt_length === prompt).map(row => ({x: row.decode_length, y: row.median_ms / row.decode_length}));
   const bestThroughput = architecture => rows.filter(row => row.architecture === architecture && row.workload === "maximum_throughput").map(row => ({x: row.decode_length, y: row.tokens_per_second, batch: row.batch_size})).sort((a, b) => a.x - b.x);
   const samuBest = bestThroughput("samu"), rgBest = bestThroughput("rglru");
   const map = rows => new Map(rows.map(row => [row.x, row.y]));
@@ -222,15 +238,15 @@ function renderInference(data) {
     return "双方随生成长度互有胜负";
   };
   document.querySelector("#inference-result").innerHTML = `<div class="system-facts">
-    <div><h3>固定批量连续生成</h3><p><b>${describe(latencyRange, "速度")}</b>。B=16，测量整条生成轨迹；4K 提示只改变起始缓存，不计入生成延迟。</p></div>
+    <div><h3>固定批量连续生成</h3><p><b>${describe(latencyRange, "速度")}</b>。B=16，测量整条生成轨迹。4K 提示只改变固定大小递推状态与卷积缓存中的数值，不改变后续每一步的张量形状，因此空提示与 4K 提示曲线接近重合是预期现象。</p></div>
     <div><h3>候选批量中的最高吞吐</h3><p><b>${describe(throughputRange, "吞吐")}</b>。每个长度都在双方相同的 B=1–512 声明集合内筛选，并以完成整条轨迹的实测值决定。</p></div>
   </div>`;
   lineChart(document.querySelector("#inference-latency-chart"), [
     {label: "SAMU · 空提示", color: css("--state"), points: latencyPoints("samu", 0)},
     {label: "RG-LRU · 空提示", color: css("--rglru"), points: latencyPoints("rglru", 0)},
-    {label: "SAMU · 4K 提示", color: css("--write"), dashed: true, points: latencyPoints("samu", 4096)},
-    {label: "RG-LRU · 4K 提示", color: css("--motion"), dashed: true, points: latencyPoints("rglru", 4096)},
-  ], {xLabel: "连续生成词元数", yLabel: "完整轨迹延迟（毫秒）", yFormat: value => fmt(value, value < 10 ? 2 : 0)});
+    {label: "SAMU · 4K 提示", color: css("--state"), dashed: true, points: latencyPoints("samu", 4096)},
+    {label: "RG-LRU · 4K 提示", color: css("--rglru"), dashed: true, points: latencyPoints("rglru", 4096)},
+  ], {xLabel: "连续生成词元数", yLabel: "平均单步延迟（毫秒/词元）", yFormat: value => fmt(value, 3)});
   lineChart(document.querySelector("#inference-throughput-chart"), [
     {label: "SAMU", color: css("--state"), points: samuBest},
     {label: "RG-LRU", color: css("--rglru"), points: rgBest},
@@ -245,12 +261,12 @@ function renderResources(inference) {
 }
 
 function renderPaperScale(data) {
-  const names = {"400m": "400M 尺度", "1.3b": "1.3B 尺度", "7b": "7B 尺度"};
+  const names = {"400m": "400M 尺度", "1.3b": "1.3B 尺度"};
   const records = data.records || [];
   const record = (scale, architecture) => records.find(item => item.scale === scale && item.architecture === architecture);
   const measured = (item, length) => item?.rows?.find(row => row.sequence_length === length && row.status === "measured");
   const rows = [];
-  for (const scale of ["400m", "1.3b", "7b"]) {
+  for (const scale of ["400m", "1.3b"]) {
     const samu = record(scale, "samu"), rglru = record(scale, "rglru");
     for (const length of [2048, 4096, 8192]) {
       const s = measured(samu, length), r = measured(rglru, length);
@@ -258,16 +274,12 @@ function renderPaperScale(data) {
         const ratio = r.order_balanced_median_step_ms / s.order_balanced_median_step_ms;
         const winner = ratio >= 1 ? `SAMU 快 ${fmt(ratio, 2)} 倍` : `RG-LRU 快 ${fmt(1 / ratio, 2)} 倍`;
         rows.push(`<tr><td>${names[scale]}</td><td>${fmt(samu.parameters / 1e6, 1)}M / ${fmt(rglru.parameters / 1e6, 1)}M</td><td>${fmt(length / 1024, 0)}K</td><td>${fmt(s.order_balanced_median_step_ms, 1)} ms</td><td>${fmt(r.order_balanced_median_step_ms, 1)} ms</td><td><strong>${winner}</strong></td><td>${fmt(s.peak_allocated_bytes / 2 ** 30, 1)} / ${fmt(r.peak_allocated_bytes / 2 ** 30, 1)} GiB</td></tr>`);
-      } else if (scale === "7b" && length === 2048) {
-        const sNeed = samu?.minimum_fp32_parameter_gradient_adam_bytes / 2 ** 30;
-        const rNeed = rglru?.minimum_fp32_parameter_gradient_adam_bytes / 2 ** 30;
-        rows.push(`<tr><td>${names[scale]}</td><td>${fmt(samu?.parameters / 1e9, 2)}B / ${fmt(rglru?.parameters / 1e9, 2)}B</td><td colspan="4">单卡训练无法分配：只计算 FP32 参数、梯度和 Adam 两组动量，SAMU / RG-LRU 已需 ${fmt(sNeed, 1)} / ${fmt(rNeed, 1)} GiB，尚未计入激活与 CUDA 工作区</td><td>H800 物理显存 ${fmt(data.environment.gpu_total_memory_bytes / 2 ** 30, 0)} GiB</td></tr>`);
-      } else if (scale !== "7b") {
+      } else {
         rows.push(`<tr><td>${names[scale]}</td><td>${fmt(samu?.parameters / 1e6, 1)}M / ${fmt(rglru?.parameters / 1e6, 1)}M</td><td>${fmt(length / 1024, 0)}K</td><td colspan="4">该形状在本次单卡运行中未得到有效计时</td></tr>`);
       }
     }
   }
-  document.querySelector("#paper-scale-table").innerHTML = `<h3>按 Griffin 表 2 宽度与层数扩展的完整优化器步骤</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>配置</th><th>SAMU / RG-LRU 参数</th><th>序列长度</th><th>SAMU</th><th>RG-LRU</th><th>对比</th><th>峰值显存：SAMU / RG-LRU</th></tr></thead><tbody>${rows.join("")}</tbody></table></div><p class="fairness-inline">400M、1.3B 和 7B 是 Griffin 表 2 的宽度、递推宽度与层数标签；网页同时显示本实现的精确参数量。每个可运行点固定 8192 个词元，计入前向、交叉熵、反向、梯度裁剪和 AdamW，并用正序与逆序两轮计时抵消运行顺序。7B 的单卡容量判断使用可证明的最低驻留字节，不把失败的分配伪装成速度结果。</p>`;
+  document.querySelector("#paper-scale-table").innerHTML = `<h3>按 Griffin 表 2 宽度与层数扩展的完整优化器步骤</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>配置</th><th>SAMU / RG-LRU 参数</th><th>序列长度</th><th>SAMU</th><th>RG-LRU</th><th>对比</th><th>峰值显存：SAMU / RG-LRU</th></tr></thead><tbody>${rows.join("")}</tbody></table></div><p class="fairness-inline">网页显示 400M 与 1.3B 配置的精确参数量。每个点固定 8192 个词元，计入前向、交叉熵、反向、梯度裁剪和 AdamW，并用正序与逆序两轮计时抵消运行顺序。</p>`;
 }
 
 function renderRoofline(data) {
@@ -328,5 +340,6 @@ export async function initCompleteAnalysis() {
   renderResources(paperInference);
   renderPaperScale(paperScale);
   renderRoofline(roofline);
+  renderAdvantageFigures({scan, paperScale, inference: paperInference});
   renderHeadline(environment, trainingSummary, inferenceSummary);
 }

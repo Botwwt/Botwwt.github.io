@@ -199,17 +199,29 @@
 
 .section5-section { background: color-mix(in srgb, var(--state) 2.5%, var(--paper)); }
 .evidence-section { background: var(--paper); }
+.evidence-atlas { background: var(--paper-2); }
+.journal-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 2.4rem 3rem; max-width: 1350px; margin: 0 auto; }
+.journal-figure { min-width: 0; margin: 0; padding-top: 1rem; border-top: 1px solid var(--line-strong); }
+.journal-wide { grid-column: 1 / -1; }
+.journal-head { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: .75rem; align-items: start; min-height: 58px; }
+.journal-head h3 { margin: .35rem 0 0; font-size: 1.08rem; letter-spacing: -.015em; }
+.figure-letter { color: var(--ink); font: 600 1rem/1 var(--sans); text-transform: lowercase; }
+.journal-svg { display: block; width: 100%; min-height: 360px; overflow: visible; }
+.journal-svg.tall { min-height: 520px; }
+.journal-figure figcaption { margin-top: .55rem; color: var(--muted); font-size: .76rem; line-height: 1.65; }
+.figure-source-line { max-width: 1350px; margin: 2.4rem auto 0; padding-top: .9rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .76rem; }
 .adaptation-section { background: color-mix(in srgb, var(--write) 2.5%, var(--paper)); }
 .analysis-summary { max-width: 1350px; margin: 0 auto 2rem; padding: 1.2rem 1.3rem; border-left: 3px solid var(--state); background: var(--panel); }
 .forward-summary { margin-top: 1.4rem; }
 .analysis-summary > p { margin: 0; }
 .summary-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.summary-grid.two { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .summary-grid > div { padding: 1rem 1.1rem; background: var(--panel); }
 .summary-grid h3 { margin: 0 0 .45rem; font-size: .9rem; }
 .summary-grid p { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.65; }
 .summary-grid strong { color: var(--state); font: 600 1.18rem/1.3 var(--mono); }
 .single-chart { max-width: 1350px; margin: 0 auto; }
-.single-chart .chart-panel { padding: 1rem; border: 1px solid var(--line); background: var(--panel); }
+.single-chart .chart-panel { padding: 1rem 0; border: 0; border-top: 1px solid var(--line-strong); background: transparent; }
 .single-chart svg { display: block; width: 100%; min-height: 390px; }
 .formula-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1px; max-width: 1350px; margin: 0 auto 2rem; border: 1px solid var(--line); background: var(--line); }
 .formula-pair > div { min-width: 0; padding: 1rem 1.2rem; background: var(--panel); }
@@ -239,7 +251,7 @@
 .innovation-boundary h3 { margin: .65rem 0 .35rem; font-size: 1rem; }
 .innovation-boundary p { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.65; }
 .system-chart-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1.4rem; max-width: 1350px; margin: 0 auto; }
-.system-chart-grid .chart-panel { padding: 1rem; border: 1px solid var(--line); background: var(--panel); }
+.system-chart-grid .chart-panel { padding: 1rem 0; border: 0; border-top: 1px solid var(--line-strong); background: transparent; }
 .system-chart-grid svg { display: block; width: 100%; min-height: 350px; }
 .section5-formula { max-width: 1350px; margin: 2rem auto 0; }
 .section5-section > .source-note { margin-top: 1.5rem; }
@@ -299,7 +311,8 @@
   .lesson-nav { display: none; }
   .course-body { max-width: 720px; margin: 0 auto; }
   .breakout { margin-inline: 0; width: 100%; }
-  .lesson-grid, .compare-three, .transition-view, .coverage-grid, .profiler-grid, .environment-grid, .provenance-grid, .method-grid, .system-facts, .system-chart-grid, .innovation-boundary, .summary-grid, .formula-pair, .principle-grid, .four-data-grid, .advantage-list, .coverage-table { grid-template-columns: 1fr; }
+  .lesson-grid, .compare-three, .transition-view, .coverage-grid, .profiler-grid, .environment-grid, .provenance-grid, .method-grid, .system-facts, .system-chart-grid, .innovation-boundary, .summary-grid, .summary-grid.two, .formula-pair, .principle-grid, .four-data-grid, .advantage-list, .coverage-table, .journal-grid { grid-template-columns: 1fr; }
+  .journal-wide { grid-column: auto; }
   .dataflow-diagram { grid-template-columns: 1fr; }
   .warp-layout, .time-mode { grid-template-columns: 1fr; }
   .lane-detail, .tile-stats { border-left: 0; border-top: 1px solid var(--line); padding: 1rem 0 0; }
