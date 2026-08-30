@@ -159,83 +159,46 @@ function renderCorrectness(officialBlock, equationAudit) {
   </tbody></table></div><p class="fairness-inline">官方来源固定在提交 <code>${officialBlock.official_commit}</code>。BF16 对照允许低精度舍入误差，但每项门槛在运行脚本中预先固定；只要任一检查失败，脚本就不会把该实现加入速度表。逐词解码审计还明确检查卷积缓存保持 BF16、递推缓存保持 FP32。</p>`;
 }
 
-const rgRows = (matrix, scale) => matrix.records.find(row => row.scale === scale && row.architecture === "rglru")?.rows || [];
-const samuRows = (matrix, scale) => matrix.records.find(row => row.scale === scale && row.architecture === "samu")?.rows || [];
-
-function renderTraining(training, matrix, paperScale) {
-  const {samu, rglru} = training.aggregate;
-  const bpcDelta = samu.mean_test_bpc - rglru.mean_test_bpc;
-  const measuredShortSAMU = matrix.trained_L256_point?.find(row => row.architecture === "samu");
-  const smallSAMU = [
-    ...(measuredShortSAMU ? [measuredShortSAMU] : []),
-    ...samuRows(matrix, "small"),
-  ];
-  const smallRG = rgRows(matrix, "small");
-  const rgAt = length => smallRG.find(row => row.sequence_length === length)
-    || matrix.trained_L256_point?.find(row => row.architecture === "rglru" && row.sequence_length === length);
-  const samuAt = length => smallSAMU.find(row => row.sequence_length === length);
-  const lengths = smallSAMU.map(row => row.sequence_length).filter(length => rgAt(length));
-  const speedups = new Map(lengths.map(length => [length, rgAt(length).median_step_ms / samuAt(length).median_step_ms]));
-  const shortSpeed = speedups.get(256), longSpeed = speedups.get(8192);
-  const largeSAMU = samuRows(matrix, "large");
-  const largeRG = rgRows(matrix, "large");
-  const largeSpeedups = largeSAMU.map(row => {
-    const comparison = largeRG.find(item => item.sequence_length === row.sequence_length);
-    return comparison?.median_step_ms / row.median_step_ms;
-  }).filter(Number.isFinite);
-  const largeSpeedRange = largeSpeedups.length
-    ? [Math.min(...largeSpeedups), Math.max(...largeSpeedups)] : [NaN, NaN];
-  const paperRecord = (scale, architecture) => paperScale.records?.find(row => row.scale === scale && row.architecture === architecture);
-  const paperSAMU = paperRecord("1.3b", "samu"), paperRG = paperRecord("1.3b", "rglru");
-  const paperSpeedups = (paperSAMU?.rows || []).filter(row => row.status === "measured").map(row => {
-    const comparison = paperRG?.rows?.find(item => item.sequence_length === row.sequence_length && item.status === "measured");
-    return comparison?.order_balanced_median_step_ms / row.order_balanced_median_step_ms;
-  }).filter(Number.isFinite);
-  const paperSpeedRange = paperSpeedups.length ? [Math.min(...paperSpeedups), Math.max(...paperSpeedups)] : [NaN, NaN];
-  const describeSpeed = ratio => {
-    if (!Number.isFinite(ratio)) return "等待结果";
-    if (Math.abs(ratio - 1) < .02) return "双方差距小于 2%，基本持平";
-    return ratio >= 1 ? `SAMU 快 ${fmt(ratio, 2)} 倍` : `RG-LRU 快 ${fmt(1 / ratio, 2)} 倍`;
+function renderTraining(paperScale) {
+  const record = (scale, architecture) => paperScale.records?.find(row => row.scale === scale && row.architecture === architecture);
+  const measuredRows = (scale, architecture) => (record(scale, architecture)?.rows || []).filter(row => row.status === "measured");
+  const speedRange = scale => {
+    const samu = measuredRows(scale, "samu");
+    const rglru = measuredRows(scale, "rglru");
+    const ratios = samu.map(row => {
+      const comparison = rglru.find(item => item.sequence_length === row.sequence_length);
+      return comparison?.order_balanced_median_step_ms / row.order_balanced_median_step_ms;
+    }).filter(Number.isFinite);
+    return ratios.length ? [Math.min(...ratios), Math.max(...ratios)] : [NaN, NaN];
   };
-  const qualityText = `${bpcDelta < 0 ? "SAMU" : "RG-LRU"} 低 ${fmt(Math.abs(bpcDelta), 4)} BPB`;
+  const memoryRange = (scale, architecture) => {
+    const values = measuredRows(scale, architecture).map(row => row.peak_allocated_bytes / 2 ** 30).filter(Number.isFinite);
+    return values.length ? [Math.min(...values), Math.max(...values)] : [NaN, NaN];
+  };
+  const speed400 = speedRange("400m"), speed13 = speedRange("1.3b");
+  const memory400SAMU = memoryRange("400m", "samu"), memory400RG = memoryRange("400m", "rglru");
+  const memory13SAMU = memoryRange("1.3b", "samu"), memory13RG = memoryRange("1.3b", "rglru");
+  const sevenSAMU = record("7b", "samu"), sevenRG = record("7b", "rglru");
+  const describeRange = range => Number.isFinite(range[0])
+    ? `SAMU 快 ${fmt(range[0], 2)}–${fmt(range[1], 2)} 倍`
+    : "等待结果";
   document.querySelector("#training-result").innerHTML = `<div class="summary-grid">
-    <div><h3>训练质量</h3><p><strong>SAMU ${fmt(samu.mean_test_bpc, 4)} ± ${fmt(samu.std_test_bpc, 4)} BPB</strong><br>RG-LRU ${fmt(rglru.mean_test_bpc, 4)} ± ${fmt(rglru.std_test_bpc, 4)} BPB；${qualityText}。</p></div>
-    <div><h3>短序列完整训练步</h3><p><strong>${describeSpeed(shortSpeed)}</strong><br>L=256、B=32，每步总计 8192 个词元。</p></div>
-    <div><h3>1.3B 配置完整训练步</h3><p><strong>${Number.isFinite(paperSpeedRange[0]) ? `SAMU 快 ${fmt(paperSpeedRange[0], 2)}–${fmt(paperSpeedRange[1], 2)} 倍` : "等待结果"}</strong><br>32K 词表、24 层、递推宽度 2560，覆盖 L=2K、4K、8K。</p></div>
+    <div><h3>400M 完整优化器步骤</h3><p><strong>${describeRange(speed400)}</strong><br>峰值已分配显存：SAMU ${fmt(memory400SAMU[1], 1)} GiB，RG-LRU ${fmt(memory400RG[0], 1)}–${fmt(memory400RG[1], 1)} GiB。</p></div>
+    <div><h3>1.3B 完整优化器步骤</h3><p><strong>${describeRange(speed13)}</strong><br>峰值已分配显存：SAMU ${fmt(memory13SAMU[1], 1)} GiB，RG-LRU ${fmt(memory13RG[0], 1)}–${fmt(memory13RG[1], 1)} GiB。</p></div>
+    <div><h3>7B 单卡容量边界</h3><p><strong>双方都不能在 80 GiB H800 上完成同精度 AdamW 步骤</strong><br>仅 FP32 参数、梯度和两组 Adam 动量就需要 ${fmt(sevenSAMU?.minimum_fp32_parameter_gradient_adam_bytes / 2 ** 30, 1)} / ${fmt(sevenRG?.minimum_fp32_parameter_gradient_adam_bytes / 2 ** 30, 1)} GiB。</p></div>
   </div>`;
 
-  const runPoints = architecture => training.runs.filter(run => run.architecture === architecture).map((run, index) => ({
-    label: `${architecture === "samu" ? "SAMU" : "RG-LRU"} · 种子 ${run.seed}`,
-    color: architecture === "samu" ? css("--state") : css("--rglru"), dashed: index > 0,
-    points: run.log.filter(row => row.validation).map(row => ({x: row.step, y: row.validation.bits_per_character})),
+  const points = (scale, architecture) => measuredRows(scale, architecture).map(row => ({
+    x: row.sequence_length,
+    y: row.order_balanced_median_step_ms,
   }));
-  lineChart(document.querySelector("#training-quality-chart"), [...runPoints("samu"), ...runPoints("rglru")], {
-    xLabel: "优化器更新次数", yLabel: "验证集每字节比特数（越低越好）", yFormat: value => fmt(value, 3),
-  });
   lineChart(document.querySelector("#training-step-chart"), [
-    {label: "SAMU 精确分块训练", color: css("--state"), points: smallSAMU.map(row => ({x: row.sequence_length, y: row.tokens_per_second}))},
-    {label: "RG-LRU-16", color: css("--rglru"), points: [...smallRG, ...(matrix.trained_L256_point || []).filter(row => row.architecture === "rglru")].map(row => ({x: row.sequence_length, y: row.tokens_per_second}))},
-  ], {xLabel: "序列长度 L（每步总词元固定为 8192）", yLabel: "完整训练吞吐（词元/秒）", yFormat: value => fmt(value, 0)});
-
-  const labels = Object.fromEntries(["small", "medium", "large"].map(scale => {
-    const parameters = matrix.records.find(row => row.scale === scale && row.architecture === "samu")?.parameters;
-    return [scale, Number.isFinite(parameters) ? `${fmt(parameters / 1e6, 2)}M 参数` : scale];
-  }));
-  const rows = ["small", "medium", "large"].flatMap(scale => {
-    const measuredSAMU = samuRows(matrix, scale);
-    const comparison = rgRows(matrix, scale);
-    return measuredSAMU.map(row => {
-      const rg = comparison.find(item => item.sequence_length === row.sequence_length);
-      const ratio = rg?.median_step_ms / row.median_step_ms;
-      const winner = ratio >= 1
-        ? `SAMU 快 ${fmt(ratio, 2)} 倍`
-        : `RG-LRU 快 ${fmt(1 / ratio, 2)} 倍`;
-      return rg ? `<tr><td>${labels[scale]}</td><td>${fmt(row.sequence_length / 1024, 0)}K</td><td>${fmt(row.median_step_ms, 2)} ms</td><td>${fmt(rg.median_step_ms, 2)} ms</td><td><strong>${winner}</strong></td><td>${fmt(row.peak_allocated_bytes / 2 ** 30, 2)} / ${fmt(rg.peak_allocated_bytes / 2 ** 30, 2)} GiB</td></tr>` : "";
-    });
-  }).join("");
-  const table = document.querySelector("#training-matrix-table");
-  if (table) table.innerHTML = `<div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>完整模型规模</th><th>序列长度</th><th>SAMU 每步耗时</th><th>RG-LRU 每步耗时</th><th>更快的一方</th><th>峰值显存：SAMU / RG-LRU</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-  return {samu, rglru, bpcDelta, shortSpeed, longSpeed, largeSpeedRange, paperSpeedRange};
+    {label: "400M · SAMU", color: css("--state"), points: points("400m", "samu")},
+    {label: "400M · RG-LRU", color: css("--rglru"), points: points("400m", "rglru")},
+    {label: "1.3B · SAMU", color: css("--write"), dashed: true, points: points("1.3b", "samu")},
+    {label: "1.3B · RG-LRU", color: css("--motion"), dashed: true, points: points("1.3b", "rglru")},
+  ], {xLabel: "序列长度 L（每步总词元固定为 8192）", yLabel: "完整优化器步骤耗时（毫秒）", yFormat: value => fmt(value, 0)});
+  return {speed400, speed13};
 }
 
 function renderInference(data) {
@@ -278,7 +241,7 @@ function renderInference(data) {
 function renderResources(inference) {
   const metadata = architecture => inference.measurement_passes?.find(item => item.architecture === architecture);
   const rows = [["SAMU", metadata("samu")], ["RG-LRU-16", metadata("rglru")]].map(([name, row]) => `<tr><td>${name}</td><td>${fmt(row?.parameters, 0)}</td><td>${fmt(row?.bf16_parameter_bytes / 2 ** 30, 2)} GiB</td><td>${fmt(row?.fp32_state_bytes_per_sequence / 1024, 1)} KiB</td><td>${fmt(row?.bf16_convolution_cache_bytes_per_sequence / 1024, 1)} KiB</td><td>${fmt((row?.fp32_state_bytes_per_sequence + row?.bf16_convolution_cache_bytes_per_sequence) / 1024, 1)} KiB</td></tr>`).join("");
-  document.querySelector("#resource-table").innerHTML = `<h3>1.3B 配置的权重与每序列缓存</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>方法</th><th>完整模型参数</th><th>BF16 权重</th><th>FP32 递推状态</th><th>BF16 卷积缓存</th><th>缓存合计</th></tr></thead><tbody>${rows}</tbody></table></div><p class="fairness-inline">双方都使用模型宽度 2048、递推宽度 2560、24 层和 32K 词表，并且递推缓存字节完全相同。RG-LRU 保留官方 16 组块对角门，因此其门参数会随通道数展开；SAMU 只增加两个共享控制方向和每模态静态谱参数。速度实验使用随机权重，因为权重数值不改变算子形状；训练质量仍由上方 enwik8 三随机种子实验单独回答。</p>`;
+  document.querySelector("#resource-table").innerHTML = `<h3>1.3B 配置的权重与每序列缓存</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>方法</th><th>完整模型参数</th><th>BF16 权重</th><th>FP32 递推状态</th><th>BF16 卷积缓存</th><th>缓存合计</th></tr></thead><tbody>${rows}</tbody></table></div><p class="fairness-inline">双方都使用模型宽度 2048、递推宽度 2560、24 层和 32K 词表，并且递推缓存字节完全相同。RG-LRU 保留官方 16 组块对角门，因此其门参数会随通道数展开；SAMU 只增加两个共享控制方向和每模态静态谱参数。速度实验使用随机权重，因为权重数值不改变算子形状；本报告只回答系统性能，不从这些随机权重推导准确率或损失。</p>`;
 }
 
 function renderPaperScale(data) {
@@ -326,11 +289,10 @@ function renderRoofline(data) {
 }
 
 function renderHeadline(environment, training, inference) {
-  document.querySelector("#headline-env").textContent = `${environment.gpu || "NVIDIA H800 PCIe"} · enwik8 三随机种子 · 400M/1.3B 系统实测`;
-  const quality = `${training.bpcDelta < 0 ? "SAMU" : "RG-LRU"} 测试集 BPB 低 ${fmt(Math.abs(training.bpcDelta), 4)}`;
-  const trainText = Number.isFinite(training.paperSpeedRange[0])
-    ? `1.3B 配置中 SAMU 快 ${fmt(training.paperSpeedRange[0], 2)}–${fmt(training.paperSpeedRange[1], 2)} 倍`
-    : "等待训练结果";
+  document.querySelector("#headline-env").textContent = `${environment.gpu || "NVIDIA H800 PCIe"} · Griffin 第 4、5 节实验轴 · 400M/1.3B 系统实测`;
+  const describeTraining = (scale, range) => Number.isFinite(range[0])
+    ? `${scale} 配置中 SAMU 快 ${fmt(range[0], 2)}–${fmt(range[1], 2)} 倍`
+    : `等待 ${scale} 训练步结果`;
   const inferenceText = Number.isFinite(inference.throughputRange[0]) ? (
     inference.throughputRange[0] >= 1 && inference.throughputRange[1] < 1.02
       ? `SAMU 峰值吞吐高 ${fmt((inference.throughputRange[0] - 1) * 100, 1)}%–${fmt((inference.throughputRange[1] - 1) * 100, 1)}%，两者接近持平`
@@ -341,16 +303,14 @@ function renderHeadline(environment, training, inference) {
           : "双方随生成长度互有胜负"
   ) : "等待 H800 结果";
   document.querySelector("#headline-results").innerHTML = `
-    <div class="headline-result"><h3>训练质量</h3><p><b>${quality}</b>。报告三个随机种子的均值和标准差。</p></div>
-    <div class="headline-result winner-samu"><h3>完整训练步</h3><p><b>${trainText}</b>。计入前向、反向、梯度裁剪和 AdamW 更新。</p></div>
+    <div class="headline-result winner-samu"><h3>400M 完整训练步</h3><p><b>${describeTraining("400M", training.speed400)}</b>。计入全部 12 层、交叉熵、反向、梯度裁剪和 AdamW 更新。</p></div>
+    <div class="headline-result winner-samu"><h3>1.3B 完整训练步</h3><p><b>${describeTraining("1.3B", training.speed13)}</b>。计入全部 24 层、交叉熵、反向、梯度裁剪和 AdamW 更新。</p></div>
     <div class="headline-result"><h3>完整模型生成</h3><p><b>${inferenceText}</b>。每一步包含 24 个完整 Hawk 递推块和 32K 词表投影。</p></div>`;
 }
 
 export async function initCompleteAnalysis() {
-  const [scan, training, model, environment, matrix, deviceScan, scanBackends, paperScale, roofline, paperInference, officialBlock, equationAudit] = await Promise.all([
-    readJSON(SCAN_RESULT), readJSON(`${RESULT_ROOT}/training_summary.json`),
-    readJSON(`${RESULT_ROOT}/full_model_benchmark.json`), readJSON(`${RESULT_ROOT}/environment.json`),
-    readJSON(`${RESULT_ROOT}/griffin_training_matrix_final.json`),
+  const [scan, environment, deviceScan, scanBackends, paperScale, roofline, paperInference, officialBlock, equationAudit] = await Promise.all([
+    readJSON(SCAN_RESULT), readJSON(`${RESULT_ROOT}/environment.json`),
     readJSON(`${RESULT_ROOT}/training_on_device_complete.json`),
     readJSON(`${RESULT_ROOT}/paper_scale_backend_ablation.json`),
     readJSON(`${RESULT_ROOT}/paper_scale_h800.json`),
@@ -363,7 +323,7 @@ export async function initCompleteAnalysis() {
   renderScan(scan);
   renderDeviceScan(deviceScan);
   renderScanBackends(scanBackends);
-  const trainingSummary = renderTraining(training, matrix, paperScale);
+  const trainingSummary = renderTraining(paperScale);
   const inferenceSummary = renderInference(paperInference);
   renderResources(paperInference);
   renderPaperScale(paperScale);

@@ -24,10 +24,10 @@ for (const asset of localAssets) {
   catch { failures.push(`missing local asset ${asset}`); }
 }
 
-const [environment, correctness, officialBlock, equationAudit, training, deviceScan,
+const [environment, correctness, officialBlock, equationAudit, deviceScan,
   backendAblation, paperScale, inference, roofline] = await Promise.all([
   load("environment.json"), load("correctness.json"), load("official_hawk_block_audit.json"),
-  load("training_equation_audit.json"), load("training_summary.json"),
+  load("training_equation_audit.json"),
   load("training_on_device_complete.json"), load("paper_scale_backend_ablation.json"),
   load("paper_scale_h800.json"), load("paper_scale_inference_h800.json"),
   load("h800_roofline_decode.json"),
@@ -54,13 +54,6 @@ for (const name of ["samu_decode_bfloat16", "rglru_decode_bfloat16", "rglru_deco
   if (!correctness[name] || !finite(correctness[name].output_max_abs) || !finite(correctness[name].state_max_abs)) {
     failures.push(`missing one-step decode correctness row ${name}`);
   }
-}
-
-if ((training.runs || []).length !== 6) failures.push(`expected six quality runs, found ${(training.runs || []).length}`);
-for (const architecture of ["samu", "rglru"]) {
-  const runs = (training.runs || []).filter(row => row.architecture === architecture);
-  if (runs.length !== 3) failures.push(`${architecture} does not have three quality seeds`);
-  if (!finite(training.aggregate?.[architecture]?.mean_test_bpc)) failures.push(`${architecture} has no aggregate test BPB`);
 }
 
 for (const method of [
@@ -132,6 +125,7 @@ const visibleText = [html, await readFile(join(root, "README.md"), "utf8"),
   await readFile(join(root, "src", "lessons.js"), "utf8")].join("\n");
 if (/mamba/i.test(visibleText)) failures.push("visible report still mentions Mamba");
 if (/RTX 3090|3090 实测/i.test(visibleText)) failures.push("visible report still labels the experiment as RTX 3090");
+if (/验证集训练曲线|测试集 BPB|enwik8 三随机种子|训练质量/.test(visibleText)) failures.push("visible report still contains the removed quality-training track");
 
 if (failures.length) {
   console.error(failures.join("\n"));
@@ -140,7 +134,6 @@ if (failures.length) {
 console.log(JSON.stringify({
   sections: lessons.length,
   assets: localAssets.length,
-  qualityRuns: training.runs.length,
   deviceScanRows: deviceScan.summary.length,
   backendRows: backendAblation.rows.length,
   paperScaleRecords: paperScale.records.length,

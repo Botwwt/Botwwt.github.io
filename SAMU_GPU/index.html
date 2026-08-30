@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="SAMU 与 Griffin/RecurrentGemma 官方 RG-LRU 在 NVIDIA H800 上的完整训练与推理对比。">
+  <meta name="description" content="SAMU 与按 Griffin/RecurrentGemma 官方方程实现的 RG-LRU 在 NVIDIA H800 上进行训练和推理系统对比。">
   <title>SAMU GPU · 与 RG-LRU 的公平对比</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
       <div class="hero-copy">
         <p class="eyebrow">NVIDIA H800 · 400M / 1.3B 完整系统实验</p>
         <h1 id="hero-title">SAMU 与 RG-LRU<br>从方程比到完整模型</h1>
-        <p class="hero-thesis">我们固定 Griffin 的 RG-LRU 方程、16 组分块门控、数值精度和状态重置语义，再把 SAMU 与 RG-LRU 分别装入完全相同的 Hawk 模型骨架。质量实验使用同数据、同预算的六层语言模型；系统实验使用 Griffin 表 2 的 400M 与 1.3B 配置。SAMU 直接复用块内已有的输入分支作为复数写入，不再携带旧微基准中的额外大投影。</p>
+        <p class="hero-thesis">我们固定 Griffin 的 RG-LRU 方程、16 组分块门控、数值精度和状态重置语义，再把 SAMU 与 RG-LRU 分别装入完全相同的 Hawk 模型骨架。训练与推理系统实验使用 Griffin 表 2 的 400M 与 1.3B 配置，并逐项对应正文与附录的批量、长度和计时边界。SAMU 直接复用块内已有的输入分支作为复数写入，不再携带旧微基准中的额外大投影。</p>
         <div class="hero-actions"><a class="button primary" href="#summary">先看实测</a><a class="button" href="#report">理解实现</a><a class="text-link" href="#sources">代码与原始结果 →</a></div>
       </div>
       <div class="hero-figure" id="architecture-explorer">
@@ -40,7 +40,7 @@
     <section class="headline-results" id="summary" aria-labelledby="headline-title">
       <div class="section-kicker"><span class="evidence measured">H800 实测</span><span id="headline-env">正在读取实验环境…</span></div>
       <h2 id="headline-title">先看完整模型，再解释速度来自哪里</h2>
-      <div class="result-strip" id="headline-results" aria-live="polite"><div class="headline-result skeleton">正在读取训练质量…</div><div class="headline-result skeleton">正在读取完整训练步…</div><div class="headline-result skeleton">正在读取完整模型推理…</div></div>
+      <div class="result-strip" id="headline-results" aria-live="polite"><div class="headline-result skeleton">正在读取 400M 训练步…</div><div class="headline-result skeleton">正在读取 1.3B 训练步…</div><div class="headline-result skeleton">正在读取完整模型推理…</div></div>
     </section>
 
     <section class="architecture-delta" id="advantage" aria-labelledby="advantage-title">
@@ -59,25 +59,21 @@
     </section>
 
     <section class="wide-section evidence-section" id="training" aria-labelledby="training-title">
-      <div class="wide-heading"><div><p class="part-label">对应 Griffin 第 4 节与附录 D</p><h2 id="training-title">设备端高效训练递推模型</h2></div><p>质量结果来自完整六层字节语言模型，系统速度同时覆盖 Griffin 表 2 的 400M 与 1.3B 形状。每一步都执行词嵌入、矩阵乘法、卷积、前馈网络、递推、交叉熵、反向传播、梯度裁剪和 AdamW 参数更新。投影后的递推扫描只用于解释端到端结果，不代替完整训练。</p></div>
+      <div class="wide-heading"><div><p class="part-label">对应 Griffin 第 4 节与附录 D</p><h2 id="training-title">设备端高效训练递推模型</h2></div><p>实验严格沿用 Griffin 的系统问题：先隔离扫描实现，再把它装回表 2 的完整 Hawk 模型，最后固定每步 8192 个词元比较 2K、4K、8K 序列。400M 与 1.3B 点均执行全部层、交叉熵、反向传播、梯度裁剪和 AdamW 更新；7B 只报告单卡容量边界。</p></div>
       <div class="method-grid">
-        <div><h3>完整训练配置</h3><p>模型宽度 256，递推宽度 384，共 6 层；训练序列长 256、批量 32，因此每步处理 8192 个字符。每种方法训练 3000 步，并使用 17、29、43 三个随机种子。</p></div>
-        <div><h3>训练质量</h3><p>使用 enwik8 的前 9000 万字节训练、中间 500 万字节验证、最后 500 万字节测试。每个原始字节对应一个词元，报告每字节比特数；数值越低，说明模型给真实下一个字节分配的概率越高。</p></div>
+        <div><h3>图 8(a)：扫描实现</h3><p>固定 B=8、1024 个实状态量和 L=2K–16K，分别测 PyTorch 逐步参考、片上顺序扫描、精确分块扫描以及 BF16/FP32 结合扫描。</p></div>
+        <div><h3>图 8(b)：完整模型后端</h3><p>在 400M 和 1.3B 完整模型中只替换扫描后端，其余层、精度、损失和优化器不变，用来判断扫描内核加速能否传递到完整训练步。</p></div>
         <div><h3>固定总词元的长度轴</h3><p>仿照 Griffin 图 3，把每步总词元固定为 8192，再把序列长度改为 2K、4K、8K。这样观察长序列是否让递推扫描成为瓶颈，而不会同时增加训练数据量。</p></div>
         <div><h3>为何需要自定义反向扫描</h3><p>自动微分若保存每一步的大量中间量，会增加显存流量。我们的内核只保存前向状态；反向时逆序重建递推梯度，使当前伴随状态驻留在寄存器中。</p></div>
       </div>
-      <div class="analysis-summary" id="training-result"><p>正在读取完整训练结果…</p></div>
-      <div class="system-chart-grid">
-        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">3 个随机种子</span><h3>验证集训练曲线</h3></div><span class="protocol">越低越好</span></div><svg id="training-quality-chart" viewBox="0 0 760 430" role="img" aria-label="SAMU 与 RG-LRU 验证集训练曲线"></svg><figcaption>每条线对应一次从头训练；曲线来自 500、1000、1500、2000、2500 和 3000 次更新时的完整验证集评估。三次运行都保留，不挑选单次结果。</figcaption></figure>
-        <figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">每步 8192 个词元</span><h3>完整训练步吞吐</h3></div><span class="protocol">L=256 / 2K / 4K / 8K</span></div><svg id="training-step-chart" viewBox="0 0 760 430" role="img" aria-label="固定总词元的完整训练吞吐"></svg><figcaption>计时包括损失函数、反向传播、梯度裁剪和参数更新；第一轮编译不计入中位数。</figcaption></figure>
-      </div>
+      <div class="analysis-summary" id="training-result"><p>正在读取 400M 与 1.3B 完整训练步…</p></div>
+      <div class="single-chart"><figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">每步 8192 个词元</span><h3>Griffin 表 2 尺度的完整训练步</h3></div><span class="protocol">L=2K / 4K / 8K</span></div><svg id="training-step-chart" viewBox="0 0 920 470" role="img" aria-label="400M 与 1.3B 完整训练步耗时"></svg><figcaption>每个点先预热 3 步，再保留 7 个完整优化器步骤；正序与逆序各运行一轮，最终聚合 14 个计时样本。输入为随机词元，只测固定形状的系统性能，不给出训练收敛结论。</figcaption></figure></div>
       <div class="method-grid">
         <div><h3>旧路径为什么随序列变慢</h3><p>旧的顺序训练内核由一个 CUDA 程序从第一个词元循环到最后一个词元。它能把状态留在寄存器里，却只有“批量 × 状态分块”这么多并行任务。当序列变长、批量从 4 降到 1 时，可同时工作的线程块反而减少，H800 的大量计算单元处于空闲状态。</p></div>
         <div><h3>新的精确分块训练怎样运行</h3><p>时间轴按 16 个词元切块。第一轮并行计算每块的仿射摘要，第二轮只在块之间传递入口状态，第三轮并行重放各块并写出逐词元状态；反向传播用同样的三阶段结构逆序处理。所有阶段都使用原方程，没有近似正弦、余弦或指数。</p></div>
         <div><h3>SAMU 在这里利用了什么</h3><p>同一词元的全部复数模态共享径向控制和相位控制。一个时间块的总衰减与总转角可由这些共享控制量的和重建，不必为每个模态保存一份动态门控矩阵。这样既增加了时间并行度，也保持了较小的中间张量。</p></div>
-        <div><h3>为什么短序列收益更小</h3><p>L=256、B=32 时，顺序内核本来就有足够多的批量并行任务，分块摘要和块间前缀会带来额外启动与读写。L=8K、B=1 时，增加时间块并行度的收益远大于这部分开销，因此加速随序列长度增加。</p></div>
+        <div><h3>为什么三种长度的耗时接近</h3><p>每步总词元始终是 8192，因此公共矩阵乘法的工作量基本不变；双方选中的精确分块后端又把时间轴拆成并行任务。L=8K 时批量降为 1，速度比会略有变化，页面保留全部绝对时间，不把小幅波动解释成额外算法收益。</p></div>
       </div>
-      <div class="resource-table-wrap" id="training-matrix-table"><p>正在读取三个模型规模的训练矩阵…</p></div>
       <div class="resource-table-wrap" id="paper-scale-table"><p>正在读取 Griffin 表 2 尺度的完整训练步…</p></div>
       <div class="analysis-summary" id="scan-result"><p>正在读取投影后的扫描诊断…</p></div>
       <div class="single-chart"><figure class="chart-panel"><div class="figure-head"><div><span class="figure-number">补充诊断 · B=8 · 状态宽度 1024</span><h3>只看投影后的前向扫描</h3></div><span class="protocol">不是完整训练结果</span></div><svg id="training-chart" viewBox="0 0 920 470" role="img" aria-label="SAMU 与 RG-LRU 的前向扫描延迟"></svg><figcaption>这张图只回答扫描内核本身的差异；上面的完整训练图才回答端到端训练速度。</figcaption></figure></div>
@@ -116,11 +112,9 @@
         <li><a href="https://github.com/google-deepmind/recurrentgemma/tree/2efa84dac0e68e63547a27a18fa943c98f1c312e">RecurrentGemma 固定版本</a></li>
         <li><a href="https://github.com/google-deepmind/recurrentgemma/blob/2efa84dac0e68e63547a27a18fa943c98f1c312e/recurrentgemma/jax/scan.py">RG-LRU 官方 Pallas 扫描与自定义反向</a></li>
       </ul></div><div><h3>本项目代码与数据</h3><ul class="source-list">
-        <li><a href="benchmark/run_small_model_study.py">完整小模型训练与推理脚本</a></li>
+        <li><a href="benchmark/run_small_model_study.py">Hawk 模型骨架与训练、解码计时基础实现</a></li>
         <li><a href="benchmark/triton_training_scan.py">前向与反向 Triton 扫描内核</a></li>
         <li><a href="benchmark/triton_rglru.py">RG-LRU CUDA 对照内核</a></li>
-        <li><a href="benchmark_results_small_model/training_summary.json">三随机种子训练原始结果</a></li>
-        <li><a href="benchmark_results_small_model/full_model_benchmark.json">完整训练步与推理原始结果</a></li>
         <li><a href="benchmark_results_small_model/training_equation_audit.json">官方方程与分块梯度审计</a></li>
         <li><a href="benchmark_results_small_model/training_on_device_complete.json">设备端扫描后端原始结果</a></li>
         <li><a href="benchmark_results_small_model/paper_scale_backend_ablation.json">400M / 1.3B 完整训练步后端矩阵</a></li>
@@ -128,7 +122,6 @@
         <li><a href="benchmark_results_small_model/paper_scale_h800.json">Griffin 表 2 尺度训练结果</a></li>
         <li><a href="benchmark_results_small_model/h800_roofline_decode.json">H800 屋顶线与解码字节模型</a></li>
         <li><a href="benchmark_results_small_model/paper_scale_inference_h800.json">1.3B 配置完整模型推理结果</a></li>
-        <li><a href="benchmark_results_small_model/enwik8_dataset_manifest.json">enwik8 数据切分与校验值</a></li>
       </ul></div></div>
       <p class="source-note">硬件：NVIDIA H800 PCIe 80GB。RecurrentGemma 固定提交：<code>2efa84dac0e68e63547a27a18fa943c98f1c312e</code>。数据集、软件版本、GPU 型号与计算能力记录在 <a href="benchmark_results_small_model/environment.json">实验环境文件</a> 中。</p>
     </section>
