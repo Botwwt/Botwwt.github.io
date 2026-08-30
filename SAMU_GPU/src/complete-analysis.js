@@ -1,4 +1,4 @@
-import {renderAdvantageFigures} from "./advantage-figures.js?v=20260830-2";
+import {renderAdvantageFigures} from "./advantage-figures.js?v=20260830-3";
 
 const NS = "http://www.w3.org/2000/svg";
 const RESULT_ROOT = "benchmark_results_small_model";
@@ -154,29 +154,6 @@ function renderScanBackends(data) {
   document.querySelector("#scan-backend-table").innerHTML = `<h3>从 PyTorch 参考到优化 GPU 实现</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>完整模型配置</th><th>递推单元</th><th>PyTorch 逐步参考</th><th>最快精确 GPU 候选</th><th>实现加速</th></tr></thead><tbody>${engineeringRows}</tbody></table></div><p class="fairness-inline">这里的“实现加速”只说明同一递推方程经过 GPU 内核适配后快了多少，不是 SAMU 相对 RG-LRU 的架构加速。</p><h3>完整训练步只更换扫描后端（B=4，L=2K）</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>完整模型配置</th><th>递推单元</th>${Object.values(backendLabels).map(label => `<th>${label}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div><p class="fairness-inline">每个单元格都包含 32K 词表、完整 Hawk 层、交叉熵、反向传播、梯度裁剪和 AdamW 更新，唯一变化是递推扫描后端。PyTorch 逐步参考为每个时间步建立运算，其中 RG-LRU 路径保持官方 RecurrentGemma 的扫描语义；它主要用于正确性参考，不代表 H800 性能上限。片上顺序扫描在一个 CUDA 程序内沿时间更新；结合扫描先物化各时间步的仿射转移，再以树形前缀合并；16/32 步分块先并行计算块摘要，再传播块边界并回放块内状态。最终架构对比会用独立调优数据为双方选择最快的精确后端，再以新样本计时。</p>`;
 }
 
-function renderCorrectness(officialBlock, equationAudit) {
-  const blockError = officialBlock.numerical_equivalence?.component_max_abs_errors?.whole_residual_block_max_abs;
-  const samuError = officialBlock.canonical_samu_equivalence?.component_max_abs_errors?.full_sequence_max_abs;
-  const officialTraining = equationAudit.official_rglru_training || {};
-  const scans = equationAudit.custom_scan_reference_checks || {};
-  const fp32Relative = scans["samu_chunk16_torch.float32"]?.gradient_max_relative;
-  const bf16Relative = scans["samu_chunk16_torch.bfloat16"]?.gradient_max_relative;
-  const blocks = Object.fromEntries((officialBlock.rows || []).map(row => [row.scale, row]));
-  const decodeAudit = officialBlock.decode_consistency || {};
-  const decodeRows = decodeAudit.rows || [];
-  const decodeMaxError = decodeRows.length ? Math.max(...decodeRows.flatMap(row => [
-    row.block_output_max_abs, row.conv_cache_max_abs, row.recurrent_cache_max_abs,
-  ]).filter(Number.isFinite)) : NaN;
-  document.querySelector("#correctness-audit").innerHTML = `<h3>先通过官方方程与整块实现审计，再进入计时</h3><div class="profile-table-wrap"><table class="profile-table"><thead><tr><th>检查对象</th><th>检查方法</th><th>最大误差或参数量</th><th>结果</th></tr></thead><tbody>
-    <tr><td>400M / 1.3B RG-LRU 块</td><td>逐组件对照固定提交的官方 RecurrentGemma</td><td>${fmt(blocks["400m"]?.official_total_block_parameters, 0)} / ${fmt(blocks["1.3b"]?.official_total_block_parameters, 0)} 个参数；双方逐组件相同</td><td>${officialBlock.passed ? "通过" : "未通过"}</td></tr>
-    <tr><td>完整 RG-LRU 残差块</td><td>复制同一权重，覆盖因果卷积、分段重置、末状态与整块输出</td><td>${Number(blockError).toExponential(3)}</td><td>${officialBlock.numerical_equivalence?.passed ? "通过" : "未通过"}</td></tr>
-    <tr><td>标准 SAMU 完整序列</td><td>对照单组共享控制的 PyTorch 方程</td><td>${Number(samuError).toExponential(3)}</td><td>${officialBlock.canonical_samu_equivalence?.passed ? "通过" : "未通过"}</td></tr>
-    <tr><td>RG-LRU BF16 训练路径</td><td>对照未修改的官方 PyTorch 层</td><td>输出 ${fmt(officialTraining.output_max_abs, 5)}；末状态 ${fmt(officialTraining.cache_max_abs, 5)}</td><td>${officialTraining.passed ? "通过" : "未通过"}</td></tr>
-    <tr><td>SAMU 精确 16 步分块反向</td><td>对照显式 PyTorch 自动微分</td><td>FP32 / BF16 最大相对梯度误差 ${Number(fp32Relative).toExponential(3)} / ${Number(bf16Relative).toExponential(3)}</td><td>${equationAudit.passed ? "通过" : "未通过"}</td></tr>
-    <tr><td>整段前向与逐词解码</td><td>SAMU 紧凑内核、RG-LRU 标量融合内核和块对角矩阵乘分别逐词运行，再与整段前向比较</td><td>${Number.isFinite(decodeMaxError) ? Number(decodeMaxError).toExponential(3) : "等待测量"}</td><td>${decodeAudit.passed ? "通过" : "未通过"}</td></tr>
-  </tbody></table></div><p class="fairness-inline">官方来源固定在提交 <code>${officialBlock.official_commit}</code>。BF16 对照允许低精度舍入误差，但每项门槛在运行脚本中预先固定；只要任一检查失败，脚本就不会把该实现加入速度表。逐词解码审计还明确检查卷积缓存保持 BF16、递推缓存保持 FP32。</p>`;
-}
-
 function renderTraining(paperScale) {
   const record = (scale, architecture) => paperScale.records?.find(row => row.scale === scale && row.architecture === architecture);
   const measuredRows = (scale, architecture) => (record(scale, architecture)?.rows || []).filter(row => row.status === "measured");
@@ -321,17 +298,14 @@ function renderHeadline(environment, training, inference) {
 }
 
 export async function initCompleteAnalysis() {
-  const [scan, environment, deviceScan, scanBackends, paperScale, roofline, paperInference, officialBlock, equationAudit] = await Promise.all([
+  const [scan, environment, deviceScan, scanBackends, paperScale, roofline, paperInference] = await Promise.all([
     readJSON(SCAN_RESULT), readJSON(`${RESULT_ROOT}/environment.json`),
     readJSON(`${RESULT_ROOT}/training_on_device_complete.json`),
     readJSON(`${RESULT_ROOT}/paper_scale_backend_ablation.json`),
     readJSON(`${RESULT_ROOT}/paper_scale_h800.json`),
     readJSON(`${RESULT_ROOT}/h800_roofline_decode.json`),
     readJSON(`${RESULT_ROOT}/paper_scale_inference_h800.json`),
-    readJSON(`${RESULT_ROOT}/official_hawk_block_audit.json`),
-    readJSON(`${RESULT_ROOT}/training_equation_audit.json`),
   ]);
-  renderCorrectness(officialBlock, equationAudit);
   renderScan(scan);
   renderDeviceScan(deviceScan);
   renderScanBackends(scanBackends);

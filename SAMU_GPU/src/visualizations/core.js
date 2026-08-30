@@ -1,4 +1,4 @@
-import {activateWhenVisible, AnimationController, bindTransport, css, fitCanvas, lerp, roundedRect} from "../animation-controller.js?v=20260830-2";
+import {css, fitCanvas, roundedRect} from "../animation-controller.js?v=20260830-3";
 
 const line = (ctx, a, b, color, width = 2) => {
   ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b);
@@ -36,66 +36,121 @@ const card = (ctx, x, y, width, height, title, subtitle, color, active = false) 
 export function initArchitecture() {
   const canvas = document.querySelector("#architecture-canvas");
   if (!canvas) return;
-  const explainer = document.querySelector("#architecture-explainer");
-  const descriptions = [
-    "块内已有的输入分支和因果卷积先生成递推输入；这部分与 RG-LRU 共用。",
-    "递推输入的前后两半直接作为复数写入，不再增加一块 D×D 稠密矩阵。",
-    "同一递推输入只做两次向量归约，得到所有模态共享的径向控制和相位控制。",
-    "静态频谱参数与两个共享控制量组合，为每个模态恢复本步的衰减和旋转。",
-    "不同模态由不同 GPU 线程并行处理；每个线程沿时间轴顺序更新自己的状态。",
-    "最后状态直接以 FP32 写入缓存；BF16 输出继续进入块内的乘法连接。",
-  ];
-  const controller = new AnimationController({
-    steps: descriptions.length,
-    duration: 2500,
-    onFrame: draw,
-    onStep(step) { if (explainer) explainer.textContent = descriptions[step]; },
-  });
-
-  function draw(step, progress) {
+  function draw() {
     const {ctx, width: w, height: h} = fitCanvas(canvas);
     ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    ctx.scale(w / 960, h / 520);
     const dynamic = css("--dynamic");
     const state = css("--state");
     const write = css("--write");
     const motion = css("--motion");
+    const ink = css("--ink");
+    const muted = css("--muted");
+    const paper = css("--paper");
+    const panel = css("--panel");
     const lineColor = css("--line-strong");
-    const nodes = [
-      {x: w * .025, y: h * .39, w: w * .14, h: h * .2, title: "块输入", sub: "[B,D] · BF16", color: dynamic},
-      {x: w * .20, y: h * .39, w: w * .17, h: h * .2, title: "输入分支与卷积", sub: "双方共用 · [B,2M]", color: motion},
-      {x: w * .42, y: h * .14, w: w * .18, h: h * .2, title: "两个共享控制量", sub: "[B,2] · FP32", color: dynamic},
-      {x: w * .42, y: h * .66, w: w * .18, h: h * .2, title: "复数写入", sub: "拆分 · [B,M,2]", color: write},
-      {x: w * .65, y: h * .29, w: w * .21, h: h * .42, title: "模态状态更新", sub: "衰减 · 旋转 · 加写入", color: state},
-      {x: w * .89, y: h * .39, w: w * .095, h: h * .2, title: "新状态", sub: "FP32", color: state},
-    ];
-    const links = [[0, 1], [1, 3], [1, 2], [2, 4], [3, 4], [4, 5]];
-    links.forEach(([from, to]) => {
-      const a = nodes[from], b = nodes[to];
-      arrow(ctx, [a.x + a.w, a.y + a.h / 2], [b.x, b.y + b.h / 2], lineColor);
-    });
-    nodes.forEach((node, index) => card(
-      ctx, node.x, node.y, node.w, node.h,
-      node.title, node.sub, node.color,
-      [0, 1, 2, 4, 4, 5][step] === index,
-    ));
-    label(ctx, "静态频谱参数 ν、θ", nodes[4].x + nodes[4].w / 2, h * .1, css("--static"), 11);
-    arrow(ctx, [nodes[4].x + nodes[4].w / 2, h * .13], [nodes[4].x + nodes[4].w / 2, nodes[4].y], css("--static"));
-    label(ctx, "上一状态（固定大小缓存）", nodes[4].x + nodes[4].w / 2, h * .91, state, 11);
-    arrow(ctx, [nodes[4].x + nodes[4].w / 2, h * .87], [nodes[4].x + nodes[4].w / 2, nodes[4].y + nodes[4].h], state);
-    const [from, to] = links[Math.min(step, links.length - 1)];
-    const a = nodes[from], b = nodes[to];
-    dot(
-      ctx,
-      lerp(a.x + a.w, b.x, progress),
-      lerp(a.y + a.h / 2, b.y + b.h / 2, progress),
-      5,
-      step === 1 ? write : step >= 3 ? state : motion,
-    );
+
+    const panelBox = (x, y, width, height, title, subtitle = "") => {
+      roundedRect(ctx, x, y, width, height, 18);
+      ctx.fillStyle = panel; ctx.fill();
+      ctx.strokeStyle = lineColor; ctx.lineWidth = 1.2; ctx.stroke();
+      label(ctx, title, x + 18, y + 27, ink, 13, "left");
+      if (subtitle) label(ctx, subtitle, x + 18, y + 47, muted, 10, "left");
+    };
+    const block = (x, y, width, height, title, color, subtitle = "") => {
+      roundedRect(ctx, x, y, width, height, 7);
+      ctx.fillStyle = `${color}22`; ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.stroke();
+      label(ctx, title, x + width / 2, y + (subtitle ? height * .43 : height * .58), ink, 11);
+      if (subtitle) label(ctx, subtitle, x + width / 2, y + height * .70, muted, 8.5);
+    };
+    const junction = (x, y) => {
+      ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2);
+      ctx.fillStyle = paper; ctx.fill(); ctx.strokeStyle = lineColor; ctx.stroke();
+      label(ctx, "×", x, y + 4, ink, 12);
+    };
+    const residual = (x, y) => {
+      ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2);
+      ctx.fillStyle = paper; ctx.fill(); ctx.strokeStyle = lineColor; ctx.stroke();
+      label(ctx, "+", x, y + 4, ink, 13);
+    };
+    const dashedArrow = (from, to, color) => {
+      ctx.save(); ctx.setLineDash([7, 6]); arrow(ctx, from, to, color, 1.4); ctx.restore();
+    };
+
+    panelBox(26, 38, 220, 440, "Hawk 残差块", "重复堆叠 N 层");
+    block(72, 388, 128, 42, "RMSNorm", write);
+    block(61, 306, 150, 58, "递推混合块", dynamic, "Temporal mixing");
+    residual(136, 278);
+    block(72, 211, 128, 42, "RMSNorm", write);
+    block(61, 129, 150, 58, "门控前馈块", motion, "Gated MLP");
+    residual(136, 101);
+    arrow(ctx, [136, 468], [136, 430], lineColor);
+    arrow(ctx, [136, 388], [136, 364], lineColor);
+    arrow(ctx, [136, 306], [136, 287], lineColor);
+    arrow(ctx, [136, 269], [136, 253], lineColor);
+    arrow(ctx, [136, 211], [136, 187], lineColor);
+    arrow(ctx, [136, 129], [136, 110], lineColor);
+    arrow(ctx, [136, 92], [136, 60], lineColor);
+    line(ctx, [46, 451], [46, 278], lineColor, 1.1);
+    line(ctx, [46, 278], [127, 278], lineColor, 1.1);
+    line(ctx, [46, 278], [46, 101], lineColor, 1.1);
+    line(ctx, [46, 101], [127, 101], lineColor, 1.1);
+    label(ctx, "输入", 136, 496, muted, 10);
+    label(ctx, "输出", 136, 28, muted, 10);
+
+    panelBox(292, 38, 260, 225, "门控前馈块", "双方完全相同");
+    block(326, 189, 82, 34, "Linear", motion);
+    block(326, 137, 82, 34, "GeLU", write);
+    block(437, 189, 82, 34, "Linear", motion);
+    junction(423, 111);
+    block(382, 58, 82, 34, "Linear", motion);
+    arrow(ctx, [423, 248], [423, 229], lineColor);
+    line(ctx, [423, 229], [367, 229], lineColor, 1.2);
+    line(ctx, [423, 229], [478, 229], lineColor, 1.2);
+    arrow(ctx, [367, 229], [367, 223], lineColor);
+    arrow(ctx, [367, 189], [367, 171], lineColor);
+    arrow(ctx, [367, 137], [414, 111], lineColor);
+    arrow(ctx, [478, 189], [432, 111], lineColor);
+    arrow(ctx, [423, 102], [423, 92], lineColor);
+
+    panelBox(586, 38, 348, 440, "SAMU 递推混合块", "对应 Griffin 架构中的 RG-LRU 位置");
+    block(618, 382, 92, 38, "Linear", motion, "输出门分支");
+    block(618, 318, 92, 38, "GeLU", write);
+    block(810, 382, 92, 38, "Linear", motion, "递推分支");
+    block(793, 310, 126, 48, "因果 Conv1D", dynamic, "局部时间混合");
+    block(793, 232, 126, 54, "SAMU", state, "复数模态状态更新");
+    junction(760, 186);
+    block(714, 105, 92, 38, "Linear", motion, "输出投影");
+    label(ctx, "共享控制 cₜ、dₜ", 856, 218, state, 9.5);
+    label(ctx, "Griffin 基线在此使用 RG-LRU", 760, 454, muted, 9.5);
+    arrow(ctx, [760, 465], [760, 430], lineColor);
+    line(ctx, [760, 430], [664, 430], lineColor, 1.2);
+    line(ctx, [760, 430], [856, 430], lineColor, 1.2);
+    arrow(ctx, [664, 430], [664, 420], lineColor);
+    arrow(ctx, [664, 382], [664, 356], lineColor);
+    arrow(ctx, [664, 318], [751, 186], lineColor);
+    arrow(ctx, [856, 382], [856, 358], lineColor);
+    arrow(ctx, [856, 310], [856, 286], lineColor);
+    arrow(ctx, [793, 259], [769, 186], lineColor);
+    arrow(ctx, [760, 177], [760, 143], lineColor);
+    arrow(ctx, [760, 105], [760, 76], lineColor);
+    label(ctx, "输出", 760, 66, muted, 10);
+
+    dashedArrow([211, 158], [292, 158], motion);
+    dashedArrow([211, 335], [586, 335], dynamic);
+    label(ctx, "展开", 251, 146, motion, 9.5);
+    label(ctx, "展开", 394, 323, dynamic, 9.5);
+    ctx.restore();
   }
 
-  bindTransport(document.querySelector('[data-controller="architecture"]'), controller, {play: "播放", pause: "暂停"});
-  controller.onStep?.(0);
-  activateWhenVisible(canvas.closest(".hero-figure"), controller);
+  draw();
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(draw).observe(canvas);
+  if (typeof MutationObserver !== "undefined") {
+    new MutationObserver(draw).observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+  }
+  document.fonts?.ready.then(draw);
 }
 
 export function initCoherent(root) {

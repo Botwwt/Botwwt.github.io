@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles/base.css?v=20260830-2">
-  <link rel="stylesheet" href="styles/course.css?v=20260830-2">
+  <link rel="stylesheet" href="styles/base.css?v=20260830-3">
+  <link rel="stylesheet" href="styles/course.css?v=20260830-3">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 </head>
@@ -26,14 +26,13 @@
       <div class="hero-copy">
         <p class="eyebrow">NVIDIA H800 · 400M / 1.3B 完整系统实验</p>
         <h1 id="hero-title">SAMU 与 RG-LRU<br>从方程比到完整模型</h1>
-        <p class="hero-thesis">我们固定 Griffin 的 RG-LRU 方程、16 组分块门控、数值精度和状态重置语义，再把 SAMU 与 RG-LRU 分别装入完全相同的 Hawk 模型骨架。训练与推理系统实验使用 Griffin 表 2 的 400M 与 1.3B 配置，并逐项对应正文与附录的批量、长度和计时边界。SAMU 直接复用块内已有的输入分支作为复数写入，不再携带旧微基准中的额外大投影。</p>
+        <p class="hero-thesis">我们固定 Griffin 的 RG-LRU 方程、16 组分块门控、数值精度和状态重置语义，再把 SAMU 与 RG-LRU 分别装入完全相同的 Hawk 模型骨架。训练与推理系统实验使用 Griffin 表 2 的 400M 与 1.3B 配置，并逐项对应正文与附录的批量、长度和计时边界。</p>
         <div class="hero-actions"><a class="button primary" href="#summary">先看实测</a><a class="button" href="#report">理解实现</a><a class="text-link" href="#sources">代码与原始结果 →</a></div>
       </div>
       <div class="hero-figure" id="architecture-explorer">
-        <div class="figure-head"><div><span class="figure-number">图 1</span><h2>SAMU 在递推块中的真实数据路径</h2></div><span class="protocol">点击按钮逐步查看</span></div>
-        <canvas id="architecture-canvas" width="960" height="520" aria-label="SAMU 递推块数据路径动画"></canvas>
-        <p class="figure-explainer" id="architecture-explainer">词元表示经过现有输入分支和因果卷积后，直接形成复数写入；两个共享控制量只计算一次，再广播到全部模态。</p>
-        <div class="transport compact" data-controller="architecture"><button data-action="back">上一步</button><button data-action="toggle" class="play">暂停</button><button data-action="step">下一步</button><button data-action="reset">重新播放</button><select data-action="speed" aria-label="动画速度"><option value=".5">慢速</option><option value="1" selected>正常</option><option value="2">快速</option></select></div>
+        <div class="figure-head"><div><span class="figure-number">图 1</span><h2>SAMU 在 Hawk 架构中的位置</h2></div><span class="protocol">架构示意</span></div>
+        <canvas id="architecture-canvas" width="960" height="520" aria-label="Hawk 残差块、门控前馈块与 SAMU 递推块架构图"></canvas>
+        <p class="figure-explainer">左侧给出重复堆叠的 Hawk 残差块，右侧展开其中的递推混合块。SAMU 与 RG-LRU 共用输入投影、因果卷积、输出门和输出投影，只替换状态更新单元。</p>
       </div>
     </section>
 
@@ -55,13 +54,12 @@
         <div><b>SAMU 的结构机会</b><p>全部模态共享两个随词元变化的坐标，所以动态控制计算不会随状态宽度线性展开。状态越宽，这一差异越有机会抵消复数乘法的额外成本。</p></div>
         <div><b>不能省略的成本</b><p>每个复数模态仍需两维实数状态、一次旋转和一次缩放。页面按相同 FP32 状态字节比较，不把一个复数误算成一个实数。</p></div>
       </div>
-      <div class="resource-table-wrap" id="correctness-audit"><p>正在读取官方方程与整块数值审计…</p></div>
     </section>
 
     <section class="wide-section evidence-atlas" id="evidence" aria-labelledby="evidence-title">
       <div class="wide-heading"><div><p class="part-label">结构优势与系统效果分开报告</p><h2 id="evidence-title">SAMU 的优势在哪里，最终传递了多少</h2></div><p>下面五幅图分别回答动态控制规模、递推参数、扫描速度、完整训练和完整推理。解析推导与 H800 实测使用不同标记；所有实测点都来自页面公开的原始记录，并保留运行顺序、样本数和分位数。</p></div>
       <div class="journal-grid">
-        <figure class="journal-figure"><div class="journal-head"><span class="figure-letter">a</span><div><span class="evidence derived">结构推导</span><h3>每个词元的动态控制量</h3></div></div><svg class="journal-svg" id="control-scaling-chart" role="img" aria-label="RG-LRU 与 SAMU 动态控制量随递推宽度的变化"></svg><figcaption>RG‑LRU 的输入门和保留门合计产生 <i>2D</i> 个通道级动态值；SAMU 始终产生两个共享控制量。这里统计逻辑值的数量，不把它直接冒充实际 HBM 流量。</figcaption></figure>
+        <figure class="journal-figure"><div class="journal-head"><span class="figure-letter">a</span><div><span class="evidence derived">结构推导</span><h3>每个词元的动态控制量</h3></div></div><svg class="journal-svg" id="control-scaling-chart" role="img" aria-label="RG-LRU 与 SAMU 动态控制量随递推宽度的变化"></svg><figcaption>RG‑LRU 的输入门和保留门合计产生 <i>2D</i> 个通道级动态值；SAMU 始终产生两个共享控制量。</figcaption></figure>
         <figure class="journal-figure"><div class="journal-head"><span class="figure-letter">b</span><div><span class="evidence derived">结构推导</span><h3>每层递推混合器参数</h3></div></div><svg class="journal-svg" id="mixer-parameter-chart" role="img" aria-label="400M 与 1.3B 配置中递推混合器参数量"></svg><figcaption>只比较被替换的递推混合器。公共输入投影、卷积、输出投影和前馈网络不计入本图，因此图注同时给出完整模型参数差距，防止把局部比例误写成整模比例。</figcaption></figure>
         <figure class="journal-figure journal-wide"><div class="journal-head"><span class="figure-letter">c</span><div><span class="evidence measured">H800 实测</span><h3>共享控制传递到完整训练步的效果</h3></div></div><svg class="journal-svg tall" id="training-evidence-chart" role="img" aria-label="SAMU 完整训练加速与峰值显存减少"></svg><figcaption>400M 与 1.3B 完整模型；每点固定 8192 个词元，包含前向、交叉熵、反向、梯度裁剪和 AdamW。加速误差线使用 14 个步骤样本的 P10–P90 保守组合，显存为计时窗口内峰值已分配量。</figcaption></figure>
         <figure class="journal-figure"><div class="journal-head"><span class="figure-letter">d</span><div><span class="evidence measured">H800 实测</span><h3>投影后的精确前向扫描</h3></div></div><svg class="journal-svg" id="scan-evidence-chart" role="img" aria-label="SAMU 与 RG-LRU 投影后精确分块扫描延迟"></svg><figcaption>B=8、1024 个实状态量、L=2K–16K。双方都使用 32 词元精确分块，计时只覆盖投影后的递推扫描。正序与逆序各运行一轮，误差线是两轮原始样本的 P10–P90 包络。</figcaption></figure>
@@ -139,6 +137,6 @@
     </section>
   </main>
   <div id="tooltip" class="tooltip" hidden></div>
-  <script type="module" src="src/app.js?v=20260830-2"></script>
+  <script type="module" src="src/app.js?v=20260830-3"></script>
 </body>
 </html>
