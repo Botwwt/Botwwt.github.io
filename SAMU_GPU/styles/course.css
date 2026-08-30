@@ -192,6 +192,9 @@
 .profile-table th, .profile-table td { padding: .7rem .75rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 .profile-table th { color: var(--muted); font-weight: 500; white-space: nowrap; }
 .profile-table td:nth-child(2), .profile-table td:nth-child(3) { white-space: nowrap; }
+.architecture-table { min-width: 760px; table-layout: fixed; }
+.architecture-table th:first-child, .architecture-table td:first-child { width: 18%; }
+.architecture-table td:nth-child(2), .architecture-table td:nth-child(3) { width: 41%; white-space: normal; overflow-wrap: anywhere; }
 .metric-audit { margin-top: 1.7rem; }
 
 .section5-section { background: color-mix(in srgb, var(--state) 2.5%, var(--paper)); }
