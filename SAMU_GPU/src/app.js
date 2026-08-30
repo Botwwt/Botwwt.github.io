@@ -1,7 +1,7 @@
-import {lessons, parts} from "./lessons.js";
-import {initArchitecture, initCoreFigure} from "./visualizations/core.js";
-import {initCompleteAnalysis} from "./complete-analysis.js";
-import {renderMathWhenReady} from "./math.js";
+import {lessons, parts} from "./lessons.js?v=20260830-2";
+import {initArchitecture, initCoreFigure} from "./visualizations/core.js?v=20260830-2";
+import {initCompleteAnalysis} from "./complete-analysis.js?v=20260830-2";
+import {renderMathWhenReady} from "./math.js?v=20260830-2";
 
 const content = document.querySelector("#lesson-content");
 const nav = document.querySelector("#lesson-links");

@@ -1,4 +1,4 @@
-import {activateWhenVisible, AnimationController, bindTransport, css, fitCanvas, lerp, roundedRect} from "../animation-controller.js";
+import {activateWhenVisible, AnimationController, bindTransport, css, fitCanvas, lerp, roundedRect} from "../animation-controller.js?v=20260830-2";
 
 const line = (ctx, a, b, color, width = 2) => {
   ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b);
