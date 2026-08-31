@@ -19,10 +19,16 @@ const html = await readFile(join(root, "index.html"), "utf8");
 const script = await readFile(join(root, "src", "final-report.js"), "utf8");
 const css = await readFile(join(root, "styles", "final-report.css"), "utf8");
 
-check(/src\/final-report\.js\?v=20260831-2/.test(html), "final report module is missing or not cache-versioned");
-check(/styles\/final-report\.css\?v=20260831-2/.test(html), "final report stylesheet is missing or not cache-versioned");
+const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
+const duplicateIds = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
+const internalTargets = [...html.matchAll(/href="#([^"]+)"/g)].map(match => match[1]);
+check(duplicateIds.length === 0, `duplicate HTML ids: ${duplicateIds.join(", ")}`);
+for (const target of internalTargets) check(ids.includes(target), `missing internal link target ${target}`);
+
+check(/src\/final-report\.js\?v=20260831-4/.test(html), "final report module is missing or not cache-versioned");
+check(/styles\/final-report\.css\?v=20260831-4/.test(html), "final report stylesheet is missing or not cache-versioned");
 check(!/src\/app\.js|complete-analysis\.js|advantage-figures\.js|lessons\.js/.test(html), "legacy report modules are still mounted");
-for (const target of ["conclusion", "measurements", "backend", "memory", "rglru", "correctness", "lesson-6", "sources"]) {
+for (const target of ["conclusion", "terms", "measurements", "rglru", "backend", "memory", "correctness", "lesson-6", "sources"]) {
   check(html.includes(`href="#${target}"`), `missing navigation target ${target}`);
   check(html.includes(`id="${target}"`), `missing section id ${target}`);
 }
@@ -37,17 +43,20 @@ for (const asset of localAssets) {
 }
 
 for (const required of [
-  "24.6%–40.2% faster",
-  "5.8%–7.6% faster",
-  "3.8%–6.5% faster",
-  "12.4% slower",
-  "单个完整 recurrent block",
-  "不是 12/24 层完整语言模型 optimizer step",
-  "grouped” 只表示 chunk summaries 的执行分组",
-  "足以重放 transition，但不足以独立恢复完整 controller derivative",
-  "P<sub>c,m</sub>=exp(−ν<sub>m</sub>G<sub>c</sub>)",
-  "pure scan-only 最快的是 accelerated-scan/Hippogriff",
-  "当前已证明 400M/1.3B 完整模型 optimizer step 更快",
+  "完整递归混合器：前向+反向",
+  "快 24.6%–40.2%",
+  "单个完整循环块：前向+反向",
+  "快 5.8%–7.6%",
+  "快 3.8%–6.5%",
+  "慢 12.4%",
+  "不是 12/24 层完整语言模型的优化器更新",
+  "“共享特殊函数结果”是什么意思",
+  "“以 64 个分块为一组”是什么意思",
+  "按 \\(Q_c=L_c\\circ O_g\\) 求分块入口",
+  "足以重放状态转移，但不足以单独恢复完整控制器导数",
+  "P_{c,m}=e^{-\\nu_m G_c}",
+  "纯扫描最快的是 accelerated-scan/Hippogriff",
+  "当前已证明 400M/1.3B 完整模型优化器更新更快",
 ]) check(html.includes(required), `missing scope-critical copy: ${required}`);
 
 for (const stale of [
@@ -60,9 +69,13 @@ for (const stale of [
 ]) check(!stale.test(html), `stale or unsupported visible claim remains: ${stale}`);
 
 check(/--viz-series-1/.test(css) && /\.paper-figure/.test(css) && /\.scientific-chart/.test(css), "scientific report styling is incomplete");
-check(/<title>complete mixer F\+B latency<\/title>/.test(script), "mixer chart lacks an accessible title");
-check(/<title>D=1024 length crossover<\/title>/.test(script), "length chart lacks an accessible title");
-check(/<title>L=32768 width scaling<\/title>/.test(script), "width chart lacks an accessible title");
+check(/MathJax/.test(html) && /tex-svg\.js/.test(html), "MathJax is not configured");
+check((html.match(/architecture-figure/g) || []).length === 1, "the report must contain exactly one architecture figure");
+check(/<title>完整递归混合器前向加反向延迟<\/title>/.test(script), "mixer chart lacks an accessible Chinese title");
+check(/<title>D=1024 时的序列长度转折<\/title>/.test(script), "length chart lacks an accessible Chinese title");
+check(/<title>L=32768 时的状态宽度扩展<\/title>/.test(script), "width chart lacks an accessible Chinese title");
+check((html.match(/\\\[/g) || []).length === (html.match(/\\\]/g) || []).length, "unbalanced display-math delimiters");
+check((html.match(/\\\(/g) || []).length === (html.match(/\\\)/g) || []).length, "unbalanced inline-math delimiters");
 check(/minimum_ms/.test(script) && /maximum_ms/.test(script), "figures do not render measured dispersion");
 check(/selected_dispatch_very_long_hybrid_h800_v2\.json/.test(script), "very-long chart is not bound to the strict hybrid result");
 check(/group\.shape\.length === 32768/.test(script), "length chart may be using rejected 65K/131K full-group rows");
@@ -190,8 +203,8 @@ if (failures.length) {
 }
 
 console.log(JSON.stringify({
-  reportVersion: "2026-08-31-2",
-  sections: 8,
+  reportVersion: "2026-08-31-4",
+  sections: 9,
   localAssets: localAssets.length,
   primaryMixerRows: mixer.rows.length,
   mixerSamplesPerRow: 10,
