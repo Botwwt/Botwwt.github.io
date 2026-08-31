@@ -25,10 +25,10 @@ const internalTargets = [...html.matchAll(/href="#([^"]+)"/g)].map(match => matc
 check(duplicateIds.length === 0, `duplicate HTML ids: ${duplicateIds.join(", ")}`);
 for (const target of internalTargets) check(ids.includes(target), `missing internal link target ${target}`);
 
-check(/src\/final-report\.js\?v=20260831-4/.test(html), "final report module is missing or not cache-versioned");
-check(/styles\/final-report\.css\?v=20260831-4/.test(html), "final report stylesheet is missing or not cache-versioned");
+check(/src\/final-report\.js\?v=20260831-5/.test(html), "final report module is missing or not cache-versioned");
+check(/styles\/final-report\.css\?v=20260831-5/.test(html), "final report stylesheet is missing or not cache-versioned");
 check(!/src\/app\.js|complete-analysis\.js|advantage-figures\.js|lessons\.js/.test(html), "legacy report modules are still mounted");
-for (const target of ["conclusion", "terms", "measurements", "rglru", "backend", "memory", "correctness", "lesson-6", "sources"]) {
+for (const target of ["conclusion", "terms", "measurements", "rglru", "backend", "memory", "sources"]) {
   check(html.includes(`href="#${target}"`), `missing navigation target ${target}`);
   check(html.includes(`id="${target}"`), `missing section id ${target}`);
 }
@@ -49,28 +49,34 @@ for (const required of [
   "快 5.8%–7.6%",
   "快 3.8%–6.5%",
   "慢 12.4%",
-  "不是 12/24 层完整语言模型的优化器更新",
-  "“共享特殊函数结果”是什么意思",
-  "“以 64 个分块为一组”是什么意思",
+  "SAMU 与 RG-LRU 的 H800 训练性能对比",
+  "共享特殊函数结果",
+  "以 64 个分块为一组",
+  "RG-LRU 的 GPU 实现",
   "按 \\(Q_c=L_c\\circ O_g\\) 求分块入口",
   "足以重放状态转移，但不足以单独恢复完整控制器导数",
   "P_{c,m}=e^{-\\nu_m G_c}",
-  "纯扫描最快的是 accelerated-scan/Hippogriff",
-  "当前已证明 400M/1.3B 完整模型优化器更新更快",
 ]) check(html.includes(required), `missing scope-critical copy: ${required}`);
 
 for (const stale of [
   /src\/app\.js/,
   /paper_scale_inference_h800\.json/,
   /完整模型生成/,
-  /400M\s*\/\s*1\.3B 多层完整模型训练与生成属于当前/,
-  /65K\/131K 仍有约 43% 优势[^<]*可以/,
-  /SAMU 在所有形状都比 RG-LRU 快[^<]*证明/,
+  /[“”]/,
+  /帕累托/,
+  /当前证据范围/,
+  /结论不是/,
+  /纯扫描|Hippogriff|Lingua|accelerated-scan/,
+  /单一内核不可能覆盖所有形状/,
+  /保留显存不是单向胜利/,
+  /id="correctness"|id="lesson-6"/,
+  /可以写|不能写/,
 ]) check(!stale.test(html), `stale or unsupported visible claim remains: ${stale}`);
 
 check(/--viz-series-1/.test(css) && /\.paper-figure/.test(css) && /\.scientific-chart/.test(css), "scientific report styling is incomplete");
 check(/MathJax/.test(html) && /tex-svg\.js/.test(html), "MathJax is not configured");
 check((html.match(/architecture-figure/g) || []).length === 1, "the report must contain exactly one architecture figure");
+check(/\.scope-split\s*\{[^}]*grid-template-columns:\s*1fr/.test(css), "wide block tables are not stacked vertically");
 check(/<title>完整递归混合器前向加反向延迟<\/title>/.test(script), "mixer chart lacks an accessible Chinese title");
 check(/<title>D=1024 时的序列长度转折<\/title>/.test(script), "length chart lacks an accessible Chinese title");
 check(/<title>L=32768 时的状态宽度扩展<\/title>/.test(script), "width chart lacks an accessible Chinese title");
@@ -80,8 +86,8 @@ check(/minimum_ms/.test(script) && /maximum_ms/.test(script), "figures do not re
 check(/selected_dispatch_very_long_hybrid_h800_v2\.json/.test(script), "very-long chart is not bound to the strict hybrid result");
 check(/group\.shape\.length === 32768/.test(script), "length chart may be using rejected 65K/131K full-group rows");
 
-const [mixer, counterexample, length, veryLong, width, block, optimizer, launches, fattori, scanOnly,
-  hybrid65, hybrid131, rejectedLong, compressed] = await Promise.all([
+const [mixer, counterexample, length, veryLong, width, block, optimizer, launches, fattori,
+  hybrid65, hybrid131] = await Promise.all([
   load("selected_dispatch_grouped_k32_h800.json"),
   load("selected_dispatch_l8192_d1024_serial_k32_h800.json"),
   load("selected_dispatch_length_scaling_grouped_k32_h800.json"),
@@ -91,11 +97,8 @@ const [mixer, counterexample, length, veryLong, width, block, optimizer, launche
   load("optimizer_step_grouped_k32_h800.json"),
   load("selected_dispatch_launches_grouped_k32_h800.json"),
   load("public_fattori_h800.json"),
-  load("public_accelerated_scan_h800.json"),
   load("samu_hybrid_prefix64_65536_d1024_correctness_v2.json"),
   load("samu_hybrid_prefix64_131072_d1024_correctness_v2.json"),
-  load("samu_grouped_k32_long_correctness.json"),
-  load("samu_compressed_grouped_k32_correctness.json"),
 ]);
 
 const mixerExpected = [
@@ -185,17 +188,10 @@ for (const [state, samuParameters, rgParameters] of [[1024, 3076, 134144], [2048
 check(hybrid65.passed && hybrid131.passed, "strict very-long hybrid correctness gate did not pass");
 check(hybrid65.rows?.[0]?.output?.relative_l2 === 0 && hybrid131.rows?.[0]?.output?.relative_l2 === 0,
   "strict very-long hybrid output is not bitwise identical");
-check(rejectedLong.passed === false, "rejected full-group very-long result is unexpectedly marked passed");
-check(compressed.passed === false, "compressed grouped interaction is unexpectedly marked passed");
-check(close(compressed.rows?.[1]?.output?.relative_l2, 6.375004431902198e-6, 1e-12), "compressed grouped rejection metric mismatch");
 
 const fattoriOriginal = fattori.rows.find(row => row.implementation === "fattori_original");
 const oursRestricted = fattori.rows.find(row => row.implementation === "ours_restricted");
 check(fattori.source_diff_empty && close(median(fattoriOriginal), 4.535) && close(median(oursRestricted), 2.260), "Fattori restricted reproduction mismatch");
-const hippogriff = scanOnly.rows.find(row => row.implementation === "hippogriff_accelerated_scan");
-const lingua = scanOnly.rows.find(row => row.implementation === "lingua_original_wrapper");
-const oursChunk32 = scanOnly.rows.find(row => row.implementation === "ours_materialized_chunk32");
-check(close(median(hippogriff), 0.710) && close(median(lingua), 0.736) && close(median(oursChunk32), 0.858), "public scan-only reproduction mismatch");
 
 if (failures.length) {
   console.error(failures.join("\n"));
@@ -203,13 +199,14 @@ if (failures.length) {
 }
 
 console.log(JSON.stringify({
-  reportVersion: "2026-08-31-4",
-  sections: 9,
+  reportVersion: "2026-08-31-5",
+  sections: 7,
   localAssets: localAssets.length,
   primaryMixerRows: mixer.rows.length,
   mixerSamplesPerRow: 10,
   oneBlockCases: block.cases.length,
   oneBlockOptimizerCases: optimizer.cases.length,
   strictVeryLongRows: veryLong.rows.length,
-  rejectedCandidatesRetained: ["full-group very-long", "compressed grouped K32"],
+  architectureFigures: 1,
+  wideTablesStacked: true,
 }, null, 2));

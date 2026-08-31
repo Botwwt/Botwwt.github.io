@@ -1,4 +1,4 @@
-const VERSION = "20260831-4";
+const VERSION = "20260831-5";
 const root = "results/gpu_optimization";
 
 const paths = {
@@ -10,7 +10,6 @@ const paths = {
   block: "block_dispatch_grouped_k32_h800.json",
   optimizer: "optimizer_step_grouped_k32_h800.json",
   fattori: "public_fattori_h800.json",
-  scanOnly: "public_accelerated_scan_h800.json",
 };
 
 const fetchJSON = async name => {
@@ -185,10 +184,10 @@ function renderWidthTable(points) {
 }
 
 const caseNames = {
-  state2048_short: "短形状 · B=4，L=2K · 模型宽度/实状态宽度=2048/2048",
-  state2560_medium: "中形状 · B=1，L=8K · 模型宽度/实状态宽度=2560/2560",
-  state1024_long: "长形状 · B=1，L=32K · 模型宽度/实状态宽度=1024/1024",
-  "400m_block_long": "400M 宽度配置 · B=1，L=32K · 模型宽度/实状态宽度=1536/2048（单循环块）",
+  state2048_short: "<b>短形状</b><small>B=4，L=2048<br>模型宽度 2048 · 状态宽度 D=2048</small>",
+  state2560_medium: "<b>中形状</b><small>B=1，L=8192<br>模型宽度 2560 · 状态宽度 D=2560</small>",
+  state1024_long: "<b>长形状</b><small>B=1，L=32768<br>模型宽度 1024 · 状态宽度 D=1024</small>",
+  "400m_block_long": "<b>约 4 亿参数模型的宽度配置</b><small>B=1，L=32768<br>模型宽度 1536 · 状态宽度 D=2048</small>",
 };
 
 function renderBlockTable(data) {
@@ -197,7 +196,7 @@ function renderBlockTable(data) {
     const samu = item.rows.find(row => row.architecture === "samu");
     return `<tr><td>${caseNames[item.case]}</td><td>${statsText(rg.forward_backward)}</td><td class="best">${statsText(samu.forward_backward)}</td><td class="best">${fmt(pct(rg.forward_backward.median_ms, samu.forward_backward.median_ms), 1)}%</td><td>${fmt(gib(rg.peak_allocated_delta_bytes), 3)}</td><td class="best">${fmt(gib(samu.peak_allocated_delta_bytes), 3)}</td><td>${rg.parameters.toLocaleString()}</td><td>${samu.parameters.toLocaleString()}</td></tr>`;
   });
-  document.querySelector("#block-table").innerHTML = table(["单循环块形状", "RG-LRU 前向+反向", "SAMU 前向+反向", "SAMU 快", "RG-LRU 实际分配 GiB", "SAMU 实际分配 GiB", "RG-LRU 参数量", "SAMU 参数量"], rows);
+  document.querySelector("#block-table").innerHTML = table(["形状", "RG-LRU 前向+反向（毫秒）", "SAMU 前向+反向（毫秒）", "用时缩短", "RG-LRU 实际分配（GiB）", "SAMU 实际分配（GiB）", "RG-LRU 参数量", "SAMU 参数量"], rows);
 }
 
 function renderOptimizerTable(data) {
@@ -206,29 +205,20 @@ function renderOptimizerTable(data) {
     const samu = item.rows.find(row => row.architecture === "samu");
     return `<tr><td>${caseNames[item.case]}</td><td>${statsText(rg.optimizer_step)}</td><td class="best">${statsText(samu.optimizer_step)}</td><td class="best">${fmt(pct(rg.optimizer_step.median_ms, samu.optimizer_step.median_ms), 1)}%</td><td>${fmt(gib(rg.peak_allocated_delta_bytes), 3)} / ${fmt(gib(samu.peak_allocated_delta_bytes), 3)}</td><td>${fmt(gib(rg.peak_reserved_delta_bytes), 3)} / ${fmt(gib(samu.peak_reserved_delta_bytes), 3)}</td></tr>`;
   });
-  document.querySelector("#optimizer-table").innerHTML = table(["单循环块形状", "RG-LRU 一步", "SAMU 一步", "SAMU 快", "实际分配 RG-LRU/SAMU GiB", "保留显存 RG-LRU/SAMU GiB"], rows);
+  document.querySelector("#optimizer-table").innerHTML = table(["形状", "RG-LRU 一次更新（毫秒）", "SAMU 一次更新（毫秒）", "用时缩短", "实际分配 RG-LRU / SAMU（GiB）", "保留显存 RG-LRU / SAMU（GiB）"], rows);
 }
 
-function renderPublicTable(fattori, scanOnly) {
+function renderPublicTable(fattori) {
   const byName = (data, name) => data.rows.find(row => row.implementation === name);
   const fattoriRow = byName(fattori, "fattori_original");
   const ours = byName(fattori, "ours_restricted");
-  const hippogriff = byName(scanOnly, "hippogriff_accelerated_scan");
-  const lingua = byName(scanOnly, "lingua_original_wrapper");
-  const chunk32 = byName(scanOnly, "ours_materialized_chunk32");
   document.querySelector("#public-table").innerHTML = `
     <h4>受限完整无重置路径 · B=4，L=2048，D=2048 · PyTorch 2.4.1/CUDA 12.4</h4>
     ${table(["实现", "前向", "前向+反向", "测量约定"], [
       `<tr><td>我们的受限路径</td><td>${fmt(ours.forward.median_ms)}</td><td class="best">${fmt(ours.forward_backward.median_ms)}</td><td>零初始状态、无重置的次要对比</td></tr>`,
       `<tr><td>Fattori 原始 hawk-pytorch</td><td>${fmt(fattoriRow.forward.median_ms)}</td><td>${fmt(fattoriRow.forward_backward.median_ms)}</td><td>原仓库代码，相同受限约定</td></tr>`,
     ])}
-    <p class="table-note">2.260 毫秒对 4.535 毫秒：我们的延迟低 50.2%，等价吞吐比约为 2.01 倍。该表不进入支持规范重置语义的主排名。</p>
-    <h4>纯扫描 · 仿射系数预先生成 · PyTorch 2.4.1/CUDA 12.4</h4>
-    ${table(["实现", "前向", "前向+反向", "结论"], [
-      `<tr><td>accelerated-scan / Hippogriff</td><td>${fmt(hippogriff.forward.median_ms)}</td><td class="best">${fmt(hippogriff.forward_backward.median_ms)}</td><td>本表最快</td></tr>`,
-      `<tr><td>Lingua 原始封装</td><td>${fmt(lingua.forward.median_ms)}</td><td>${fmt(lingua.forward_backward.median_ms)}</td><td>调用同一个 accelerated-scan 内核</td></tr>`,
-      `<tr><td>我们的通用物化 K=32 分块扫描</td><td>${fmt(chunk32.forward.median_ms)}</td><td>${fmt(chunk32.forward_backward.median_ms)}</td><td>不是最快纯扫描</td></tr>`,
-    ])}`;
+    <p class="table-note">2.260 毫秒对 4.535 毫秒：我们的延迟低 50.2%，等价吞吐比约为 2.01 倍。</p>`;
 }
 
 async function main() {
@@ -259,7 +249,7 @@ async function main() {
     renderWidthTable(widthPoints);
     renderBlockTable(data.block);
     renderOptimizerTable(data.optimizer);
-    renderPublicTable(data.fattori, data.scanOnly);
+    renderPublicTable(data.fattori);
     observeChart(document.querySelector("#mixer-chart"), width => drawMixerChart(document.querySelector("#mixer-chart"), mixerGroups, width));
     observeChart(document.querySelector("#length-chart"), width => drawLengthChart(document.querySelector("#length-chart"), lengthPoints, width));
     observeChart(document.querySelector("#width-chart"), width => drawWidthChart(document.querySelector("#width-chart"), widthPoints, width));

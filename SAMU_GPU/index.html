@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="SAMU 与经过充分优化的 RG-LRU 在 NVIDIA H800 上的训练后端、GPU 执行流程、形状调度、显存和公开实现对比。">
-  <title>SAMU GPU · H800 最终训练后端报告</title>
+  <meta name="description" content="SAMU 与 RG-LRU 在 NVIDIA H800 上的训练时间、GPU 实现、显存和参数量对比。">
+  <title>SAMU 与 RG-LRU · H800 训练后端对比</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles/base.css?v=20260831-4">
-  <link rel="stylesheet" href="styles/final-report.css?v=20260831-4">
+  <link rel="stylesheet" href="styles/base.css?v=20260831-5">
+  <link rel="stylesheet" href="styles/final-report.css?v=20260831-5">
   <script>
     window.MathJax = {
       tex: {inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]]},
@@ -24,7 +24,7 @@
   <header class="topbar">
     <a class="brand" href="#top" aria-label="SAMU GPU 首页"><span class="brand-mark">S</span><span>SAMU GPU</span></a>
     <nav aria-label="主导航">
-      <a href="#conclusion">结论</a><a href="#terms">名词</a><a href="#measurements">实测</a><a href="#rglru">RG-LRU</a><a href="#backend">SAMU</a><a href="#memory">资源</a><a href="#correctness">正确性</a><a href="#lesson-6">边界</a><a href="#sources">证据</a>
+      <a href="#conclusion">结果</a><a href="#terms">名词</a><a href="#measurements">实测</a><a href="#rglru">RG-LRU</a><a href="#backend">SAMU</a><a href="#memory">资源</a><a href="#sources">证据</a>
     </nav>
     <button class="theme-toggle" id="theme-toggle" aria-label="切换深浅主题">◐</button>
   </header>
@@ -32,9 +32,9 @@
   <main id="top">
     <section class="hero-final" aria-labelledby="hero-title">
       <div class="hero-copy-final">
-        <p class="eyebrow">最终训练后端 · NVIDIA H800 PCIe 80 GB · 2026-08-31</p>
-        <h1 id="hero-title">SAMU 已形成 GPU 帕累托优势，<br>但优势有明确形状边界</h1>
-        <p class="hero-thesis-final">我们先把 RG-LRU 强化为当前仓库中最强的规范语义后端，再让双方按照批量大小、序列长度和状态宽度分别选择最快的合法路径。当前证据支持 SAMU 在主要训练区域降低递归混合器延迟、峰值实际分配显存和求分块入口状态所需的临时工作区；它不支持“SAMU 在每个形状都更快”。</p>
+        <p class="eyebrow">NVIDIA H800 PCIe 80 GB · 训练后端实测 · 2026-08-31</p>
+        <h1 id="hero-title">SAMU 与 RG-LRU 的 H800 训练性能对比</h1>
+        <p class="hero-thesis-final">我们先完善 RG-LRU 的 GPU 实现，再在相同测试条件下比较两种递归结构。SAMU 在多数已测训练形状中用时更短、实际分配显存更少，保存分块入口状态的临时数组也更小；在 B=1、L=8192、D=1024 时，RG-LRU 仍然更快。</p>
         <div class="hero-actions">
           <a class="button primary" href="#terms">先看名词解释</a>
           <a class="button" href="#measurements">查看绝对时间</a>
@@ -49,15 +49,9 @@
       </div>
     </section>
 
-    <section class="scope-warning" aria-label="证据范围">
-      <b>当前证据范围</b>
-      <p>本页的新主结论来自一个完整递归混合器、单个完整循环块，以及该循环块的一次 AdamW 更新。此前页面展示的 400M/1.3B（约 4 亿/13 亿参数）多层完整模型训练与生成属于较早实验轨道，没有在当前强化后端下重新完成，因此不进入本页主排名，也不能用于声称当前后端已在完整语言模型训练或推理解码中获胜。</p>
-    </section>
-
     <section class="report-section" id="conclusion" aria-labelledby="conclusion-title">
       <div class="section-heading">
-        <div><p class="part-label">01 · 当前结论</p><h2 id="conclusion-title">优势来自共享低维控制的执行结构</h2></div>
-        <p>结论不是“SAMU 有一个更快的扫描算子”。被测量的是每位置复用 \(e^{c_t},\cos d_t,\sin d_t\)、随用随算 \(\lambda_{t,m}\)、按 \(Q_c=L_c\circ O_g\) 求分块入口、用 \(\overline\lambda_{t,m}\) 传播反向状态梯度，以及按模态求和得到 \(\overline c_t,\overline d_t\) 共同形成的按形状调度后端。</p>
+        <div><p class="part-label">01 · 实测概览</p><h2 id="conclusion-title">主要结果</h2></div>
       </div>
       <div class="claim-grid">
         <article><span>延迟</span><h3>主要递归混合器区域获胜</h3><p>四个主要形状的前向+反向分别快 24.6%、27.6%、37.3%、40.2%。加入完整循环块的公共层后，收益缩小但仍为 5.8%–7.6%。</p></article>
@@ -69,7 +63,7 @@
 
     <section class="report-section tinted" id="terms" aria-labelledby="terms-title">
       <div class="section-heading">
-        <div><p class="part-label">02 · 符号与测量范围</p><h2 id="terms-title">图表中的 B、L、D 和“前向+反向”分别指什么</h2></div>
+        <div><p class="part-label">02 · 符号与测量范围</p><h2 id="terms-title">图表中的 B、L、D 和前向+反向分别指什么</h2></div>
         <p>这些符号同时决定并行度、工作量和 GPU 路径。不同形状不能只按序列长度比较，也不能把递归混合器时间当成完整模型时间。</p>
       </div>
       <div class="glossary-grid">
@@ -79,19 +73,19 @@
         <article><span class="term-symbol">K</span><h3>每个分块的时间步数</h3><p>K=32 表示一个 GPU 程序实例先在寄存器中顺序处理 32 个时间步，再把该分块压缩成一个仿射摘要。K 越大，分块数越少，但寄存器压力也越高。</p></article>
         <article><span class="term-symbol">前向</span><h3>从输入计算全部输出</h3><p>包含控制量或门值准备、递归状态更新和可见输出。页面计时排除首次编译，但包含该路径正常执行所需的 CUDA 内核。</p></article>
         <article><span class="term-symbol">反向</span><h3>从输出梯度计算全部相关梯度</h3><p>使用稠密输出梯度，计算输入梯度、初始状态梯度和全部参数梯度。它不是只传播状态梯度，也不是只测一个反向扫描内核。</p></article>
-        <article><span class="term-symbol">前向+反向</span><h3>训练核心算子的合计时间</h3><p>把同一次完整前向和完整反向的 GPU 时间相加。它不包含 AdamW 参数更新；加入 AdamW 后的数字在“单循环块优化器更新”表中单独报告。</p></article>
+        <article><span class="term-symbol">前向+反向</span><h3>训练核心算子的合计时间</h3><p>把同一次完整前向和完整反向的 GPU 时间相加。它不包含 AdamW 参数更新；加入 AdamW 后的数字在单循环块优化器更新表中单独报告。</p></article>
         <article><span class="term-symbol">递归混合器</span><h3>本页最主要的替换对象</h3><p>包括 RG-LRU 的门或 SAMU 的控制器、状态转移、递归写入、输出，以及相应反向。它不包括循环块外层的归一化、深度卷积、公共投影和多层感知机。</p></article>
         <article><span class="term-symbol">完整循环块</span><h3>更接近模型训练的算子范围</h3><p>在递归混合器外加入公共归一化、输入投影、深度卷积、输出投影和门控多层感知机。当前只测一个 <code>RecurrentBlock</code>，不是多层语言模型。</p></article>
         <article><span class="term-symbol">中位数 [最小，最大]</span><h3>表格中的计时写法</h3><p>每一行保留两轮、每轮五次，共十个计时样本。中位数是主值，方括号给出十个样本的最小值和最大值，不挑单次最快结果。</p></article>
         <article><span class="term-symbol">BF16 / FP32</span><h3>张量存储与累加精度</h3><p>BF16 是 16 位脑浮点格式，用于输入和输出以降低带宽与存储开销；FP32 是 32 位单精度格式，用于递归状态、关键归约和控制器导数累加，以控制长链误差。</p></article>
-        <article><span class="term-symbol">AdamW</span><h3>参数更新步骤</h3><p>一种带解耦权重衰减的优化器。本页的“单循环块 AdamW 更新”包含该循环块的前向、反向和一次参数更新，但只更新一个循环块，不代表多层完整模型的一次训练迭代。</p></article>
+        <article><span class="term-symbol">AdamW</span><h3>参数更新步骤</h3><p>一种带解耦权重衰减的优化器。本页的单循环块 AdamW 更新包含该循环块的前向、反向和一次参数更新。</p></article>
         <article><span class="term-symbol">延迟</span><h3>完成一次被测工作的 GPU 时间</h3><p>单位为毫秒。比较百分比按 \((t_{\mathrm{RG}}-t_{\mathrm{SAMU}})/t_{\mathrm{RG}}\) 计算；正数表示 SAMU 用时更少，表格同时保留双方绝对时间。</p></article>
         <article><span class="term-symbol">实际分配 / 保留显存</span><h3>两种不同的显存口径</h3><p>实际分配显存是活动张量真正占用的峰值；保留显存还包括 CUDA 缓存分配器暂存、可供后续复用的显存。两者必须分开报告。</p></article>
         <article><span class="term-symbol">临时工作区 / 内核启动</span><h3>中间数组与程序调用次数</h3><p>临时工作区只统计每个分块的等价变换和入口状态等中间量；内核启动数是一次前向和反向触发的 CUDA 程序次数。启动更少通常有利，但不能单独决定总延迟。</p></article>
       </div>
       <div class="word-clarification">
-        <article><h3>“共享特殊函数结果”是什么意思</h3><p>每个位置只计算一次 \(E_t=e^{c_t}\)、\(C_t=\cos d_t\)、\(S_t=\sin d_t\)，该位置的全部复数模态随后复用这三个值。这里不是让不同位置共用控制量，也不是让不同样本共用状态。</p></article>
-        <article><h3>“以 64 个分块为一组”是什么意思</h3><p>把相邻 64 个分块的等价变换放进一个执行组，按后文的 \(L_c\)、\(U_g\)、\(O_g\)、\(Q_c\) 公式求出每个分块的入口状态。被组合的是执行时的等价变换，不是控制量、模态或模型参数。</p></article>
+        <article><h3>共享特殊函数结果</h3><p>每个位置只计算一次 \(E_t=e^{c_t}\)、\(C_t=\cos d_t\)、\(S_t=\sin d_t\)，该位置的全部复数模态随后复用这三个值。不同位置仍使用各自的控制量，不同样本也保留各自的状态。</p></article>
+        <article><h3>以 64 个分块为一组</h3><p>把相邻 64 个分块的等价变换放进一个执行组，按后文的 \(L_c\)、\(U_g\)、\(O_g\)、\(Q_c\) 公式求出每个分块的入口状态。被组合的是执行时的等价变换，不是控制量、模态或模型参数。</p></article>
         <article><h3>为什么不逐分块传递入口状态</h3><p>长序列含有很多分块，逐个传递会限制并行度。按 \(Q_c=L_c\circ O_g\) 分开计算组内组合与更早分组组合，只需与分块数成正比的组合次数，并允许不同执行组同时工作。</p></article>
       </div>
     </section>
@@ -119,8 +113,8 @@
 
     <section class="report-section" id="rglru" aria-labelledby="rglru-title">
       <div class="section-heading">
-        <div><p class="part-label">04 · RG-LRU 在 GPU 上如何运行</p><h2 id="rglru-title">基线融合门计算，并按仿射公式并行求分块入口</h2></div>
-        <p>Google/Hugging Face RecurrentGemma 提供规范数学和正确性语义；本项目的 Triton/CUDA 路径是面向 H800 的实现，不称作 Google 官方 CUDA 实现。</p>
+        <div><p class="part-label">04 · RG-LRU 在 GPU 上如何运行</p><h2 class="compact-method-title" id="rglru-title">RG-LRU 的 GPU 实现</h2></div>
+        <p>RG-LRU 的方程和重置语义按固定版本的 RecurrentGemma 核对；H800 上运行的 Triton/CUDA 内核由本项目实现。</p>
       </div>
       <div class="equation-panel rg-equation">
         <div class="math-display">\[
@@ -177,7 +171,7 @@
         <tr><td>按 \(Q_c=L_c\circ O_g\) 并行求入口状态</td><td>逐分块串行传播并行度低，多轮全局扫描又会增加组合次数和内核启动</td><td>每 32 个分块为一组，分别计算 \(L_c\)、\(U_g\)、\(O_g\) 和 \(Q_c\)</td></tr>
         <tr><td>每个程序处理的时间步数和通道数按形状选择</td><td>一次处理更多时间步会减少分块数，但增加寄存器压力；通道数太小或太大都会降低占用</td><td>最终主路径每个程序处理 16 步；短形状每次处理 128 个通道，中等及 \(D=1024\) 长形状为 256 个，\(D=2048\) 长形状为 128 个</td></tr>
         <tr><td>反向重算与局部梯度归约</td><td>保存全部逐点保持系数和写入因子会增加训练显存</td><td>反向重放时重算门值和逐点项，分块先形成 \(\alpha\) 的局部梯度，再归约到 \([D]\)</td></tr>
-        <tr><td>正确性参考与公开库分约定排名</td><td>公开实现支持的重置、初始状态和门结构不同，直接混排会削弱基线或扩大结论</td><td>Google/HF 用作规范参考；Fattori 只进入零初始、无重置对比；纯扫描另表报告</td></tr>
+        <tr><td>规范参考与开源实现分开使用</td><td>RecurrentGemma 和 Fattori 实现支持的重置、初始状态与门结构不同</td><td>RecurrentGemma 用于核对方程和重置语义；Fattori 只比较双方共同支持的零初始状态、无重置路径</td></tr>
       </tbody></table></div></div>
 
       <div class="baseline-balance">
@@ -185,11 +179,9 @@
         <article><h3>RG-LRU 的结构性成本</h3><p>两个动态门都随位置和 \(D\) 个通道变化，门准备、保存和反向天然具有 \([B,L,D]\) 规模。SAMU 只有两个随位置变化的共享控制量，这是长序列和宽状态时逐渐显现优势的根源。</p></article>
       </div>
 
-      <div class="data-block"><h3>公开实现：只在相同测量约定内排名</h3><div class="table-scroll" id="public-table"><p class="loading">正在读取公开实现复现数据……</p></div></div>
+      <div class="data-block"><h3>与 Fattori 开源实现的受限对比</h3><div class="table-scroll" id="public-table"><p class="loading">正在读取公开实现复现数据……</p></div></div>
       <div class="comparison-notes">
-        <p><b>Fattori：</b>直接运行固定提交的开源 <code>hawk-pytorch</code>，不称“官方实现”。其公开内核不支持规范的任意重置、重置位置写入归一化和非零初始状态，所以只进入次要的零初始状态、无重置对比。</p>
-        <p><b>Hippogriff / Lingua：</b>两者调用同一个 <code>proger/accelerated-scan</code> CUDA 扫描内核。完整门结构与规范 RG-LRU 不同，因此只比较预先生成仿射系数后的纯扫描。</p>
-        <p><b>允许的表述：</b>在本次实际测过、使用相同受限完整无重置约定的公开 RG-LRU 路径中，我们的实现延迟最低；纯扫描最快的是 accelerated-scan/Hippogriff，不是我们的通用 K=32 分块扫描。</p>
+        <p><b>测量条件：</b>固定提交的 <code>hawk-pytorch</code> 不支持当前 RG-LRU 路径中的任意重置、重置位置写入归一化和非零初始状态，因此这里只比较零初始状态、无重置的完整前向与反向。</p>
       </div>
     </section>
 
@@ -232,9 +224,9 @@
       </div>
 
       <div class="formula-walkthrough">
-        <article><b>控制量怎样得到</b><p>先把选择输入 \(x_t^{\mathrm{sel}}\) 末尾补一个常数 1，再分别与两个单位长度方向 \(\widehat w_\phi,\widehat w_r\) 做内积。双曲正切得到 \(p_t,r_t\)，随后严格按上式得到共享相位改变量 \(d_t\) 和共享保持改变量 \(c_t\)。GPU 实现只是把内积和这些逐点函数合并计算，没有把它换成任意的“输入到两个标量”全连接层。</p></article>
+        <article><b>控制量怎样得到</b><p>先把选择输入 \(x_t^{\mathrm{sel}}\) 末尾补一个常数 1，再分别与两个单位长度方向 \(\widehat w_\phi,\widehat w_r\) 做内积。双曲正切得到 \(p_t,r_t\)，随后严格按上式得到共享相位改变量 \(d_t\) 和共享保持改变量 \(c_t\)。GPU 实现只合并这些内积和逐点函数，不改变控制器公式。</p></article>
         <article><b>时间步怎样合并</b><p>相邻两步严格使用 \(T_2\circ T_1\)，也就是先执行 \(T_1\)，再执行 \(T_2\)。乘法次序不能交换。对一个包含 \(K\) 个位置的分块 \(c=[s,e]\)，程序按 \(T_e\circ\cdots\circ T_s\) 得到该分块的一个等价变换。</p></article>
-        <article><b>长序列怎样得到每个分块的入口状态</b><p>记第 \(c\) 个分块的等价变换为 \(S_c\)，第 \(g\) 组从 \(g_0\) 到 \(g_1\)。先算组内早于分块 \(c\) 的组合 \(L_c=S_{c-1}\circ\cdots\circ S_{g_0}\) 和整组组合 \(U_g=S_{g_1}\circ\cdots\circ S_{g_0}\)，再算更早各组的组合 \(O_g=U_{g-1}\circ\cdots\circ U_0\)，最后用 \(Q_c=L_c\circ O_g\) 得到分块入口前的完整变换。所谓“以 64 个分块为一组”，只是并行计算这些公式。</p></article>
+        <article><b>长序列怎样得到每个分块的入口状态</b><p>记第 \(c\) 个分块的等价变换为 \(S_c\)，第 \(g\) 组从 \(g_0\) 到 \(g_1\)。先算组内早于分块 \(c\) 的组合 \(L_c=S_{c-1}\circ\cdots\circ S_{g_0}\) 和整组组合 \(U_g=S_{g_1}\circ\cdots\circ S_{g_0}\)，再算更早各组的组合 \(O_g=U_{g-1}\circ\cdots\circ U_0\)，最后用 \(Q_c=L_c\circ O_g\) 得到分块入口前的完整变换。以 64 个分块为一组只是并行计算这些公式。</p></article>
       </div>
 
 
@@ -287,7 +279,7 @@
       </div>
       <figure class="architecture-figure adaptation-figure">
         <div class="figure-head"><div><span class="figure-number">图 2</span><h3>RG-LRU 的 GPU 骨架如何转化为 SAMU 专用优化</h3></div><span class="evidence verified">设计对应关系</span></div>
-        <svg class="arch-svg" viewBox="0 0 1260 470" role="img" aria-labelledby="adapt-title adapt-desc">
+        <svg class="arch-svg" viewBox="0 0 1260 345" role="img" aria-labelledby="adapt-title adapt-desc">
           <title id="adapt-title">RG-LRU 优化骨架与 SAMU 专用优化的对应关系</title>
           <desc id="adapt-desc">左列给出 RG-LRU 已验证的执行公式，中列给出 SAMU 对应的数学性质，右列说明由此采取的 GPU 执行动作。</desc>
           <defs><marker id="arrow-map" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" class="arch-arrow-head"/></marker></defs>
@@ -311,11 +303,6 @@
           <path d="M765 290 H835" class="arch-arrow" marker-end="url(#arrow-map)"/>
           <rect x="840" y="255" width="390" height="70" class="arch-box reverse-box"/><text x="1035" y="282" class="arch-box-title">用 λ 的共轭传播状态梯度，再按模态求和</text><text x="1035" y="304" class="arch-box-sub">每个位置只保留 c 与 d 的两个梯度</text>
 
-          <rect x="30" y="350" width="330" height="70" class="arch-box rg-box"/><text x="195" y="377" class="arch-box-title">单一内核不可能覆盖所有形状</text><text x="195" y="399" class="arch-box-sub">串行与层级路径都保留</text>
-          <path d="M360 385 H430" class="arch-arrow" marker-end="url(#arrow-map)"/>
-          <rect x="435" y="350" width="330" height="70" class="arch-box shared-box"/><text x="600" y="377" class="arch-box-title">复数重放和控制器有固定开销</text><text x="600" y="399" class="arch-box-sub">窄中序列不一定受益</text>
-          <path d="M765 385 H835" class="arch-arrow" marker-end="url(#arrow-map)"/>
-          <rect x="840" y="350" width="390" height="70" class="arch-box output-box"/><text x="1035" y="377" class="arch-box-title">形状调度保留反例，不强制 SAMU 获胜</text><text x="1035" y="399" class="arch-box-sub">L=8192、D=1024 仍由 RG-LRU 更快</text>
         </svg>
         <figcaption><b>图 2</b> 左列是 RG-LRU 已验证的执行规律，中列说明 SAMU 在相同仿射组合公式上增加了什么结构，右列给出实际 GPU 动作。SAMU 仍按 \(T_2\circ T_1\) 合并相邻时间步，但单步系数变为复数；它利用每个位置只有 \(c_t,d_t\) 两个动态量的性质，复用特殊函数结果、随用随算 \(\lambda_{t,m}\)，并在反向按模态求和得到两个控制梯度。图中的箭头表示推导关系，不表示把 RG-LRU 参数转换成 SAMU 参数。</figcaption>
       </figure>
@@ -346,7 +333,7 @@
         <tr><td>B=1，16384≤L&lt;65536</td><td>每程序处理 32 步；每 64 个分块为一组计算 \(Q_c\)</td><td>每程序处理 16 步；每 32 个分块为一组计算 \(Q_c\)</td></tr>
         <tr><td>B=1，L≥65536</td><td>前向入口依次传播；反向每 64 个分块为一组计算 \(Q_c\)；每程序处理 32 步</td><td>每程序处理 16 步；每 32 个分块为一组计算 \(Q_c\)</td></tr>
         <tr><td>含重置、打包序列或未支持形状</td><td>回退到精确规范路径</td><td>精确且支持重置的规范路径</td></tr>
-      </tbody></table></div><p><b>表中的“每 64 个分块为一组”只说明怎样并行计算 \(Q_c=L_c\circ O_g\)。</b>它没有把两个控制量分组，没有把模态分组，也没有改变 SAMU 的模型方程。</p></div>
+      </tbody></table></div><p><b>表中的每 64 个分块为一组只说明怎样并行计算 \(Q_c=L_c\circ O_g\)。</b>它没有把两个控制量分组，没有把模态分组，也没有改变 SAMU 的模型方程。</p></div>
     </section>
 
     <section class="report-section tinted" id="memory" aria-labelledby="memory-title">
@@ -364,46 +351,20 @@
         <div class="data-block"><h3>保存分块等价变换和入口状态的理论临时工作区</h3><div class="table-scroll"><table><thead><tr><th>形状</th><th>SAMU</th><th>RG-LRU</th></tr></thead><tbody><tr><td>B=4，L=2048，D=2048</td><td>6.000 MiB</td><td>12.375 MiB</td></tr><tr><td>B=1，L=8192，D=2560</td><td>7.617 MiB</td><td>15.469 MiB</td></tr><tr><td>B=1，L=32768，D=1024</td><td>12.188 MiB</td><td>24.750 MiB</td></tr><tr><td>B=1，L=32768，D=2048</td><td>24.375 MiB</td><td>49.500 MiB</td></tr></tbody></table></div><p class="table-note">这里只统计每个分块的等价变换和入口状态数组，不含输出、模型激活或 CUDA 分配器保留量。</p></div>
         <div class="data-block"><h3>递归混合器参数量</h3><div class="table-scroll"><table><thead><tr><th>实数状态宽度 D</th><th>SAMU</th><th>RG-LRU</th></tr></thead><tbody><tr><td>1024</td><td>3,076</td><td>134,144</td></tr><tr><td>2048</td><td>6,148</td><td>530,432</td></tr><tr><td>2560</td><td>7,684</td><td>826,880</td></tr></tbody></table></div><p class="table-note">这里只比较被替换的递归混合器参数；完整循环块仍包含双方共有的大矩阵和多层感知机。</p></div>
       </div>
-      <div class="caveat"><b>保留显存不是单向胜利</b><p>单循环块 AdamW 更新中，短形状和中形状的保留显存下降或基本持平；400M 宽度配置的长形状中，SAMU 为 4.658 GiB，RG-LRU 为 4.598 GiB，SAMU 高约 1.3%。因此只能声称已测形状的峰值实际分配显存下降，不能声称所有显存指标都下降。</p></div>
-    </section>
-
-    <section class="report-section" id="correctness" aria-labelledby="correctness-title">
-      <div class="section-heading">
-        <div><p class="part-label">07 · 正确性优先</p><h2 id="correctness-title">未通过门槛的候选不进入默认调度</h2></div>
-        <p>每个新路径依次通过 FP32 顺序数学参考、FP32/BF16 输出与全部相关梯度、内核级计时、完整循环块计时。阈值没有在看到结果后放宽。</p>
-      </div>
-      <div class="gate-row"><div><span>第一级</span><b>数学等价</b><small>长度 1/2/3/7/31/32/33、最后不完整分块、初始状态、重置、打包边界</small></div><div><span>第二级</span><b>数值正确</b><small>输出、输入、写入、初始状态、ν、θ、共享保持与相位梯度</small></div><div><span>第三级</span><b>内核证据</b><small>前向、反向、合计时间、显存、工作区、启动数、两轮样本</small></div><div><span>第四级</span><b>循环块证据</b><small>加入公共投影、卷积、归一化和多层感知机后仍需获益</small></div></div>
-      <div class="correctness-grid">
-        <article class="pass"><span>通过 · L=32768</span><h3>前向与反向都按 \(Q_c=L_c\circ O_g\) 并行求入口</h3><p>每个程序实例处理 32 个位置，并以 64 个分块等价变换为一组计算 \(L_c\)、\(U_g\)、\(O_g\) 和 \(Q_c\)。宽状态 \(L=32768\) 的正确性门槛通过，因此该区域默认采用此实现。</p></article>
-        <article class="fail"><span>拒绝 · L=65536/131072</span><h3>超长序列前向也并行计算 \(Q_c\)</h3><p>BF16 输出相对 \(L_2\) 误差为 \(5.84\times10^{-6}\) 和 \(7.49\times10^{-6}\)，超过预声明的 \(5\times10^{-6}\)；早期约 43% 的延迟优势不进入最终结论。</p></article>
-        <article class="pass"><span>通过 · L=65536/131072</span><h3>串行前向前缀与三级共轭反向组合</h3><p>在 \(D=1024\) 时，输出与串行前向、串行反向实现逐位一致；输入梯度相对 \(L_2\) 误差为 \(4.72\times10^{-6}\) 和 \(7.09\times10^{-6}\)，最大参数梯度相对误差为 \(3.29\times10^{-5}\) 和 \(1.67\times10^{-4}\)。</p></article>
-        <article class="fail"><span>未启用</span><h3>只保存每个分块的 \(G_c,D_c\) 统计量</h3><p>闭式和显存表示本身正确，但它与并行计算 \(Q_c\) 的实现组合后，BF16 输出相对 \(L_2\) 误差为 \(6.38\times10^{-6}\)，超过 \(5\times10^{-6}\)，而且还需要额外重建 \(P\)，因此不作为默认低延迟实现。</p></article>
-      </div>
-      <div class="rejected-list"><h3>其余未选候选</h3><ul><li><b>用 FP32 原子加法直接合并共享控制梯度：</b>数值接近，但不是逐位确定，且没有快过先保留各模态分片局部和、再统一求和的两阶段方法。</li><li><b>先按模态分片计算频谱梯度、再做第二次求和：</b>在 \(D=1024\) 时基本持平，在 \(D=2048\) 时约慢 0.7%，还增加临时工作区。</li><li><b>预先缓存静态频谱量：</b>中等长度 \(D=2048\) 时基本持平，长序列 \(D=1024\) 时约慢 1.7%。</li><li><b>用 BF16 计算 \(\widetilde{x}_t^{\mathsf T}\widehat w_\phi\)、\(\widetilde{x}_t^{\mathsf T}\widehat w_r\) 或累加其导数：</b>方向梯度相对误差约为 \(2\times10^{-3}\)；默认仍用 FP32 完成这两个内积、坐标导数和局部和。</li><li><b>每个程序实例重新执行 64 个复数时间步：</b>Triton 编译反复被终止，没有合法运行时间，因此继续让每个程序实例重新执行 32 个时间步。</li></ul></div>
-    </section>
-
-    <section class="report-section final-claims" id="lesson-6" aria-labelledby="lesson-6-title">
-      <div class="section-heading">
-        <div><p class="part-label">08 · 最终可写结论</p><h2 id="lesson-6-title">当前证据精确支持什么</h2></div>
-        <p>下面的表述同时写清测量对象、硬件、优势区域和未覆盖范围。</p>
-      </div>
-      <blockquote>在单张 NVIDIA H800 PCIe 80 GB、BF16 输入输出和 FP32 递归状态下，SAMU 的共享低维频谱控制形成了按形状变化的 GPU 帕累托优势。对比对象是同样融合门准备、把连续时间步合成精确等价变换、按 \(Q_c=L_c\circ O_g\) 并行求分块入口，并按形状选择实现的 RG-LRU。SAMU 在四个主要完整递归混合器训练形状上将前向+反向延迟降低 24.6%–40.2%，将峰值实际分配显存降低 22.0%–23.5%；在单个完整循环块上将前向+反向延迟降低 5.8%–7.6%，在该循环块的一次 AdamW 更新上降低 3.8%–6.5%。优势来自每个位置复用 \(e^{c_t},\cos d_t,\sin d_t\)，随用随算 \(\lambda_{t,m}\)，用共轭 \(\overline{\lambda}_{t,m}\) 传播反向状态梯度，减少分块入口临时工作区，并把控制梯度中间量缩成每位置两个标量。该优势不是所有形状都成立：\(B=1,L=8192,D=1024\) 时 SAMU 仍慢 12.4%；当前结果也不证明 SAMU 的纯扫描算子最快，不证明多层完整语言模型或推理解码已经获胜，也不提供收敛、任务质量或多 GPU 结论。</blockquote>
-      <div class="do-dont"><div><h3>可以写</h3><ul><li>按形状变化的 GPU 帕累托优势</li><li>主要递归混合器、单循环块与单循环块 AdamW 更新的绝对时间和百分比</li><li>更低峰值实际分配显存、分块入口状态临时工作区和递归混合器参数量</li><li>长序列、宽状态优势区域以及明确的转折形状</li></ul></div><div><h3>不能写</h3><ul><li>“SAMU 在所有形状都比 RG-LRU 快”</li><li>“SAMU 拥有最快的纯扫描”</li><li>“当前已证明 400M/1.3B 完整模型优化器更新更快”</li><li>“L=65536/131072 仍有约 43% 优势”</li><li>“只保存每个分块的两个统计量会普遍降低延迟”</li></ul></div></div>
     </section>
 
     <section class="report-section sources-final" id="sources" aria-labelledby="sources-title">
-      <div class="section-heading"><div><p class="part-label">09 · 代码与原始证据</p><h2 id="sources-title">每个数字都能回到原始数据</h2></div><p>主结果使用 PyTorch 2.1.2 + CUDA 11.8；公开库复现使用 PyTorch 2.4.1 + CUDA 12.4。两类软件环境之间不交叉计算速度比。</p></div>
+      <div class="section-heading"><div><p class="part-label">07 · 代码与原始证据</p><h2 id="sources-title">每个数字都能回到原始数据</h2></div><p>主结果使用 PyTorch 2.1.2 + CUDA 11.8；Fattori 复现使用 PyTorch 2.4.1 + CUDA 12.4。</p></div>
       <div class="source-grid">
         <div><h3>最终报告与实现</h3><ul><li><a href="docs/SAMU_FINAL_H800_REPORT.md">最终 H800 训练后端报告</a></li><li><a href="docs/OUR_RGLRU_GPU_AUDIT.md">RG-LRU 强化审计</a></li><li><a href="benchmark/triton_training_scan.py">SAMU 训练扫描后端</a></li><li><a href="benchmark/triton_fused_rglru_training.py">融合规范 RG-LRU 后端</a></li><li><a href="benchmark/run_selected_dispatch_comparison.py">最终递归混合器计时程序</a></li><li><a href="benchmark/run_long_block_dispatch_comparison.py">完整循环块计时程序</a></li></ul></div>
-        <div><h3>主结果原始数据</h3><ul><li><a href="results/gpu_optimization/selected_dispatch_grouped_k32_h800.json">完整递归混合器</a></li><li><a href="results/gpu_optimization/selected_dispatch_l8192_d1024_serial_k32_h800.json">L=8192、D=1024 反例</a></li><li><a href="results/gpu_optimization/selected_dispatch_very_long_hybrid_h800_v2.json">超长序列严格调度</a></li><li><a href="results/gpu_optimization/block_dispatch_grouped_k32_h800.json">单个完整循环块</a></li><li><a href="results/gpu_optimization/optimizer_step_grouped_k32_h800.json">单循环块 AdamW 更新</a></li><li><a href="results/gpu_optimization/selected_dispatch_launches_grouped_k32_h800.json">CUDA 内核启动数</a></li><li><a href="results/gpu_optimization/backward_components_grouped_k32_h800.json">反向各阶段剖析</a></li></ul></div>
-        <div><h3>正确性与公开库</h3><ul><li><a href="results/gpu_optimization/samu_grouped_k32_long_correctness.json">超长序列前向并行计算 \(Q_c\) 的被拒绝结果</a></li><li><a href="results/gpu_optimization/samu_hybrid_prefix64_65536_d1024_correctness_v2.json">\(L=65536\)：前向入口依次传播、反向并行计算 \(Q_c\)</a></li><li><a href="results/gpu_optimization/samu_hybrid_prefix64_131072_d1024_correctness_v2.json">\(L=131072\)：前向入口依次传播、反向并行计算 \(Q_c\)</a></li><li><a href="results/gpu_optimization/samu_compressed_grouped_k32_correctness.json">只保存 \(G_c,D_c\) 与并行计算 \(Q_c\) 的组合门槛</a></li><li><a href="results/gpu_optimization/public_fattori_h800.json">Fattori 复现</a></li><li><a href="results/gpu_optimization/public_accelerated_scan_h800.json">Hippogriff/Lingua 纯扫描复现</a></li></ul></div>
-        <div><h3>论文与原仓库</h3><ul><li><a href="https://arxiv.org/abs/2402.19427">Griffin 论文</a></li><li><a href="https://github.com/google-deepmind/recurrentgemma/tree/2efa84dac0e68e63547a27a18fa943c98f1c312e">Google DeepMind RecurrentGemma</a></li><li><a href="https://github.com/fattorib/hawk-pytorch/tree/e43239336cf93b6dd79486447150429e472a4b90">Fattori hawk-pytorch</a></li><li><a href="https://github.com/proger/hippogriff/tree/72f6c448b6ce6e4bc742de07390a5914c42163b3">Hippogriff</a></li><li><a href="https://github.com/facebookresearch/lingua/tree/437d680e521873bb5971067148a69587790da853">Lingua</a></li><li><a href="https://github.com/proger/accelerated-scan/tree/866fa4cd4eaf01338ee6d77a4f99fcd4b2f656d1">accelerated-scan</a></li></ul></div>
+        <div><h3>主结果原始数据</h3><ul><li><a href="results/gpu_optimization/selected_dispatch_grouped_k32_h800.json">完整递归混合器</a></li><li><a href="results/gpu_optimization/selected_dispatch_l8192_d1024_serial_k32_h800.json">L=8192、D=1024 反例</a></li><li><a href="results/gpu_optimization/selected_dispatch_very_long_hybrid_h800_v2.json">超长序列实测</a></li><li><a href="results/gpu_optimization/block_dispatch_grouped_k32_h800.json">单个完整循环块</a></li><li><a href="results/gpu_optimization/optimizer_step_grouped_k32_h800.json">单循环块 AdamW 更新</a></li><li><a href="results/gpu_optimization/selected_dispatch_launches_grouped_k32_h800.json">CUDA 内核启动数</a></li><li><a href="results/gpu_optimization/backward_components_grouped_k32_h800.json">反向各阶段剖析</a></li><li><a href="results/gpu_optimization/public_fattori_h800.json">Fattori 复现</a></li></ul></div>
+        <div><h3>论文与原仓库</h3><ul><li><a href="https://arxiv.org/abs/2402.19427">Griffin 论文</a></li><li><a href="https://github.com/google-deepmind/recurrentgemma/tree/2efa84dac0e68e63547a27a18fa943c98f1c312e">Google DeepMind RecurrentGemma</a></li><li><a href="https://github.com/fattorib/hawk-pytorch/tree/e43239336cf93b6dd79486447150429e472a4b90">Fattori hawk-pytorch</a></li></ul></div>
       </div>
       <p class="environment-line" id="environment-line">正在读取 H800 环境记录……</p>
     </section>
   </main>
 
-  <footer><p>SAMU GPU · 正确性优先 · 强基线 · 原始证据优先</p><p>页面结论版本：2026-08-31-4</p></footer>
-  <script type="module" src="src/final-report.js?v=20260831-4"></script>
+  <footer><p>SAMU GPU · NVIDIA H800 训练后端实测</p><p>页面版本：2026-08-31-5</p></footer>
+  <script type="module" src="src/final-report.js?v=20260831-5"></script>
 </body>
 </html>
