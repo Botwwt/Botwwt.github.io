@@ -32,7 +32,6 @@ body { font-size: 16px; }
 .verdict-row strong { font: 500 clamp(1.25rem, 2vw, 1.75rem)/1.18 var(--mono); }
 .verdict-row small { color: var(--muted); font-size: .76rem; line-height: 1.5; }
 .verdict-row.win strong { color: var(--positive); }
-.verdict-row.loss strong { color: var(--negative); }
 
 .report-section { scroll-margin-top: 88px; padding: clamp(5rem, 8vw, 8rem) clamp(1.25rem, 5vw, 5rem); }
 .report-section.tinted { background: var(--paper-2); }
@@ -106,7 +105,6 @@ th, td { padding: .66rem .7rem .66rem 0; border-bottom: 1px solid var(--line); t
 th { color: var(--muted); font: 500 .67rem/1.35 var(--mono); white-space: nowrap; }
 td:not(:first-child) { font-variant-numeric: tabular-nums; }
 td.best { color: var(--positive); font-weight: 600; }
-td.loss { color: var(--negative); font-weight: 600; }
 .loading { color: var(--muted); font-size: .8rem; }
 .two-column-data { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(2rem, 5vw, 5rem); max-width: 1360px; margin: 0 auto; }
 .scope-split { display: grid; grid-template-columns: 1fr; gap: 3rem; max-width: 1360px; margin: 3.5rem auto 0; }

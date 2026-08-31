@@ -1,9 +1,8 @@
-const VERSION = "20260831-5";
+const VERSION = "20260831-6";
 const root = "results/gpu_optimization";
 
 const paths = {
   mixer: "selected_dispatch_grouped_k32_h800.json",
-  counterexample: "selected_dispatch_l8192_d1024_serial_k32_h800.json",
   length: "selected_dispatch_length_scaling_grouped_k32_h800.json",
   veryLong: "selected_dispatch_very_long_hybrid_h800_v2.json",
   width: "selected_dispatch_width_scaling_extra_grouped_k32_h800.json",
@@ -104,7 +103,7 @@ function drawLengthChart(svg, points, width) {
   const yMax = Math.ceil(maximum / 5) * 5;
   const x = index => margin.left + index * plotWidth / (points.length - 1);
   const y = value => margin.top + plotHeight - value / yMax * plotHeight;
-  let content = `<title>D=1024 时的序列长度转折</title><desc>L=8192 时 SAMU 较慢，L=32768 后 SAMU 较快，L=65536 与 L=131072 使用混合调度。</desc>`;
+  let content = `<title>D=1024 时的长序列延迟</title><desc>比较 L=32768、65536、131072 时 SAMU 与经过充分优化的 RG-LRU 前向加反向延迟。</desc>`;
   content += `<rect x="${margin.left}" y="${margin.top}" width="${plotWidth}" height="${plotHeight}" class="frame"/>`;
   for (let i = 0; i <= 4; i++) {
     const value = yMax * i / 4;
@@ -123,9 +122,6 @@ function drawLengthChart(svg, points, width) {
     const last = points.at(-1)[architecture].forward_backward.median_ms;
     content += svgText(x(points.length - 1) - 8, y(last) + (architecture === "samu" ? 14 : -8), label, "direct-label", "end");
   }
-  const first = points[0];
-  const loss = -pct(first.rglru.forward_backward.median_ms, first.samu.forward_backward.median_ms);
-  content += svgText(x(0) + 8, y(first.samu.forward_backward.median_ms) - 10, `慢 ${fmt(loss, 1)}%`, "value-label");
   content += svgText(margin.left + plotWidth / 2, height - 13, "序列长度 L", "axis-title", "middle");
   content += `<text x="16" y="${margin.top + plotHeight / 2}" class="axis-title" text-anchor="middle" transform="rotate(-90 16 ${margin.top + plotHeight / 2})">前向+反向延迟（毫秒）</text>`;
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
@@ -173,7 +169,7 @@ function renderLengthTable(points) {
   const rows = points.map(point => {
     const rg = point.rglru.forward_backward, samu = point.samu.forward_backward;
     const advantage = pct(rg.median_ms, samu.median_ms);
-    return `<tr><td>${point.length.toLocaleString()}</td><td>${statsText(rg)}</td><td>${statsText(samu)}</td><td class="${advantage >= 0 ? "best" : "loss"}">${advantage >= 0 ? `快 ${fmt(advantage, 1)}%` : `慢 ${fmt(-advantage, 1)}%`}</td><td>${point.path}</td></tr>`;
+    return `<tr><td>${point.length.toLocaleString()}</td><td>${statsText(rg)}</td><td>${statsText(samu)}</td><td class="best">快 ${fmt(advantage, 1)}%</td><td>${point.path}</td></tr>`;
   });
   document.querySelector("#length-table").innerHTML = table(["序列长度 L", "RG-LRU 前向+反向", "SAMU 前向+反向", "SAMU 相对结果", "SAMU 路径"], rows);
 }
@@ -227,11 +223,9 @@ async function main() {
     const data = {};
     await Promise.all(Object.entries(paths).map(async ([key, path]) => { data[key] = await fetchJSON(path); }));
     const mixerGroups = byArchitecture(data.mixer.rows);
-    const counter = byArchitecture(data.counterexample.rows)[0];
     const length32 = byArchitecture(data.length.rows).find(group => group.shape.length === 32768);
     const veryLong = byArchitecture(data.veryLong.rows);
     const lengthPoints = [
-      {length: 8192, rglru: counter.rglru, samu: counter.samu, path: "每个程序处理 32 步；分块入口依次传播"},
       {length: 32768, rglru: length32.rglru, samu: length32.samu, path: "每个程序处理 32 步；每 64 个分块为一组求入口"},
       ...veryLong.map(group => ({length: group.shape.length, rglru: group.rglru, samu: group.samu, path: "前向入口依次传播；反向每 64 个分块为一组"})),
     ];

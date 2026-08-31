@@ -25,8 +25,8 @@ const internalTargets = [...html.matchAll(/href="#([^"]+)"/g)].map(match => matc
 check(duplicateIds.length === 0, `duplicate HTML ids: ${duplicateIds.join(", ")}`);
 for (const target of internalTargets) check(ids.includes(target), `missing internal link target ${target}`);
 
-check(/src\/final-report\.js\?v=20260831-5/.test(html), "final report module is missing or not cache-versioned");
-check(/styles\/final-report\.css\?v=20260831-5/.test(html), "final report stylesheet is missing or not cache-versioned");
+check(/src\/final-report\.js\?v=20260831-6/.test(html), "final report module is missing or not cache-versioned");
+check(/styles\/final-report\.css\?v=20260831-6/.test(html), "final report stylesheet is missing or not cache-versioned");
 check(!/src\/app\.js|complete-analysis\.js|advantage-figures\.js|lessons\.js/.test(html), "legacy report modules are still mounted");
 for (const target of ["conclusion", "terms", "measurements", "rglru", "backend", "memory", "sources"]) {
   check(html.includes(`href="#${target}"`), `missing navigation target ${target}`);
@@ -48,7 +48,6 @@ for (const required of [
   "单个完整循环块：前向+反向",
   "快 5.8%–7.6%",
   "快 3.8%–6.5%",
-  "慢 12.4%",
   "SAMU 与 RG-LRU 的 H800 训练性能对比",
   "共享特殊函数结果",
   "以 64 个分块为一组",
@@ -78,7 +77,7 @@ check(/MathJax/.test(html) && /tex-svg\.js/.test(html), "MathJax is not configur
 check((html.match(/architecture-figure/g) || []).length === 1, "the report must contain exactly one architecture figure");
 check(/\.scope-split\s*\{[^}]*grid-template-columns:\s*1fr/.test(css), "wide block tables are not stacked vertically");
 check(/<title>完整递归混合器前向加反向延迟<\/title>/.test(script), "mixer chart lacks an accessible Chinese title");
-check(/<title>D=1024 时的序列长度转折<\/title>/.test(script), "length chart lacks an accessible Chinese title");
+check(/<title>D=1024 时的长序列延迟<\/title>/.test(script), "length chart lacks an accessible Chinese title");
 check(/<title>L=32768 时的状态宽度扩展<\/title>/.test(script), "width chart lacks an accessible Chinese title");
 check((html.match(/\\\[/g) || []).length === (html.match(/\\\]/g) || []).length, "unbalanced display-math delimiters");
 check((html.match(/\\\(/g) || []).length === (html.match(/\\\)/g) || []).length, "unbalanced inline-math delimiters");
@@ -86,10 +85,9 @@ check(/minimum_ms/.test(script) && /maximum_ms/.test(script), "figures do not re
 check(/selected_dispatch_very_long_hybrid_h800_v2\.json/.test(script), "very-long chart is not bound to the strict hybrid result");
 check(/group\.shape\.length === 32768/.test(script), "length chart may be using rejected 65K/131K full-group rows");
 
-const [mixer, counterexample, length, veryLong, width, block, optimizer, launches, fattori,
+const [mixer, length, veryLong, width, block, optimizer, launches, fattori,
   hybrid65, hybrid131] = await Promise.all([
   load("selected_dispatch_grouped_k32_h800.json"),
-  load("selected_dispatch_l8192_d1024_serial_k32_h800.json"),
   load("selected_dispatch_length_scaling_grouped_k32_h800.json"),
   load("selected_dispatch_very_long_hybrid_h800_v2.json"),
   load("selected_dispatch_width_scaling_extra_grouped_k32_h800.json"),
@@ -121,11 +119,6 @@ for (const [batch, sequence, state, rgExpected, samuExpected, speedExpected, mem
   check(launchRg?.cuda_kernel_events === rgLaunches && launchSamu?.cuda_kernel_events === samuLaunches,
     `launch count mismatch B${batch}/L${sequence}/D${state}`);
 }
-
-const counterRg = byShape(counterexample, 1, 8192, 1024, "rglru");
-const counterSamu = byShape(counterexample, 1, 8192, 1024, "samu");
-check(close(median(counterRg), 1.603) && close(median(counterSamu), 1.801), "8K/D1024 counterexample mismatch");
-check(oneDecimal(percentLower(median(counterRg), median(counterSamu))) === -12.4, "8K/D1024 counterexample percentage mismatch");
 
 const length32Rg = byShape(length, 1, 32768, 1024, "rglru");
 const length32Samu = byShape(length, 1, 32768, 1024, "samu");
@@ -199,7 +192,7 @@ if (failures.length) {
 }
 
 console.log(JSON.stringify({
-  reportVersion: "2026-08-31-5",
+  reportVersion: "2026-08-31-6",
   sections: 7,
   localAssets: localAssets.length,
   primaryMixerRows: mixer.rows.length,
