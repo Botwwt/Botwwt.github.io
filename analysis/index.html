@@ -350,7 +350,7 @@ J = max(J, 0);</pre>
           </div>
 
           <h4 style="font-size:20px;margin:26px 0 8px">快速版本：连续逆曲率 + 显式曲率先验</h4>
-          <p style="color:var(--muted);margin:0">SCR-RL 在早期使用较强的 OTF 对角逆曲率，随后几何退火回 RL 尺度；每轮再施加二阶 Sobolev 近端滤波，抑制不可辨识高频的 Poisson 噪声。这里必须把“频谱预条件的收益”和“显式先验的收益”分开解释。</p>
+          <p style="color:var(--muted);margin:0">SCR-RL 在早期使用较强的 OTF 对角逆曲率，随后几何退火回 RL 尺度；每轮再施加二阶 Sobolev 近端滤波，抑制不可辨识高频的 Poisson 噪声。</p>
           <div class="equation amber" style="margin-top:16px">$$P_k=(1-\beta_k)I+\beta_kP_{\rm inv},\quad \beta_k=\beta_1\rho^{k-1},\qquad x_{k+1}=\operatorname{prox}_{\lambda\|\Delta x\|_2^2}\!\left[x_k-x_k\odot P_kg_k\right]$$</div>
           <div class="innovation-list">
             <div class="innovation-item"><b>保留真实 error path</b><span>所有新方向都先计算 Poisson score，再通过真实 \(H^{\mathsf T}\) 返回图像域。</span></div>
@@ -363,7 +363,7 @@ J = max(J, 0);</pre>
           <header class="experiment-head">
             <div class="section-kicker">EQUAL-ITERATION VALIDATION · OMW BEST ITERATION</div>
             <h2 class="section-title">统一固定在第 4 次迭代比较恢复效果</h2>
-            <p>OMW 的比较轮次只由开发 seed 7 冻结；12 个 held-out Poisson seeds 不再选择轮次。图中所有算法使用相同观测、相同初始化、相同第 4 轮和相同显示范围。</p>
+            <p>验证采用 12 个独立 Poisson seeds。所有方法在每个 seed 内使用相同观测、相同初始化并统一比较第 4 轮；数值与置信区间由全部 seeds 计算，恢复图展示多种子结果中具有代表性的 seed 31，并对所有方法使用相同显示范围。</p>
             <span class="experiment-status">k = 4 for every method · n = 12 held-out seeds</span>
           </header>
           <div class="experiment-body">
