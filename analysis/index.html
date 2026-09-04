@@ -43,7 +43,7 @@
     .summary{display:grid;grid-template-columns:1.2fr .8fr;overflow:hidden}.summary-main{padding:44px}.summary-side{padding:38px;background:var(--green);color:white;display:grid;align-content:center;gap:22px}
     .metric{display:grid;grid-template-columns:90px 1fr;gap:12px;align-items:center}.metric b{font:800 34px/1 Georgia,serif;color:#ffe0a9}.metric span{font-size:13px;line-height:1.45;color:#dceee7}
     .big-claim{font-family:"STSong","Songti SC",serif;font-size:28px;line-height:1.45;margin:0}.big-claim mark{background:linear-gradient(transparent 62%,#f5d09c 0);color:inherit}
-    .equation{font-family:Cambria Math,"Times New Roman",serif;background:#f3f7f4;border:1px solid #cfe0d8;border-radius:14px;padding:16px 20px;text-align:center;font-size:clamp(18px,2.5vw,25px);overflow:auto;color:#18392f}.equation.amber{background:#fff7ea;border-color:#efd6ad;color:#5c3a12}.equation small{font-family:inherit;font-size:14px;color:var(--muted)}
+    .equation{font-family:Cambria Math,"Times New Roman",serif;background:#f3f7f4;border:1px solid #cfe0d8;border-radius:14px;padding:16px 20px;text-align:center;font-size:clamp(18px,2.5vw,25px);overflow:auto;color:#18392f}.equation.amber{background:#fff7ea;border-color:#efd6ad;color:#5c3a12}.equation small{font-family:inherit;font-size:14px;color:var(--muted)}.equation mjx-container[display="true"]{margin:.35em 0!important;max-width:100%;overflow-x:auto;overflow-y:hidden;padding:3px 0}
     .callout{padding:22px 24px;border-radius:18px;background:var(--amber2);border-left:5px solid var(--amber);margin:24px 0}.callout strong{color:#7e490e}.callout.green{background:var(--mint);border-color:var(--green)}
     .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
     .concept{padding:26px}.concept .num{font:700 15px Georgia,serif;color:var(--amber);letter-spacing:.1em}.concept h3{font-size:21px;margin:7px 0 7px}.concept p{margin:0;color:var(--muted);font-size:15px}
@@ -56,6 +56,7 @@
     .sim{padding:30px}.sim-head{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:22px}.sim h3{margin:0}.sim-value{font:800 28px Georgia,serif;color:var(--green)}input[type=range]{width:100%;accent-color:var(--green)}.sim-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:20px}.sim-out{padding:17px;border-radius:12px;background:#f1f4f1}.sim-out small{display:block;color:var(--muted)}.sim-out b{font-size:20px}.bar{height:13px;background:#e4e3dc;border-radius:99px;overflow:hidden;margin:10px 0}.bar i{display:block;height:100%;width:50%;background:var(--green);border-radius:99px;transition:.25s}.bar.amber i{background:var(--amber)}
     .chapter-light{background:#ebe5da;position:relative}.chapter-light:after{content:"02";position:absolute;right:5%;top:-90px;font:900 340px/1 Georgia,serif;color:rgba(13,107,87,.045);pointer-events:none}
     .rl-loop{display:grid;grid-template-columns:1fr 55px 1fr 55px 1fr;align-items:stretch;gap:10px;padding:28px}.rl-node{padding:22px 16px;border-radius:14px;background:#eff5f1;border:1px solid #ccded5;text-align:center;display:grid;place-items:center}.rl-node strong{display:block;color:var(--green);font-size:17px}.rl-node small{color:var(--muted)}.rl-arrow{display:grid;place-items:center;font-size:27px;color:var(--amber);font-weight:900}.feedback{grid-column:1/6;border:2px dashed #d7a355;border-top:0;min-height:64px;height:auto;border-radius:0 0 18px 18px;display:flex;align-items:center;justify-content:center;padding:12px 20px;color:#9b5d13;font-size:14px;line-height:1.6;font-weight:800;text-align:center}
+    .math-analysis{margin-top:30px;padding:34px;scroll-margin-top:96px}.math-analysis h3{font-family:"STSong","Songti SC",serif;font-size:30px;margin:4px 0 8px}.math-analysis>.intro{color:var(--muted);margin:0 0 22px}.derive-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.derive-block{padding:22px;border:1px solid var(--line);border-radius:16px;background:#fbfaf6;min-width:0}.derive-block h4{margin:0 0 8px;font-size:18px}.derive-block p{font-size:14px;color:var(--muted);margin:8px 0}.derive-block .equation{font-size:17px;padding:12px;margin-top:12px}.innovation-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.innovation-item{padding:17px;border-radius:13px;background:var(--mint);border:1px solid #c7dfd4}.innovation-item b{display:block;color:var(--green);margin-bottom:4px}.innovation-item span{font-size:13px;color:#53655e}
     .steps{counter-reset:step;display:grid;gap:12px}.step{counter-increment:step;display:grid;grid-template-columns:54px 1fr;gap:16px;align-items:start;padding:18px 20px;background:var(--card);border:1px solid var(--line);border-radius:15px}.step:before{content:counter(step);width:42px;height:42px;border-radius:50%;background:var(--green);color:white;display:grid;place-items:center;font:800 18px Georgia,serif}.step h4{margin:0 0 3px}.step p{margin:0;color:var(--muted);font-size:14px}
     .freq-card{padding:30px}.freq-top{display:flex;justify-content:space-between;gap:16px;align-items:end}.alpha-readout{font:800 24px Georgia,serif;color:var(--green)}#freqCanvas{width:100%;height:260px;display:block;margin-top:16px;background:#f7f6f1;border-radius:14px;border:1px solid #dedbd2}
     .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}.legend i{display:inline-block;width:22px;height:3px;vertical-align:middle;margin-right:6px}.legend .l1{background:var(--green)}.legend .l2{background:var(--amber)}.legend .l3{background:var(--red)}
@@ -65,7 +66,7 @@
     .source-list{padding:30px;min-width:0}.source-list ol{margin:0;padding-left:22px}.source-list li{margin:10px 0;color:var(--muted);min-width:0;overflow-wrap:anywhere}.source-list b{color:var(--ink)}
     footer{padding:40px 0 70px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
     .print-note{font-size:12px;color:var(--muted);margin-top:14px}
-    @media(max-width:850px){.hero-grid,.summary,.two-col,.three-col,.layer-grid{grid-template-columns:1fr}.hero{min-height:auto}.hero-art{height:400px;max-width:100%;overflow:hidden}.orbit{width:330px;height:330px;left:-20px}.orb.a{width:210px;height:210px;left:0}.orb.b{width:175px;height:175px;right:0}.orb.c{right:10px}.hero-note{left:95px;bottom:38px;width:210px}.pipeline{justify-content:start}.workers{grid-template-columns:repeat(2,1fr)}nav{justify-content:flex-start;overflow:auto}.rl-loop{grid-template-columns:1fr}.rl-arrow{transform:rotate(90deg)}.feedback{grid-column:auto;height:auto;border:2px dashed #d7a355;padding:10px}.mask-visual{grid-template-columns:1fr}.mask-arrow{transform:rotate(90deg)}.sim-grid{grid-template-columns:1fr}.flow-row{grid-template-columns:1fr}.flow-row>.arrow{transform:rotate(90deg);text-align:center}}
+    @media(max-width:850px){.hero-grid,.summary,.two-col,.three-col,.layer-grid,.derive-grid,.innovation-list{grid-template-columns:1fr}.hero{min-height:auto}.hero-art{height:400px;max-width:100%;overflow:hidden}.orbit{width:330px;height:330px;left:-20px}.orb.a{width:210px;height:210px;left:0}.orb.b{width:175px;height:175px;right:0}.orb.c{right:10px}.hero-note{left:95px;bottom:38px;width:210px}.pipeline{justify-content:start}.workers{grid-template-columns:repeat(2,1fr)}nav{justify-content:flex-start;overflow:auto}.rl-loop{grid-template-columns:1fr}.rl-arrow{transform:rotate(90deg)}.feedback{grid-column:auto;height:auto;border:2px dashed #d7a355;padding:10px}.mask-visual{grid-template-columns:1fr}.mask-arrow{transform:rotate(90deg)}.sim-grid{grid-template-columns:1fr}.flow-row{grid-template-columns:1fr}.flow-row>.arrow{transform:rotate(90deg);text-align:center}.math-analysis{padding:24px 18px}}
     @media print{#progress,nav,.print-note{display:none}body{background:white}.hero{min-height:auto;padding:30px 0}.hero-art{display:none}section{padding:35px 0}.paper-card,.verdict{box-shadow:none;break-inside:avoid}.chapter-band{background:white;color:var(--ink)}.chapter-band .section-intro{color:var(--muted)}.layer{background:white;color:var(--ink);border-color:var(--line)}.layer h3{color:var(--ink)}.layer p{color:var(--muted)}.pipeline{background:white;border-color:var(--line)}.stage{background:white;border-color:var(--line)}.stage b{color:var(--ink)}.stage small{color:var(--muted)}}
   </style>
 </head>
@@ -92,7 +93,7 @@
   </header>
 
   <nav aria-label="章节导航">
-    <a href="#overview">总览</a><a href="#parallel">创新一：并行</a><a href="#io">I/O 实现</a><a href="#rl">创新二：反向投影</a><a href="#omw">OMW 构造</a>
+    <a href="#overview">总览</a><a href="#parallel">创新一：并行</a><a href="#io">I/O 实现</a><a href="#rl">创新二：反向投影</a><a href="#analysis">分析与创新点</a><a href="#omw">OMW 构造</a>
   </nav>
 
   <main>
@@ -221,6 +222,56 @@
           <div class="feedback">④ 对误差比值进行反向投影，并将校正结果乘到当前估计上</div>
         </div>
         <div class="equation" style="margin-top:22px">$$x^{(k+1)}=x^{(k)}\odot\left[b\ast\frac{g}{\max\!\left(f\ast x^{(k)},\varepsilon\right)}\right]$$</div>
+
+        <div id="analysis" class="paper-card math-analysis">
+          <div class="section-kicker">MATHEMATICAL ANALYSIS</div>
+          <h3>从泊松似然到 RL 更新</h3>
+          <p class="intro">光子计数通常用泊松分布建模。下面整理手写推导中的主要步骤。本节用 \(H\) 表示由 PSF 决定的空间域成像算子，并令 \(\hat y=Hx\)。所有除法和乘法均按元素进行。</p>
+
+          <div class="derive-grid">
+            <article class="derive-block">
+              <h4>1. 泊松观测模型与负对数似然</h4>
+              <p>对第 \(i\) 个像素或体素，观测值 \(y_i\) 服从均值为 \(\hat y_i\) 的泊松分布：</p>
+              <div class="equation amber">$$p(y_i\mid\hat y_i)=\frac{e^{-\hat y_i}\hat y_i^{\,y_i}}{y_i!}$$</div>
+              <p>取负对数并去掉与 \(x\) 无关的常数项，可得：</p>
+              <div class="equation">$$\mathcal L_P(x)=\sum_i\left[(Hx)_i-y_i\ln (Hx)_i\right]$$</div>
+            </article>
+
+            <article class="derive-block">
+              <h4>2. 误差如何传回样本空间</h4>
+              <p>先对预测值求导，再通过成像算子的转置映射回 \(x\)：</p>
+              <div class="equation amber">$$\frac{\partial\mathcal L_P}{\partial\hat y_i}=1-\frac{y_i}{\hat y_i}$$</div>
+              <div class="equation">$$\nabla_x\mathcal L_P=H^{\mathsf T}\!\left(\mathbf 1-\frac{y}{Hx}\right)$$</div>
+              <p>式中的 \(H^{\mathsf T}\) 就承担反向投影的作用：把观测域中的比值误差分配回可能产生这些光子的样本位置。</p>
+            </article>
+
+            <article class="derive-block">
+              <h4>3. 能量守恒条件下的 RL 乘法更新</h4>
+              <p>归一化 PSF 满足 \(H^{\mathsf T}\mathbf 1=\mathbf 1\)。采用以当前估计 \(x_k\) 为尺度的梯度步，可化为标准 RL 更新：</p>
+              <div class="equation">$$\begin{aligned}x_{k+1}&=x_k-x_k\odot\nabla_x\mathcal L_P(x_k)\\&=x_k\odot H^{\mathsf T}\!\left(\frac{y}{Hx_k}\right).\end{aligned}$$</div>
+              <p>这说明比值 \(y/(Hx_k)\) 并非经验构造，而是直接来自泊松负对数似然对预测强度的导数。</p>
+            </article>
+
+            <article class="derive-block">
+              <h4>4. Hessian 与 Newton 形式</h4>
+              <p>该目标函数的二阶导数为：</p>
+              <div class="equation amber">$$\nabla_x^2\mathcal L_P=H^{\mathsf T}\operatorname{Diag}\!\left(\frac{y}{(Hx)^2}\right)H$$</div>
+              <p>完整 Newton 更新需要求解包含 Hessian 的线性系统：</p>
+              <div class="equation">$$x_{k+1}=x_k-\left[\nabla_x^2\mathcal L_P(x_k)\right]^{-1}\nabla_x\mathcal L_P(x_k)$$</div>
+              <p>三维大数据上显式构造和求逆 Hessian 代价很高，因此 RL 使用结构简单、保持非负性的乘法迭代。</p>
+            </article>
+          </div>
+
+          <h4 style="font-size:20px;margin:26px 0 8px">与 PetaKit5D 创新点的联系</h4>
+          <p style="color:var(--muted);margin:0">OMW 没有直接计算 Newton 步，也不等同于 Hessian 的逆。它是在 RL 框架中重新设计反向投影器，使其具有受正则化约束的逆滤波特性：</p>
+          <div class="equation amber" style="margin-top:16px">$$\widehat B_{\mathrm{OMW}}=W\odot\frac{\widehat H^{*}}{|\widehat H|^2+\alpha}$$</div>
+          <div class="innovation-list">
+            <div class="innovation-item"><b>更有效的反向校正</b><span>Wiener 项比传统 matched projector 更接近稳定的逆算子，因此较少迭代即可纠正模糊。</span></div>
+            <div class="innovation-item"><b>频率范围由真实 PSF 决定</b><span>窗函数 \(W\) 跟随实际 OTF support，而不是预设椭球，减少高分辨率信息被截断。</span></div>
+            <div class="innovation-item"><b>避免不稳定的直接求逆</b><span>参数 \(\alpha\) 抑制 \(|\widehat H|\) 很小时的噪声放大，支持域外频率由 \(W\) 去除。</span></div>
+          </div>
+        </div>
+
         <div class="three-col" style="margin-top:24px">
           <article class="paper-card concept"><div class="num">RATIO = 1</div><h3>预测正确</h3><p>观测与预测一致，该位置的校正因子接近 1，当前估计基本不变。</p></article>
           <article class="paper-card concept"><div class="num">RATIO &gt; 1</div><h3>预测偏暗</h3><p>观测包含更多信号，误差反投影后会增加可能贡献到这里的样本位置。</p></article>
@@ -321,7 +372,7 @@ J = max(J, 0);</pre>
       const max=document.documentElement.scrollHeight-innerHeight;
       progress.style.width=(max?scrollY/max*100:0)+'%';
       let active='overview';
-      document.querySelectorAll('main section[id]').forEach(s=>{if(s.getBoundingClientRect().top<160)active=s.id});
+      document.querySelectorAll('main section[id], #analysis').forEach(s=>{if(s.getBoundingClientRect().top<160)active=s.id});
       navLinks.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+active));
     },{passive:true});
 
