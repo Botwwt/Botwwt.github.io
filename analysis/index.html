@@ -94,49 +94,60 @@
   </header>
 
   <nav aria-label="章节导航">
-    <a href="#overview">总览</a><a href="#parallel">创新一：并行</a><a href="#io">I/O 实现</a><a href="#rl">创新二：反向投影</a><a href="#analysis">分析与创新点</a><a href="#omw">OMW 构造</a>
+    <a href="#overview">总览</a><a href="#parallel">创新一：并行</a><a href="#io">I/O 实现</a><a href="#rl">创新二：反向投影</a><a href="#analysis">我们的创新与验证</a><a href="#omw">OMW 构造</a>
   </nav>
 
   <main>
-    <section id="spectral-result">
+    <section id="analysis">
       <div class="wrap">
         <article class="paper-card experiment-card">
           <header class="experiment-head">
-            <div class="section-kicker">LATEST EXPERIMENT · 2026-09-04</div>
-            <h2 class="section-title">对称频谱预条件梯度：首轮实验结果</h2>
-            <p>不替换真实反向传播，也不求解 Newton/Hessian 方程。方法先计算精确 Poisson 梯度，再通过对称正定的、OTF-support-aware 频谱尺度改变优化几何。在相同 forward PSF、Poisson 观测、初始化与非负约束下，与 PetaKit5D OMW 和 matched RL 直接比较。</p>
-            <span class="experiment-status">单随机种子 · 3D 合成数据 · 快速原型</span>
+            <div class="section-kicker">HELD-OUT VALIDATION · 2026-09-04</div>
+            <h2 class="section-title">从精确 Poisson 反传到 Fisher 几何白化</h2>
+            <p>保留由链式法则严格决定的 \(H^{\mathsf T}\)，在正值图像的 log-intensity 层继续反传，再用 OTF 支持域内的分数 Fisher 度量改善病态优化几何。结论来自 12 个未参与方法设计的独立 Poisson seeds，而不是单次有利噪声实现。</p>
+            <span class="experiment-status">12 held-out seeds · 3D Poisson data · frozen stopping rule</span>
           </header>
           <div class="experiment-body">
-            <div class="equation">$$g_k=H^{\mathsf T}\left(\mathbf 1-\frac{y}{Hx_k}\right),\qquad d_k=-S_k\,\mathcal F^{-1}\!\left[P(\omega)\,\mathcal F(S_kg_k)\right]$$</div>
-            <div class="equation amber" style="margin-top:12px">$$S_k=\operatorname{Diag}\!\left(x_k^{\gamma/2}\right),\qquad P(\omega)=0.01+\frac{W(\omega)}{\left(|H(\omega)|^2+\alpha\right)^q}$$</div>
+            <div class="equation">$$\delta_k=\mathbf 1-\frac{y}{Hx_k},\qquad g_{x,k}=H^{\mathsf T}\delta_k$$</div>
+            <div class="equation" style="margin-top:12px">$$x=\bar y\,e^z,\qquad g_{z,k}=\frac{x_k}{\bar y}\odot g_{x,k}$$</div>
+            <div class="equation amber" style="margin-top:12px">$$P_{\beta}(\omega)=W(\omega)\bigl(|H(\omega)|^2+\lambda\bigr)^{-\beta},\qquad \beta\in\left\{0,\tfrac14,\tfrac12,1\right\}$$</div>
 
             <div class="result-grid">
-              <div class="result-metric winner"><small>Our method · best NRMSE</small><b>0.4874</b></div>
-              <div class="result-metric"><small>PetaKit5D OMW · best NRMSE</small><b>0.6045</b></div>
-              <div class="result-metric"><small>Matched RL · 12 iterations</small><b>0.5599</b></div>
-              <div class="result-metric"><small>Relative gain over OMW</small><b>19.4%</b></div>
+              <div class="result-metric winner"><small>SCR-RL · NRMSE ± 95% CI</small><b>0.4400 ± 0.0054</b></div>
+              <div class="result-metric"><small>半白化 · NRMSE ± 95% CI</small><b>0.4482 ± 0.0040</b></div>
+              <div class="result-metric"><small>Matched RL · NRMSE ± 95% CI</small><b>0.5186 ± 0.0036</b></div>
+              <div class="result-metric"><small>PetaKit5D OMW · NRMSE ± 95% CI</small><b>0.6195 ± 0.0086</b></div>
             </div>
 
             <div style="overflow:auto">
               <table class="compare-table">
-                <thead><tr><th>方法</th><th>最佳轮次</th><th>NRMSE ↓</th><th>PSNR ↑</th><th>说明</th></tr></thead>
+                <thead><tr><th>方法</th><th>冻结轮次</th><th>Held-out NRMSE ↓</th><th>PSNR ↑</th><th>解释</th></tr></thead>
                 <tbody>
-                  <tr><td><b>对称频谱梯度</b></td><td>27</td><td class="yes">0.4874</td><td class="yes">35.70 dB</td><td>精确梯度 + OTF mask + 对称空间/频率尺度</td></tr>
-                  <tr><td><b>OMW</b></td><td>4</td><td>0.6045</td><td>33.83 dB</td><td>仓库原始 OMW projector 与更新式</td></tr>
-                  <tr><td><b>Matched RL</b></td><td>12</td><td>0.5599</td><td>34.49 dB</td><td>当前对比保存的 12 轮轨迹</td></tr>
+                  <tr><td><b>SCR-RL</b></td><td>12</td><td class="yes">0.4400 ± 0.0054</td><td class="yes">36.589 dB</td><td>精确反传 + 连续逆曲率 + 显式曲率先验</td></tr>
+                  <tr><td><b>Full Fisher whitening</b></td><td>99</td><td>0.4480 ± 0.0041</td><td>36.432 dB</td><td>\(F^{-1/2}\)，完全白化反传梯度噪声</td></tr>
+                  <tr><td><b>Geometric half whitening</b></td><td>131</td><td>0.4482 ± 0.0040</td><td>36.428 dB</td><td>\(F^{-1/4}\)，单位度量与全白化的 SPD 中点</td></tr>
+                  <tr><td><b>Matched RL</b></td><td>38</td><td>0.5186 ± 0.0036</td><td>35.161 dB</td><td>精确伴随反传的 scaled gradient</td></tr>
+                  <tr><td><b>Log-SGD</b></td><td>16</td><td>0.5651 ± 0.0209</td><td>34.427 dB</td><td>仅加入 log-intensity 参数化，不做频谱白化</td></tr>
+                  <tr><td><b>PetaKit5D OMW</b></td><td>4</td><td>0.6195 ± 0.0086</td><td>33.618 dB</td><td>仓库原始 unmatched inverse-like projector</td></tr>
+                  <tr><td><b>Damped Newton</b></td><td>3</td><td>0.6920 ± 0.0025</td><td>32.655 dB</td><td>observed Hessian、PCG 与投影线搜索</td></tr>
                 </tbody>
               </table>
             </div>
 
             <figure class="result-figure">
-              <img src="spectral-gradient-result.png" alt="对称频谱预条件梯度与 OMW、RL 的三维 Poisson 反卷积结果和逐轮曲线">
+              <img src="nature-multiseed-validation.png" alt="七种 Poisson 反卷积方法在十二个独立验证种子上的重建、收敛曲线、置信区间、频谱误差和曲率增益">
+              <figcaption class="result-note">图中阴影为 12 个 held-out seeds 的 95% CI；散点保留每个 seed，不用柱状图隐藏分布。开发 seed 7 只用于冻结停止轮次。网页展示 600 dpi PNG，并提供矢量 PDF 下载。</figcaption>
             </figure>
 
             <div class="result-links">
-              <a href="spectral-gradient-summary.csv" download>下载结果摘要 CSV</a>
-              <a href="spectral-gradient-parameter-search.csv" download>下载参数搜索 CSV</a>
+              <a href="multiseed-fixed-summary.csv" download>主要终点 CSV</a>
+              <a href="multiseed-per-seed.csv" download>逐 seed 数据</a>
+              <a href="multiseed-paired-statistics.csv" download>配对统计</a>
+              <a href="multiseed-convergence-curves.csv" download>全部收敛曲线</a>
+              <a href="multiseed-oracle-summary.csv" download>Oracle 敏感性分析</a>
+              <a href="nature-multiseed-validation.pdf" download>矢量主图 PDF</a>
             </div>
+            <p class="result-note">半白化相对 RL 与 OMW 的配对 NRMSE 分别改善 13.56% 和 27.64%，Holm-adjusted \(p=0.00293\)。半白化与全白化无显著差异（\(p=0.622\)）。SCR-RL 再改善 1.88%（Holm-adjusted \(p=0.0186\)），但这个收益来自额外显式先验，和纯 post-backprop metric 分开报告。</p>
           </div>
         </article>
       </div>
@@ -267,14 +278,14 @@
         </div>
         <div class="equation" style="margin-top:22px">$$x^{(k+1)}=x^{(k)}\odot\left[b\ast\frac{g}{\max\!\left(f\ast x^{(k)},\varepsilon\right)}\right]$$</div>
 
-        <div id="analysis" class="paper-card math-analysis">
+        <div id="backprop-derivation" class="paper-card math-analysis">
           <div class="section-kicker">MATHEMATICAL ANALYSIS</div>
-          <h3>从泊松似然到 RL 更新</h3>
-          <p class="intro">光子计数通常用泊松分布建模。下面整理手写推导中的主要步骤。本节用 \(H\) 表示由 PSF 决定的空间域成像算子，并令 \(\hat y=Hx\)。所有除法和乘法均按元素进行。</p>
+          <h3>从精确 Poisson 反传到可控 Fisher 几何</h3>
+          <p class="intro">先固定不能被替换的反向传播，再问梯度回传之后应采用什么优化度量。本节用 \(H\) 表示 PSF 对应的 forward operator，并令 \(\hat y=Hx\)。</p>
 
           <div class="derive-grid">
             <article class="derive-block">
-              <h4>1. 泊松观测模型与负对数似然</h4>
+              <h4>1. 输出层产生 Poisson error signal</h4>
               <p>对第 \(i\) 个像素或体素，观测值 \(y_i\) 服从均值为 \(\hat y_i\) 的泊松分布：</p>
               <div class="equation amber">$$p(y_i\mid\hat y_i)=\frac{e^{-\hat y_i}\hat y_i^{\,y_i}}{y_i!}$$</div>
               <p>取负对数并去掉与 \(x\) 无关的常数项，可得：</p>
@@ -282,38 +293,38 @@
             </article>
 
             <article class="derive-block">
-              <h4>2. 误差如何传回样本空间</h4>
+              <h4>2. \(H^{\mathsf T}\) 是不可替换的 exact backprop</h4>
               <p>先对预测值求导，再通过成像算子的转置映射回 \(x\)：</p>
               <div class="equation amber">$$\frac{\partial\mathcal L_P}{\partial\hat y_i}=1-\frac{y_i}{\hat y_i}$$</div>
               <div class="equation">$$\nabla_x\mathcal L_P=H^{\mathsf T}\!\left(\mathbf 1-\frac{y}{Hx}\right)$$</div>
-              <p>式中的 \(H^{\mathsf T}\) 就承担反向投影的作用：把观测域中的比值误差分配回可能产生这些光子的样本位置。</p>
+              <p>\(H^{\mathsf T}\) 由链式法则决定。OMW 直接换成 inverse-like projector 可加速校正，但通常不再是原始 Poisson loss 的严格梯度。</p>
             </article>
 
             <article class="derive-block">
-              <h4>3. 能量守恒条件下的 RL 乘法更新</h4>
-              <p>归一化 PSF 满足 \(H^{\mathsf T}\mathbf 1=\mathbf 1\)。采用以当前估计 \(x_k\) 为尺度的梯度步，可化为标准 RL 更新：</p>
-              <div class="equation">$$\begin{aligned}x_{k+1}&=x_k-x_k\odot\nabla_x\mathcal L_P(x_k)\\&=x_k\odot H^{\mathsf T}\!\left(\frac{y}{Hx_k}\right).\end{aligned}$$</div>
-              <p>这说明比值 \(y/(Hx_k)\) 并非经验构造，而是直接来自泊松负对数似然对预测强度的导数。</p>
+              <h4>3. 在 log-intensity 层继续反传</h4>
+              <p>用 \(x=\bar y e^z\) 自动保证正值。对归一化目标 \(\mathcal L_P/\bar y\) 继续应用链式法则：</p>
+              <div class="equation">$$g_z=\frac{x}{\bar y}\odot g_x=\frac{x}{\bar y}\odot H^{\mathsf T}\!\left(\mathbf 1-\frac{y}{Hx}\right)$$</div>
+              <p>空间尺度由指数层 Jacobian 严格给出，不再使用经验性的 \(x^\gamma\)。当频谱度量为单位阵时，这就是正值图像上的 log-domain SGD。</p>
             </article>
 
             <article class="derive-block">
-              <h4>4. Hessian 与 Newton 形式</h4>
-              <p>该目标函数的二阶导数为：</p>
-              <div class="equation amber">$$\nabla_x^2\mathcal L_P=H^{\mathsf T}\operatorname{Diag}\!\left(\frac{y}{(Hx)^2}\right)H$$</div>
-              <p>完整 Newton 更新需要求解包含 Hessian 的线性系统：</p>
-              <div class="equation">$$x_{k+1}=x_k-\left[\nabla_x^2\mathcal L_P(x_k)\right]^{-1}\nabla_x\mathcal L_P(x_k)$$</div>
-              <p>三维大数据上显式构造和求逆 Hessian 代价很高，因此 RL 使用结构简单、保持非负性的乘法迭代。</p>
+              <h4>4. Newton 指出方向，也暴露问题</h4>
+              <p>observed Hessian 与 Fisher 信息分别为：</p>
+              <div class="equation amber">$$\nabla_x^2\mathcal L_P=H^{\mathsf T}\operatorname{Diag}\!\left(\frac{y}{(Hx)^2}\right)H,\quad F=H^{\mathsf T}\operatorname{Diag}\!\left(\frac1{Hx}\right)H$$</div>
+              <p>完整求逆需要动态 PCG；更关键的是，小 Fisher 特征值恰好对应弱 OTF 频率，\(F^{-1}\) 会给予噪声主导方向最大的增益。实验中 NLL 继续下降而 NRMSE 反弹。</p>
             </article>
           </div>
 
-          <h4 style="font-size:20px;margin:26px 0 8px">与 PetaKit5D 创新点的联系</h4>
-          <p style="color:var(--muted);margin:0">OMW 没有直接计算 Newton 步，也不等同于 Hessian 的逆。它是在 RL 框架中重新设计反向投影器，使其具有受正则化约束的逆滤波特性：</p>
-          <div class="equation amber" style="margin-top:16px">$$\widehat B_{\mathrm{OMW}}=W\odot\frac{\widehat H^{*}}{|\widehat H|^2+\alpha}$$</div>
+          <h4 style="font-size:20px;margin:26px 0 8px">我们的进一步设计：不要替换反传，只做分数 Fisher 白化</h4>
+          <p style="color:var(--muted);margin:0">局部平稳近似下，log 坐标的 Fisher 光学频谱正比于 \(|H(\omega)|^2\)。于是 SGD、半白化、全白化与 Newton 形成同一个可解释的幂次谱：</p>
+          <div class="equation amber" style="margin-top:16px">$$P_\beta(\omega)=W(\omega)\bigl(|H(\omega)|^2+\lambda\bigr)^{-\beta},\qquad \beta=0,\tfrac14,\tfrac12,1$$</div>
+          <div class="equation" style="margin-top:12px">$$d_z=-\mathcal F^{-1}\!\left[P_{1/4}\,\mathcal F(g_z)\right],\qquad x_{k+1}=\bar y\exp(z_k+\eta_kd_z)$$</div>
           <div class="innovation-list">
-            <div class="innovation-item"><b>更有效的反向校正</b><span>Wiener 项比传统 matched projector 更接近稳定的逆算子，因此较少迭代即可纠正模糊。</span></div>
-            <div class="innovation-item"><b>频率范围由真实 PSF 决定</b><span>窗函数 \(W\) 跟随实际 OTF support，而不是预设椭球，减少高分辨率信息被截断。</span></div>
-            <div class="innovation-item"><b>避免不稳定的直接求逆</b><span>参数 \(\alpha\) 抑制 \(|\widehat H|\) 很小时的噪声放大，支持域外频率由 \(W\) 去除。</span></div>
+            <div class="innovation-item"><b>梯度仍然严格</b><span>先计算 \(H^{\mathsf T}(1-y/Hx)\)，频谱算子只作用在 exact gradient 之后，保持原始 Poisson loss 的下降方向。</span></div>
+            <div class="innovation-item"><b>空间几何由反传产生</b><span>\(x=\bar y e^z\) 的 Jacobian 自动给出 \(x/\bar y\) 尺度，同时处理非负约束，不需要经验幂次。</span></div>
+            <div class="innovation-item"><b>半白化限制噪声增益</b><span>\(F^{-1/4}\) 是 \(I\) 与 \(F^{-1/2}\) 的 SPD 几何中点；OTF mask 只允许真实光学支持域参与校正。</span></div>
           </div>
+          <div class="callout green"><strong>统计结论：</strong>在 12 个 held-out seeds 上，半白化与全白化效果相当（Holm-adjusted \(p=0.622\)），但两者均明显优于 RL/OMW。加入显式曲率先验的 SCR-RL 进一步降低 NRMSE；这部分收益单独归因于正则化，而不是反向传播度量。</div>
         </div>
 
         <div class="three-col" style="margin-top:24px">
