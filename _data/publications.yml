@@ -186,6 +186,9 @@ items:
     label:
       en: Code
       zh: 代码
+  image: /images/publications/mc-trcm.png
+  thumbnail: /images/publications/thumbnails/mc-trcm.png
+  alt: 'MC-TRCM architecture from Figure 2: source tokens, FiLM-conditioned Transformer fusion, and recursive prediction'
 - id: linearard
   selected: false
   section: ongoing

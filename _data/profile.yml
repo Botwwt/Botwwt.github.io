@@ -1,213 +1,264 @@
-updated: "2026.09"
-advisor_url: "https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm"
+updated: '2026.09'
+advisor_url: https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm
 description:
-  en: "Wentao Wang, incoming Ph.D. student at Peking University's College of Future Technology, advised by Lei Ma. Brain-inspired learning, language models, and reinforcement learning."
-  zh: "王文韬，即将赴北京大学未来技术学院攻读博士，导师马雷。大连理工大学数理基础科学本科生，专业排名 7/99，研究类脑学习、大语言模型与强化学习。"
+  en: Wentao Wang, Ph.D. Year 0 at Peking University, College of Future Technology, advised by Lei Ma. Brain-inspired learning, language models, and reinforcement
+    learning.
+  zh: 王文韬，北京大学未来技术学院博0，导师马雷。大连理工大学数理基础科学本科生，专业排名 7/99，研究类脑学习、大语言模型与强化学习。
 labels:
   en:
-    home: "Wentao Wang — homepage"
-    navigation: "Main navigation"
-    profile: "Profile and contact information"
-    portrait: "Wentao Wang at Merlion Park in Singapore"
-    skip: "Skip to content"
-    about: "About"
-    nav_research: "Research"
-    nav_experience: "Experience"
-    nav_honors: "Honors"
-    research: "Research Interests"
-    publications: "Publications"
-    experience: "Research Experience"
-    honors: "Honors & Awards"
-    education: "Education"
-    news: "News"
-    service: "Service & Activities"
-    incoming: "Incoming Ph.D. Student"
-    incoming_short: "Incoming"
-    pku: "Peking University"
-    school: "College of Future Technology"
-    advisor: "Advisor:"
-    lei_ma: "Prof. Lei Ma"
-    current: "Currently"
-    dlut: "Dalian University of Technology"
-    major: "B.S. · Foundational Mathematical Sciences"
-    links: "Academic profiles"
-    email: "Email"
-    cv: "Curriculum Vitae · 中文 PDF"
-    motto: "Stay curious. Keep exploring."
-    eyebrow: "LEARNING · REASONING · DISCOVERY"
-    greeting: "Hi, I'm"
-    greeting_name: "Wentao."
-    rank: "Major rank"
-    gpa: "GPA"
-    average: "Weighted average"
-    all: "All"
-    selected: "Selected"
-    filter: "Filter publications"
-    figure: "View research figure"
-    publications_note: "Published and accepted work, alongside manuscripts under review."
-    publication_details: "Full publication details"
-    contributions: "Research & contributions"
-    phd_detail: "Ph.D. · College of Future Technology"
-    bachelor_detail: "B.S. in Foundational Mathematical Sciences"
-    undergraduate_dates: "2023 – 2027 (expected)"
-    expected_graduation: "Expected graduation: June 2027"
-    skills: "Technical skills & selected coursework"
-    contact_eyebrow: "GET IN TOUCH"
-    contact_title: "Always open to a good research conversation."
-    contact_text: "If you share an interest in efficient learning, language models, or intelligent decision-making, feel free to reach out."
-    updated: "Updated"
-    top: "Back to top"
-    back: "Back to homepage"
+    home: Wentao Wang — homepage
+    navigation: Main navigation
+    profile: Profile and contact information
+    portrait: Wentao Wang at Merlion Park in Singapore
+    skip: Skip to content
+    about: About
+    nav_research: Research
+    nav_experience: Experience
+    nav_honors: Honors
+    research: Research Interests
+    publications: Publications
+    experience: Research Experience
+    honors: Honors & Awards
+    education: Education
+    news: News
+    service: Service & Activities
+    incoming: Ph.D. · Year 0
+    incoming_short: Year 0
+    pku: Peking University
+    school: College of Future Technology
+    advisor: 'Advisor:'
+    lei_ma: Prof. Lei Ma
+    current: Currently
+    dlut: Dalian University of Technology
+    major: B.S. · Foundational Mathematical Sciences
+    links: Academic profiles
+    email: Email
+    cv: Curriculum Vitae · 中文 PDF
+    motto: Stay curious. Keep exploring.
+    eyebrow: LEARNING · REASONING · DISCOVERY
+    greeting: Hi, I'm
+    greeting_name: Wentao.
+    rank: Major rank
+    gpa: GPA
+    average: Weighted average
+    all: All
+    selected: Selected
+    filter: Filter publications
+    figure: View research figure
+    publications_note: Published and accepted work, alongside manuscripts under review.
+    publication_details: Full publication details
+    contributions: Research & contributions
+    phd_detail: Ph.D. (Year 0) · College of Future Technology
+    bachelor_detail: B.S. in Foundational Mathematical Sciences
+    undergraduate_dates: 2023 – 2027 (expected)
+    expected_graduation: 'Expected graduation: June 2027'
+    skills: Technical skills & selected coursework
+    contact_eyebrow: GET IN TOUCH
+    contact_title: Always open to a good research conversation.
+    contact_text: If you share an interest in efficient learning, language models, or intelligent decision-making, feel free to reach out.
+    updated: Updated
+    top: Back to top
+    back: Back to homepage
   zh:
-    home: "王文韬 — 个人主页"
-    navigation: "主导航"
-    profile: "个人信息与联系方式"
-    portrait: "王文韬在新加坡鱼尾狮公园"
-    skip: "跳转至正文"
-    about: "关于我"
-    nav_research: "研究方向"
-    nav_experience: "科研经历"
-    nav_honors: "荣誉奖项"
-    research: "研究方向"
-    publications: "论文成果"
-    experience: "科研经历"
-    honors: "荣誉奖项"
-    education: "教育背景"
-    news: "近期动态"
-    service: "学术服务与活动"
-    incoming: "即将入读博士"
-    incoming_short: "即将入读"
-    pku: "北京大学"
-    school: "未来技术学院"
-    advisor: "导师："
-    lei_ma: "马雷老师"
-    current: "本科就读"
-    dlut: "大连理工大学"
-    major: "数理基础科学 · 本科"
-    links: "学术主页链接"
-    email: "邮箱"
-    cv: "个人简历 · 中文 PDF"
-    motto: "保持好奇，在探索中不断前行。"
-    eyebrow: "学习 · 推理 · 发现"
-    greeting: "你好，我是"
-    greeting_name: "王文韬。"
-    rank: "专业排名"
-    gpa: "学分绩"
-    average: "加权平均分"
-    all: "全部"
-    selected: "代表作"
-    filter: "筛选论文"
-    figure: "查看研究示意图"
-    publications_note: "汇集已发表、已录用成果及在审论文，分别标注当前状态。"
-    publication_details: "查看完整论文信息"
-    contributions: "研究内容与个人贡献"
-    phd_detail: "博士 · 未来技术学院"
-    bachelor_detail: "数理基础科学 · 本科"
-    undergraduate_dates: "2023 – 2027（预计）"
-    expected_graduation: "预计 2027 年 6 月毕业"
-    skills: "技术技能与核心课程"
-    contact_eyebrow: "联系与交流"
-    contact_title: "欢迎交流想法，一起探索。"
-    contact_text: "如果你也关注高效学习、大语言模型或智能决策，欢迎与我交流研究与合作机会。"
-    updated: "更新于"
-    top: "返回顶部"
-    back: "返回主页"
+    home: 王文韬 — 个人主页
+    navigation: 主导航
+    profile: 个人信息与联系方式
+    portrait: 王文韬在新加坡鱼尾狮公园
+    skip: 跳转至正文
+    about: 关于我
+    nav_research: 研究方向
+    nav_experience: 科研经历
+    nav_honors: 荣誉奖项
+    research: 研究方向
+    publications: 论文成果
+    experience: 科研经历
+    honors: 荣誉奖项
+    education: 教育背景
+    news: 近期动态
+    service: 学术服务与活动
+    incoming: 博0
+    incoming_short: 博0
+    pku: 北京大学
+    school: 未来技术学院
+    advisor: 导师：
+    lei_ma: 马雷老师
+    current: 本科就读
+    dlut: 大连理工大学
+    major: 数理基础科学 · 本科
+    links: 学术主页链接
+    email: 邮箱
+    cv: 个人简历 · 中文 PDF
+    motto: 保持好奇，在探索中不断前行。
+    eyebrow: 学习 · 推理 · 发现
+    greeting: 你好，我是
+    greeting_name: 王文韬。
+    rank: 专业排名
+    gpa: 学分绩
+    average: 加权平均分
+    all: 全部
+    selected: 代表作
+    filter: 筛选论文
+    figure: 查看研究示意图
+    publications_note: 汇集已发表、已录用成果及在审论文，分别标注当前状态。
+    publication_details: 查看完整论文信息
+    contributions: 研究内容与个人贡献
+    phd_detail: 博0 · 未来技术学院
+    bachelor_detail: 数理基础科学 · 本科
+    undergraduate_dates: 2023 – 2027（预计）
+    expected_graduation: 预计 2027 年 6 月毕业
+    skills: 技术技能与核心课程
+    contact_eyebrow: 联系与交流
+    contact_title: 欢迎交流想法，一起探索。
+    contact_text: 如果你也关注高效学习、大语言模型或智能决策，欢迎与我交流研究与合作机会。
+    updated: 更新于
+    top: 返回顶部
+    back: 返回主页
 intro:
-  en: >-
-    I am an <strong>incoming Ph.D. student</strong> at the <a href="https://future.pku.edu.cn/">College of Future Technology, Peking University</a>, where I will be advised by <a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">Prof. Lei Ma</a>.
-  zh: >-
-    我即将赴<strong>北京大学未来技术学院攻读博士</strong>，导师为<a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">马雷老师</a>。目前就读于<a href="https://www.dlut.edu.cn/">大连理工大学</a><strong>数理基础科学</strong>专业，预计 2027 年 6 月本科毕业。
+  en: I am a <strong>Ph.D. student (Year 0)</strong> at the <a href="https://future.pku.edu.cn/">College of Future Technology, Peking University</a>, advised
+    by <a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">Prof. Lei Ma</a>.
+  zh: 我是<strong>北京大学未来技术学院博0</strong>，导师为<a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">马雷老师</a>。目前就读于<a href="https://www.dlut.edu.cn/">大连理工大学</a><strong>数理基础科学</strong>专业，预计
+    2027 年 6 月本科毕业。
 bio:
-  en: >-
-    Currently, I study <strong>Foundational Mathematical Sciences</strong> at <a href="https://www.dlut.edu.cn/">Dalian University of Technology</a> (expected graduation: June 2027), and conduct research at Peking University and the Institute of Automation, Chinese Academy of Sciences. My interests lie in <strong>brain-inspired learning, large language models, and reinforcement learning</strong>, with a focus on memory-efficient learning and intelligent decision-making.
-  zh: >-
-    我关注<strong>类脑计算、大语言模型与强化学习</strong>，希望构建高效、低内存的学习方法，以及面向真实约束的智能决策系统。目前在北京大学和中国科学院自动化研究所开展科研实习，研究涵盖时序信用分配、长上下文建模、协同边缘缓存与神经组合优化。
+  en: 'Currently, I study <strong>Foundational Mathematical Sciences</strong> at <a href="https://www.dlut.edu.cn/">Dalian University of Technology</a>
+    (expected graduation: June 2027), and conduct research at Peking University and the Institute of Automation, Chinese Academy of Sciences. My interests
+    lie in <strong>brain-inspired learning, large language models, and reinforcement learning</strong>, with a focus on memory-efficient learning and intelligent
+    decision-making.'
+  zh: 我关注<strong>类脑计算、大语言模型与强化学习</strong>，希望构建高效、低内存的学习方法，以及面向真实约束的智能决策系统。目前在北京大学和中国科学院自动化研究所开展科研实习，研究涵盖时序信用分配、长上下文建模、协同边缘缓存与神经组合优化。
 announcement:
-  en: "<strong>Next chapter:</strong> doctoral study at Peking University, College of Future Technology, with Prof. Lei Ma."
-  zh: "<strong>下一站：北京大学。</strong>即将加入未来技术学院，在马雷老师指导下开展博士阶段研究。"
+  en: '<strong>Ph.D. · Year 0:</strong> Peking University, College of Future Technology · Advisor: Prof. Lei Ma.'
+  zh: <strong>博0 · 北京大学</strong>，未来技术学院 · 导师：马雷老师。
 research:
-  - title: {en: "Brain-inspired learning", zh: "类脑学习与信用分配"}
-    text:
-      en: "Online local learning rules for temporal credit assignment, with low memory cost and biologically inspired dynamics."
-      zh: "探索具生物启发的在线局部学习规则，以低内存开销实现时序信用分配。"
-  - title: {en: "Language models & reasoning", zh: "大语言模型与长上下文"}
-    text:
-      en: "Decision-making LLMs, long-context restoration, and memory-efficient attention distillation."
-      zh: "研究决策型大语言模型、长上下文能力恢复与线性内存注意力蒸馏。"
-  - title: {en: "Learning to make decisions", zh: "强化学习与智能决策"}
-    text:
-      en: "Reinforcement learning for wireless resource allocation and structured combinatorial optimization."
-      zh: "利用强化学习求解无线资源分配、协同缓存与具有结构约束的组合优化问题。"
+- title:
+    en: Brain-inspired learning
+    zh: 类脑学习与信用分配
+  text:
+    en: Online local learning rules for temporal credit assignment, with low memory cost and biologically inspired dynamics.
+    zh: 探索具生物启发的在线局部学习规则，以低内存开销实现时序信用分配。
+- title:
+    en: Language models & reasoning
+    zh: 大语言模型与长上下文
+  text:
+    en: Decision-making LLMs, long-context restoration, and memory-efficient attention distillation.
+    zh: 研究决策型大语言模型、长上下文能力恢复与线性内存注意力蒸馏。
+- title:
+    en: Learning to make decisions
+    zh: 强化学习与智能决策
+  text:
+    en: Reinforcement learning for wireless resource allocation and structured combinatorial optimization.
+    zh: 利用强化学习求解无线资源分配、协同缓存与具有结构约束的组合优化问题。
 news:
-  - date: "2026.09"
-    text:
-      en: "I will pursue my <strong>Ph.D. at Peking University</strong>, College of Future Technology, advised by <a href='https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm'>Prof. Lei Ma</a>."
-      zh: "即将赴<strong>北京大学未来技术学院</strong>攻读博士，导师为<a href='https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm'>马雷老师</a>。"
-  - date: "2026"
-    text:
-      en: "<a href='#mc-trcm'>MC-TRCM</a>, my first-author work on incomplete mobile and wearable feature views, was accepted to <strong>ICONIP 2026</strong>."
-      zh: "第一作者论文 <a href='#mc-trcm'>MC-TRCM</a> 已被 <strong>ICONIP 2026</strong> 录用，研究不完整移动与可穿戴特征视图的递归融合。"
-  - date: "2026"
-    text:
-      en: "<a href='#global-credit-criticality'>Global Credit Assignment via Dynamical Criticality</a> was accepted to <strong>ICML 2026</strong> (first author)."
-      zh: "第一作者论文 <a href='#global-credit-criticality'>Global Credit Assignment via Dynamical Criticality</a> 已被 <strong>ICML 2026</strong> 录用。"
-  - date: "2026.06"
-    text:
-      en: "Earned a <strong>bronze medal</strong> in Kaggle BirdCLEF+ 2026, following a bronze in March Machine Learning Mania 2026."
-      zh: "获得 Kaggle BirdCLEF+ 2026 <strong>铜牌</strong>；此前获得 March Machine Learning Mania 2026 铜牌。"
+- date: '2026.09'
+  text:
+    en: 'My doctoral home: <strong>Peking University, College of Future Technology</strong> · <strong>Ph.D. Year 0</strong> · Advisor: <a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">Prof.
+      Lei Ma</a>.'
+    zh: 博士阶段：<strong>北京大学未来技术学院博0</strong>，导师为<a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">马雷老师</a>。
+- date: '2026'
+  text:
+    en: <a href='#mc-trcm'>MC-TRCM</a>, my first-author work on incomplete mobile and wearable feature views, was accepted to <strong>ICONIP 2026</strong>.
+    zh: 第一作者论文 <a href='#mc-trcm'>MC-TRCM</a> 已被 <strong>ICONIP 2026</strong> 录用，研究不完整移动与可穿戴特征视图的递归融合。
+- date: '2026'
+  text:
+    en: <a href='#global-credit-criticality'>Global Credit Assignment via Dynamical Criticality</a> was accepted to <strong>ICML 2026</strong> (first author).
+    zh: 第一作者论文 <a href='#global-credit-criticality'>Global Credit Assignment via Dynamical Criticality</a> 已被 <strong>ICML 2026</strong> 录用。
+- date: '2026.06'
+  text:
+    en: Earned a <strong>bronze medal</strong> in Kaggle BirdCLEF+ 2026, following a bronze in March Machine Learning Mania 2026.
+    zh: 获得 Kaggle BirdCLEF+ 2026 <strong>铜牌</strong>；此前获得 March Machine Learning Mania 2026 铜牌。
 experience:
-  - name: {en: "Peking University", zh: "北京大学"}
-    url: "https://www.pku.edu.cn/"
-    date: {en: "Oct. 2025 – Present", zh: "2025.10 – 至今"}
-    role: {en: "Research Intern", zh: "科研实习生"}
-    text:
-      en: "Study temporal credit assignment beyond BPTT through online, biologically inspired local learning rules; analyze approximation error, stability, and scalability in recurrent and spiking networks."
-      zh: "围绕 BPTT 的时序信用分配问题开展研究，探索在线、具生物启发且低内存的局部学习规则，并验证其近似误差、稳定性与可扩展性。"
-  - name: {en: "Institute of Automation, Chinese Academy of Sciences", zh: "中国科学院自动化研究所"}
-    url: "https://ia.cas.cn/"
-    date: {en: "Dec. 2024 – Present", zh: "2024.12 – 至今"}
-    role: {en: "Research Intern", zh: "科研实习生"}
-    text:
-      en: "Research cooperative edge caching, long-context restoration, and decision-making LLMs for wireless communication. Build training pipelines and experiments; contribute to technical writing, figures, and patent materials."
-      zh: "参与协同边缘缓存、长上下文恢复与无线通信大模型综述等研究，负责环境与训练流程搭建、实验组织、图表绘制、技术写作，并参与后续专利材料整理。"
-  - name: {en: "Eastern Institute of Technology, Ningbo", zh: "东方理工大学"}
-    url: "https://www.eitech.edu.cn/"
-    date: {en: "Aug. 2025 – Nov. 2025", zh: "2025.08 – 2025.11"}
-    role: {en: "Research Intern", zh: "科研实习生"}
-    text:
-      en: "Reviewed representative work on world models and vision-language models, and mapped the main methods and technical directions."
-      zh: "阅读世界模型与视觉语言大模型相关文献，梳理代表性方法与技术路线。"
-  - name: {en: "Dalian University of Technology", zh: "大连理工大学"}
-    url: "https://www.dlut.edu.cn/"
-    date: {en: "Oct. 2024 – Mar. 2025", zh: "2024.10 – 2025.03"}
-    role: {en: "Undergraduate Researcher", zh: "本科科研"}
-    text:
-      en: "Worked on neural combinatorial optimization for pickup-and-delivery problems, including model design, reinforcement learning, benchmarks, comparative experiments, and manuscript writing."
-      zh: "围绕取送货问题神经组合优化开展本科科研，完成模型设计、强化学习训练、基准构建、对比实验与论文撰写。"
+- name:
+    en: Peking University
+    zh: 北京大学
+  url: https://www.pku.edu.cn/
+  date:
+    en: Oct. 2025 – Present
+    zh: 2025.10 – 至今
+  role:
+    en: Research Intern
+    zh: 科研实习生
+  text:
+    en: Study temporal credit assignment beyond BPTT through online, biologically inspired local learning rules; analyze approximation error, stability,
+      and scalability in recurrent and spiking networks.
+    zh: 围绕 BPTT 的时序信用分配问题开展研究，探索在线、具生物启发且低内存的局部学习规则，并验证其近似误差、稳定性与可扩展性。
+- name:
+    en: Institute of Automation, Chinese Academy of Sciences
+    zh: 中国科学院自动化研究所
+  url: https://ia.cas.cn/
+  date:
+    en: Dec. 2024 – Present
+    zh: 2024.12 – 至今
+  role:
+    en: Research Intern
+    zh: 科研实习生
+  text:
+    en: Research cooperative edge caching, long-context restoration, and decision-making LLMs for wireless communication. Build training pipelines and experiments;
+      contribute to technical writing, figures, and patent materials.
+    zh: 参与协同边缘缓存、长上下文恢复与无线通信大模型综述等研究，负责环境与训练流程搭建、实验组织、图表绘制、技术写作，并参与后续专利材料整理。
+- name:
+    en: Eastern Institute of Technology, Ningbo
+    zh: 东方理工大学
+  url: https://www.eitech.edu.cn/
+  date:
+    en: Aug. 2025 – Nov. 2025
+    zh: 2025.08 – 2025.11
+  role:
+    en: Research Intern
+    zh: 科研实习生
+  text:
+    en: Reviewed representative work on world models and vision-language models, and mapped the main methods and technical directions.
+    zh: 阅读世界模型与视觉语言大模型相关文献，梳理代表性方法与技术路线。
+- name:
+    en: Dalian University of Technology
+    zh: 大连理工大学
+  url: https://www.dlut.edu.cn/
+  date:
+    en: Oct. 2024 – Mar. 2025
+    zh: 2024.10 – 2025.03
+  role:
+    en: Undergraduate Researcher
+    zh: 本科科研
+  text:
+    en: Worked on neural combinatorial optimization for pickup-and-delivery problems, including model design, reinforcement learning, benchmarks, comparative
+      experiments, and manuscript writing.
+    zh: 围绕取送货问题神经组合优化开展本科科研，完成模型设计、强化学习训练、基准构建、对比实验与论文撰写。
 honors:
-  - date: "2026.06"
-    text: {en: "<strong>Bronze Medal</strong> · Kaggle BirdCLEF+ 2026", zh: "<strong>铜牌</strong> · Kaggle BirdCLEF+ 2026"}
-  - date: "2026.03"
-    text: {en: "<strong>Bronze Medal</strong> · Kaggle March Machine Learning Mania 2026", zh: "<strong>铜牌</strong> · Kaggle March Machine Learning Mania 2026"}
-  - date: "2026.02"
-    text: {en: "<strong>Meritorious Winner</strong> · Mathematical Contest in Modeling (MCM)", zh: "<strong>Meritorious Winner（M 奖）</strong> · 美国大学生数学建模竞赛"}
-  - date: "2025.11"
-    text: {en: "<strong>National Second Prize</strong> · National English Translation Competition", zh: "<strong>国家二等奖</strong> · 全国英语翻译大赛"}
-  - date: "2024.11"
-    text: {en: "<strong>National First Prize</strong> · Asia and Pacific Mathematical Contest in Modeling", zh: "<strong>国家一等奖</strong> · 亚太地区大学生数学建模竞赛"}
-  - date: "2024.09"
-    text: {en: "<strong>Provincial First Prize</strong> · Contemporary Undergraduate Mathematical Contest in Modeling", zh: "<strong>省级一等奖</strong> · 全国大学生数学建模竞赛"}
-  - date: "2024.01"
-    text: {en: "<strong>Honorable Mention</strong> · Mathematical Contest in Modeling (MCM)", zh: "<strong>Honorable Mention</strong> · 美国大学生数学建模竞赛"}
+- date: '2026.06'
+  text:
+    en: <strong>Bronze Medal</strong> · Kaggle BirdCLEF+ 2026
+    zh: <strong>铜牌</strong> · Kaggle BirdCLEF+ 2026
+- date: '2026.03'
+  text:
+    en: <strong>Bronze Medal</strong> · Kaggle March Machine Learning Mania 2026
+    zh: <strong>铜牌</strong> · Kaggle March Machine Learning Mania 2026
+- date: '2026.02'
+  text:
+    en: <strong>Meritorious Winner</strong> · Mathematical Contest in Modeling (MCM)
+    zh: <strong>Meritorious Winner（M 奖）</strong> · 美国大学生数学建模竞赛
+- date: '2025.11'
+  text:
+    en: <strong>National Second Prize</strong> · National English Translation Competition
+    zh: <strong>国家二等奖</strong> · 全国英语翻译大赛
+- date: '2024.11'
+  text:
+    en: <strong>National First Prize</strong> · Asia and Pacific Mathematical Contest in Modeling
+    zh: <strong>国家一等奖</strong> · 亚太地区大学生数学建模竞赛
+- date: '2024.09'
+  text:
+    en: <strong>Provincial First Prize</strong> · Contemporary Undergraduate Mathematical Contest in Modeling
+    zh: <strong>省级一等奖</strong> · 全国大学生数学建模竞赛
+- date: '2024.01'
+  text:
+    en: <strong>Honorable Mention</strong> · Mathematical Contest in Modeling (MCM)
+    zh: <strong>Honorable Mention</strong> · 美国大学生数学建模竞赛
 service:
-  - en: "<strong>Reviewer:</strong> Journal on Wireless Communications and Networking."
-    zh: "<strong>学术审稿：</strong>Journal on Wireless Communications and Networking 期刊审稿人。"
-  - en: "<strong>Community:</strong> Kaggle Competitions Expert."
-    zh: "<strong>竞赛平台：</strong>Kaggle 专家（Competitions Expert）。"
-  - en: "<strong>Academic exchange:</strong> National University of Singapore summer program."
-    zh: "<strong>学术交流：</strong>参与新加坡国立大学暑期学术交流项目。"
-  - en: "<strong>Research training:</strong> Core team member of a Liaoning provincial undergraduate innovation project (2024)."
-    zh: "<strong>科研训练：</strong>辽宁省级大学生创新创业训练项目主力队员（2024 年）。"
+- en: <strong>Reviewer:</strong> Journal on Wireless Communications and Networking.
+  zh: <strong>学术审稿：</strong>Journal on Wireless Communications and Networking 期刊审稿人。
+- en: <strong>Community:</strong> Kaggle Competitions Expert.
+  zh: <strong>竞赛平台：</strong>Kaggle 专家（Competitions Expert）。
+- en: <strong>Academic exchange:</strong> National University of Singapore summer program.
+  zh: <strong>学术交流：</strong>参与新加坡国立大学暑期学术交流项目。
+- en: <strong>Research training:</strong> Core team member of a Liaoning provincial undergraduate innovation project (2024).
+  zh: <strong>科研训练：</strong>辽宁省级大学生创新创业训练项目主力队员（2024 年）。
 courses:
-  en: "Selected coursework: Mathematical Analysis (99), Advanced Algebra (99), Probability (99), Data Structures and Algorithms (99), Optimization (99), Programming and Algorithms (100), Analytic Geometry (100)."
-  zh: "核心课程：数学分析（99）、高等代数（99）、概率论（99）、数据结构与算法（99）、最优化方法（99）、程序设计与算法（100）、解析几何（100）。"
+  en: 'Selected coursework: Mathematical Analysis (99), Advanced Algebra (99), Probability (99), Data Structures and Algorithms (99), Optimization (99),
+    Programming and Algorithms (100), Analytic Geometry (100).'
+  zh: 核心课程：数学分析（99）、高等代数（99）、概率论（99）、数据结构与算法（99）、最优化方法（99）、程序设计与算法（100）、解析几何（100）。

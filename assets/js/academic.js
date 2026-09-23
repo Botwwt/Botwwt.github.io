@@ -24,18 +24,27 @@ document.querySelectorAll('.publication-filter').forEach((filter) => {
   });
 });
 
-if ('IntersectionObserver' in window) {
-  const links = [...document.querySelectorAll('.main-nav a')];
-  const sections = links.map((link) => document.querySelector(new URL(link.href).hash)).filter(Boolean);
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      links.forEach((link) => {
-        const active = new URL(link.href).hash === `#${entry.target.id}`;
-        if (active) link.setAttribute('aria-current', 'location');
-        else link.removeAttribute('aria-current');
-      });
-    });
-  }, { rootMargin: '-12% 0px -65% 0px', threshold: 0 });
-  sections.forEach((section) => observer.observe(section));
+const navigation = [...document.querySelectorAll('.main-nav a')].map((link) => ({
+  link,
+  section: document.querySelector(new URL(link.href).hash)
+})).filter((item) => item.section);
+let navigationFrame = null;
+function updateNavigation() {
+  navigationFrame = null;
+  const marker = document.querySelector('.topbar').getBoundingClientRect().bottom + 80;
+  let current = navigation[0];
+  navigation.forEach((item) => {
+    if (item.section.getBoundingClientRect().top <= marker) current = item;
+  });
+  navigation.forEach((item) => {
+    if (item === current) item.link.setAttribute('aria-current', 'location');
+    else item.link.removeAttribute('aria-current');
+  });
 }
+function scheduleNavigation() {
+  if (navigationFrame === null) navigationFrame = requestAnimationFrame(updateNavigation);
+}
+window.addEventListener('scroll', scheduleNavigation, { passive: true });
+window.addEventListener('resize', scheduleNavigation);
+window.addEventListener('load', updateNavigation);
+updateNavigation();
