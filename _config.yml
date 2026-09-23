@@ -7,7 +7,7 @@
 
 # Site Settings
 title                    : "Wentao Wang"
-description              : "Take joy in discovery, stay true to what matters. Remain curious in exploration and reflective in work."
+description              : "Wentao Wang | Incoming Ph.D. student at Peking University, College of Future Technology, advised by Lei Ma."
 repository               : "Botwwt/Botwwt.github.io"
 url                      : "https://botwwt.github.io"
 baseurl                  : ""
@@ -25,7 +25,7 @@ baidu_site_verification  :  # get baidu_site_verification from https://ziyuan.ba
 author:
   name             : "Wentao Wang"
   avatar           : "images/wentao-wang.jpg"
-  bio              : "B.S. student in Foundational Mathematical Sciences at Dalian University of Technology"
+  bio              : "Incoming Ph.D. student at Peking University; undergraduate at Dalian University of Technology"
   location         : "Dalian, China"
   employer         : "Dalian University of Technology"
   pubmed           : 

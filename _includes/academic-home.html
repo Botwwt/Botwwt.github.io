@@ -1,0 +1,70 @@
+{% assign lang = page.lang | default: 'en' %}
+{% assign p = site.data.profile %}
+{% assign t = p.labels[lang] %}
+<section id="about" class="intro section">
+  <p class="eyebrow">{{ t.eyebrow }}</p>
+  <h1>{{ t.greeting }} <span class="intro-name">{{ t.greeting_name }}</span></h1>
+  <p class="intro-lead">{{ p.intro[lang] }}</p>
+  <p>{{ p.bio[lang] }}</p>
+  <div class="next-chapter"><span class="announcement-dot" aria-hidden="true"></span><div>{{ p.announcement[lang] }}</div></div>
+  <dl class="academic-stats">
+    <div><dt>{{ t.rank }}</dt><dd>7<span> / 99</span></dd></div>
+    <div><dt>{{ t.gpa }}</dt><dd>4.29<span> / 5.00</span></dd></div>
+    <div><dt>{{ t.average }}</dt><dd>92.9<span> / 100</span></dd></div>
+  </dl>
+</section>
+<section id="research" class="section">
+  <div class="section-heading"><h2>{{ t.research }}</h2><span class="section-number">01</span></div>
+  <div class="research-grid">
+    {% for item in p.research %}
+    <article class="research-item"><span class="research-index">0{{ forloop.index }}</span><h3>{{ item.title[lang] }}</h3><p>{{ item.text[lang] }}</p></article>
+    {% endfor %}
+  </div>
+</section>
+<section id="news" class="section">
+  <div class="section-heading"><h2>{{ t.news }}</h2><span class="section-number">02</span></div>
+  <ul class="news-list">
+    {% for item in p.news %}<li><span class="news-date">{{ item.date }}</span><span>{{ item.text[lang] }}</span></li>{% endfor %}
+  </ul>
+</section>
+<section id="publications" class="section publications-section">
+  <div class="section-heading"><h2>{{ t.publications }}</h2><span class="section-number">03</span></div>
+  {% include academic-publications.html %}
+  <a class="text-link" href="{% if lang == 'zh' %}{{ '/zh/publications/' | relative_url }}{% else %}{{ '/publications/' | relative_url }}{% endif %}">{{ t.publication_details }} <span aria-hidden="true">↗</span></a>
+</section>
+<section id="education" class="section">
+  <div class="section-heading"><h2>{{ t.education }}</h2><span class="section-number">04</span></div>
+  <div class="education-entry">
+    <img src="{{ '/images/institutions/pku.png' | relative_url }}" alt="" width="52" height="52" loading="lazy">
+    <div><div class="entry-heading"><h3><a href="https://www.pku.edu.cn/">{{ t.pku }}</a></h3><span class="status-tag">{{ t.incoming_short }}</span></div><p>{{ t.phd_detail }}</p><p class="muted">{{ t.advisor }} <a href="{{ p.advisor_url }}">{{ t.lei_ma }}</a></p></div>
+  </div>
+  <div class="education-entry">
+    <img src="{{ '/images/institutions/dlut.png' | relative_url }}" alt="" width="52" height="52" loading="lazy">
+    <div><div class="entry-heading"><h3><a href="https://www.dlut.edu.cn/">{{ t.dlut }}</a></h3><span class="entry-date">{{ t.undergraduate_dates }}</span></div><p>{{ t.bachelor_detail }}</p><p class="muted">{{ t.expected_graduation }}</p></div>
+  </div>
+</section>
+<section id="experience" class="section">
+  <div class="section-heading"><h2>{{ t.experience }}</h2><span class="section-number">05</span></div>
+  <div class="experience-list">
+    {% for item in p.experience %}
+    <article class="experience-entry"><div class="timeline-dot" aria-hidden="true"></div><div class="entry-heading"><h3><a href="{{ item.url }}">{{ item.name[lang] }}</a></h3><span class="entry-date">{{ item.date[lang] }}</span></div><p class="experience-role">{{ item.role[lang] }}</p><p>{{ item.text[lang] }}</p></article>
+    {% endfor %}
+  </div>
+</section>
+<section id="honors" class="section">
+  <div class="section-heading"><h2>{{ t.honors }}</h2><span class="section-number">06</span></div>
+  <ul class="honors-list">
+    {% for item in p.honors %}<li><span class="honor-year">{{ item.date }}</span><span>{{ item.text[lang] }}</span></li>{% endfor %}
+  </ul>
+</section>
+<section id="service" class="section">
+  <div class="section-heading"><h2>{{ t.service }}</h2><span class="section-number">07</span></div>
+  <ul class="service-list">{% for item in p.service %}<li>{{ item[lang] }}</li>{% endfor %}</ul>
+  <details class="skills-details"><summary>{{ t.skills }}</summary><p>Python · MATLAB · Java · PyTorch · Hugging Face Transformers · TRL · Unsloth</p><p>{{ p.courses[lang] }}</p></details>
+</section>
+<section id="contact" class="contact-section">
+  <p class="eyebrow">{{ t.contact_eyebrow }}</p>
+  <h2>{{ t.contact_title }}</h2>
+  <p>{{ t.contact_text }}</p>
+  <a href="mailto:{{ site.author.email }}">{{ site.author.email }} <span aria-hidden="true">↗</span></a>
+</section>

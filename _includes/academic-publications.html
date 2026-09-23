@@ -1,0 +1,33 @@
+{% assign lang = page.lang | default: 'en' %}
+{% assign t = site.data.profile.labels[lang] %}
+<div class="publication-toolbar">
+  <p>{{ t.publications_note }}</p>
+  <div class="publication-filter" role="group" aria-label="{{ t.filter }}" hidden>
+    <button type="button" data-filter="all" class="is-active" aria-pressed="true">{{ t.all }}</button>
+    <button type="button" data-filter="selected" aria-pressed="false">{{ t.selected }}</button>
+  </div>
+</div>
+<div class="publication-list">
+  {% for paper in site.data.publications.items %}
+  <article id="{{ paper.id }}" class="paper" data-selected="{% if paper.selected == false %}false{% else %}true{% endif %}">
+    <div class="paper-visual">
+      {% if paper.thumbnail %}
+      <a href="{{ paper.image | relative_url }}" target="_blank" rel="noopener" aria-label="{{ t.figure }}: {{ paper.title | escape }}"><img src="{{ paper.thumbnail | relative_url }}" alt="{{ paper.alt | escape }}" width="180" height="120" loading="lazy"></a>
+      {% else %}
+      <div class="paper-monogram" aria-hidden="true"><span>MC-TRCM</span><small>MULTIMODAL LEARNING</small></div>
+      {% endif %}
+      <span class="paper-venue{% if paper.selected == false %} paper-venue--review{% endif %}">{{ paper.venue }}</span>
+    </div>
+    <div class="paper-body">
+      <h3>{% if paper.title_url %}<a href="{{ paper.title_url }}">{{ paper.title }}</a>{% else %}{{ paper.title }}{% endif %}</h3>
+      {% if paper.authors %}<p class="paper-authors">{{ paper.authors[lang] }}</p>{% endif %}
+      <p class="paper-meta">{{ paper.meta.home[lang] }}</p>
+      <p class="paper-status">{{ paper.badge[lang] }}</p>
+      <p class="paper-summary">{{ paper.summary[lang] }}</p>
+      <div class="paper-links">{% for link in paper.links %}<a href="{{ link.url }}">{{ link.label[lang] }} <span aria-hidden="true">↗</span></a>{% endfor %}</div>
+      {% if page.publications_only and paper.bullets %}<details class="paper-details"><summary>{{ t.contributions }}</summary><ul>{% for bullet in paper.bullets[lang] %}<li>{{ bullet }}</li>{% endfor %}</ul></details>{% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+<p class="filter-status sr-only" role="status" aria-live="polite"></p>
