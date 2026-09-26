@@ -120,10 +120,10 @@ intro:
     2027 年 6 月本科毕业。
 bio:
   en: 'Currently, I study <strong>Foundational Mathematical Sciences</strong> at <a href="https://www.dlut.edu.cn/">Dalian University of Technology</a>
-    (expected graduation: June 2027), and conduct research at Peking University and the Institute of Automation, Chinese Academy of Sciences. My interests
+    (expected graduation: June 2027), and conduct research at Peking University. I previously interned at the Institute of Automation, Chinese Academy of Sciences. My interests
     lie in <strong>brain-inspired learning, large language models, and reinforcement learning</strong>, with a focus on memory-efficient learning and intelligent
     decision-making.'
-  zh: 我关注<strong>类脑计算、大语言模型与强化学习</strong>，希望构建高效、低内存的学习方法，以及面向真实约束的智能决策系统。目前在北京大学和中国科学院自动化研究所开展科研实习，研究涵盖时序信用分配、长上下文建模、协同边缘缓存与神经组合优化。
+  zh: 我关注<strong>类脑计算、大语言模型与强化学习</strong>，希望构建高效、低内存的学习方法，以及面向真实约束的智能决策系统。目前在北京大学开展科研实习，曾在中国科学院自动化研究所实习，研究涵盖时序信用分配、长上下文建模、协同边缘缓存与神经组合优化。
 announcement:
   en: '<strong>Incoming Ph.D. · 2027:</strong> Peking University, College of Future Technology · Advisor: Prof. Lei Ma.'
   zh: <strong>2027年入学直博生 · 北京大学</strong>，未来技术学院 · 导师：马雷老师。
@@ -188,8 +188,8 @@ experience:
     zh: 中国科学院自动化研究所
   url: https://ia.cas.cn/
   date:
-    en: Dec. 2024 – Present
-    zh: 2024.12 – 至今
+    en: Dec. 2024 – Sep. 25, 2026
+    zh: 2024.12 – 2026.09.25
   role:
     en: Research Intern
     zh: 科研实习生
