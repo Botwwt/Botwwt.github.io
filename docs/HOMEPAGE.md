@@ -11,7 +11,7 @@ The September 2026 redesign keeps the existing Jekyll / GitHub Pages deployment 
 - `_layouts/academic.html`, `_includes/academic-*.html`, `assets/css/academic.css`, and `assets/js/academic.js`: shared templates and responsive styling. The new layout has no external font, JavaScript, or stylesheet dependencies.
 - `files/Wentao_Wang_CV.pdf`: downloadable Chinese CV. Its LaTeX source and portrait are in the same directory; run `xelatex Wentao_Wang_CV.tex` from `files/` to rebuild it. The source uses CTeX and Font Awesome.
 
-The profile uses **2027年入学直博生 / incoming Ph.D. student (2027 entry)** at Peking University, as requested by the owner, and keeps the undergraduate graduation date as **June 2027 (expected)**. GPA and weighted average come from the latest CV; major rank is **7/99**. LinearARD is **accepted to NeurIPS 2026 (CCF-A)**, with authorship listed as **共一第三 / co-first author (third-listed)**. Student-second-author annotations have been removed as requested.
+The profile uses **2027年入学直博生 / incoming Ph.D. student (2027 entry)** at Peking University, as requested by the owner, and keeps the undergraduate graduation date as **June 2027 (expected)**. GPA and weighted average come from the latest CV; major rank is **7/99**. LinearARD is **accepted to NeurIPS 2026 (CCF-A)**, with authorship listed as **共同一作（导师一作） / co-first author (advisor listed first)**. All three Institute of Automation papers identify the advisor as first author; student-second-author annotations have been removed as requested.
 
 ## Design references
 

@@ -149,8 +149,8 @@ research:
 news:
 - date: '2026.09'
   text:
-    en: '<a href="#linearard">LinearARD</a> has been accepted to <strong>NeurIPS 2026</strong> (CCF-A). I am a co-first author (third-listed).'
-    zh: '论文 <a href="#linearard">LinearARD</a> 已被 <strong>NeurIPS 2026（CCF-A）</strong>录用，本人为共同第一作者（第三顺位）。'
+    en: '<a href="#linearard">LinearARD</a> has been accepted to <strong>NeurIPS 2026</strong> (CCF-A). I am a co-first author (advisor listed first).'
+    zh: '论文 <a href="#linearard">LinearARD</a> 已被 <strong>NeurIPS 2026（CCF-A）</strong>录用，本人为共同一作（导师一作）。'
 - date: '2026.09'
   text:
     en: 'My doctoral home: <strong>Peking University, College of Future Technology</strong> · <strong>2027 Ph.D. entry</strong> · Advisor: <a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">Prof.

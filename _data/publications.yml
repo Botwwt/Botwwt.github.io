@@ -72,11 +72,11 @@ items:
     zh: Ning Yang, Mingrui Fan, <strong>Wentao Wang</strong>, Haijun Zhang
   meta:
     home:
-      en: Third author | Institute of Automation, Chinese Academy of Sciences
-      zh: 第三作者 | 中国科学院自动化研究所
+      en: Third author (advisor is first author) | Institute of Automation, Chinese Academy of Sciences
+      zh: 第三作者（导师一作） | 中国科学院自动化研究所
     full:
-      en: Third author | Institute of Automation, Chinese Academy of Sciences | Dec. 2024 - Aug. 2025
-      zh: 第三作者 | 中国科学院自动化研究所 | 2024 年 12 月 - 2025 年 8 月
+      en: Third author (advisor is first author) | Institute of Automation, Chinese Academy of Sciences | Dec. 2024 - Aug. 2025
+      zh: 第三作者（导师一作） | 中国科学院自动化研究所 | 2024 年 12 月 - 2025 年 8 月
   summary:
     en: This survey organizes decision-making LLMs for wireless communication across data construction, architecture adaptation, reasoning control,
       multi-agent coordination, and open challenges.
@@ -121,11 +121,11 @@ items:
     zh: Ning Yang, <strong>Wentao Wang</strong>, Lingtao Ouyang, Haijun Zhang
   meta:
     home:
-      en: Second author (student first) | Institute of Automation, Chinese Academy of Sciences
-      zh: 第二作者（学生一作） | 中国科学院自动化研究所
+      en: Second author (student first; advisor is first author) | Institute of Automation, Chinese Academy of Sciences
+      zh: 第二作者（学生一作，导师一作） | 中国科学院自动化研究所
     full:
-      en: Second author (student first) | Institute of Automation, Chinese Academy of Sciences | May 2025 - Nov. 2025
-      zh: 第二作者（学生一作） | 中国科学院自动化研究所 | 2025 年 5 月 - 2025 年 11 月
+      en: Second author (student first; advisor is first author) | Institute of Automation, Chinese Academy of Sciences | May 2025 - Nov. 2025
+      zh: 第二作者（学生一作，导师一作） | 中国科学院自动化研究所 | 2025 年 5 月 - 2025 年 11 月
   summary:
     en: We formulate cooperative multi-base-station edge caching as an LLM-native sequential decision problem, build an SFT+GRPO training pipeline,
       and design an opportunity-aware reward.
@@ -204,11 +204,11 @@ items:
   title: 'LinearARD: Linear-Memory Attention Distillation for RoPE Restoration'
   meta:
     home:
-      en: Co-first author (third-listed) | Institute of Automation, Chinese Academy of Sciences
-      zh: 共一第三 | 中国科学院自动化研究所
+      en: Co-first author (advisor listed first) | Institute of Automation, Chinese Academy of Sciences
+      zh: 共同一作（导师一作） | 中国科学院自动化研究所
     full:
-      en: Co-first author (third-listed) | Institute of Automation, Chinese Academy of Sciences | Sep. 2025 - Dec. 2025
-      zh: 共一第三 | 中国科学院自动化研究所 | 2025 年 9 月 - 2025 年 12 月
+      en: Co-first author (advisor listed first) | Institute of Automation, Chinese Academy of Sciences | Sep. 2025 - Dec. 2025
+      zh: 共同一作（导师一作） | 中国科学院自动化研究所 | 2025 年 9 月 - 2025 年 12 月
   summary:
     en: LinearARD aligns row-wise dense self-relations between native-RoPE teachers and RoPE-scaled students, restoring long-context performance
       with an exact linear-memory distillation objective.
