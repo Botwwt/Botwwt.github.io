@@ -7,7 +7,7 @@
 
 # Site Settings
 title                    : "Wentao Wang"
-description              : "Wentao Wang | Ph.D. Year 0 at Peking University, College of Future Technology, advised by Lei Ma."
+description              : "Wentao Wang | Incoming Ph.D. student (2027 entry) at Peking University, College of Future Technology, advised by Lei Ma."
 repository               : "Botwwt/Botwwt.github.io"
 url                      : "https://botwwt.github.io"
 baseurl                  : ""
@@ -25,7 +25,7 @@ baidu_site_verification  :  # get baidu_site_verification from https://ziyuan.ba
 author:
   name             : "Wentao Wang"
   avatar           : "images/wentao-wang.jpg"
-  bio              : "Ph.D. Year 0 at Peking University; undergraduate at Dalian University of Technology"
+  bio              : "Incoming Ph.D. student (2027 entry) at Peking University; undergraduate at Dalian University of Technology"
   location         : "Dalian, China"
   employer         : "Dalian University of Technology"
   pubmed           : 

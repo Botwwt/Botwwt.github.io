@@ -1,9 +1,9 @@
 updated: '2026.09'
 advisor_url: https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm
 description:
-  en: Wentao Wang, Ph.D. Year 0 at Peking University, College of Future Technology, advised by Lei Ma. Brain-inspired learning, language models, and reinforcement
+  en: Wentao Wang, incoming Ph.D. student (2027 entry) at Peking University, College of Future Technology, advised by Lei Ma. Brain-inspired learning, language models, and reinforcement
     learning.
-  zh: 王文韬，北京大学未来技术学院博0，导师马雷。大连理工大学数理基础科学本科生，专业排名 7/99，研究类脑学习、大语言模型与强化学习。
+  zh: 王文韬，北京大学未来技术学院2027年入学直博生，导师马雷。大连理工大学数理基础科学本科生，专业排名 7/99，研究类脑学习、大语言模型与强化学习。
 labels:
   en:
     home: Wentao Wang — homepage
@@ -22,8 +22,8 @@ labels:
     education: Education
     news: News
     service: Service & Activities
-    incoming: Ph.D. · Year 0
-    incoming_short: Year 0
+    incoming: Incoming Ph.D. · 2027
+    incoming_short: 2027 entry
     pku: Peking University
     school: College of Future Technology
     advisor: 'Advisor:'
@@ -48,7 +48,7 @@ labels:
     publications_note: Published and accepted work, alongside manuscripts under review.
     publication_details: Full publication details
     contributions: Research & contributions
-    phd_detail: Ph.D. (Year 0) · College of Future Technology
+    phd_detail: Incoming Ph.D. (2027 entry) · College of Future Technology
     bachelor_detail: B.S. in Foundational Mathematical Sciences
     undergraduate_dates: 2023 – 2027 (expected)
     expected_graduation: 'Expected graduation: June 2027'
@@ -76,8 +76,8 @@ labels:
     education: 教育背景
     news: 近期动态
     service: 学术服务与活动
-    incoming: 博0
-    incoming_short: 博0
+    incoming: 2027年入学直博生
+    incoming_short: 2027入学
     pku: 北京大学
     school: 未来技术学院
     advisor: 导师：
@@ -102,7 +102,7 @@ labels:
     publications_note: 汇集已发表、已录用成果及在审论文，分别标注当前状态。
     publication_details: 查看完整论文信息
     contributions: 研究内容与个人贡献
-    phd_detail: 博0 · 未来技术学院
+    phd_detail: 2027年入学直博生 · 未来技术学院
     bachelor_detail: 数理基础科学 · 本科
     undergraduate_dates: 2023 – 2027（预计）
     expected_graduation: 预计 2027 年 6 月毕业
@@ -114,9 +114,9 @@ labels:
     top: 返回顶部
     back: 返回主页
 intro:
-  en: I am a <strong>Ph.D. student (Year 0)</strong> at the <a href="https://future.pku.edu.cn/">College of Future Technology, Peking University</a>, advised
+  en: I am an <strong>incoming Ph.D. student (2027 entry)</strong> at the <a href="https://future.pku.edu.cn/">College of Future Technology, Peking University</a>, advised
     by <a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">Prof. Lei Ma</a>.
-  zh: 我是<strong>北京大学未来技术学院博0</strong>，导师为<a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">马雷老师</a>。目前就读于<a href="https://www.dlut.edu.cn/">大连理工大学</a><strong>数理基础科学</strong>专业，预计
+  zh: 我是<strong>北京大学未来技术学院2027年入学直博生</strong>，导师为<a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">马雷老师</a>。目前就读于<a href="https://www.dlut.edu.cn/">大连理工大学</a><strong>数理基础科学</strong>专业，预计
     2027 年 6 月本科毕业。
 bio:
   en: 'Currently, I study <strong>Foundational Mathematical Sciences</strong> at <a href="https://www.dlut.edu.cn/">Dalian University of Technology</a>
@@ -125,8 +125,8 @@ bio:
     decision-making.'
   zh: 我关注<strong>类脑计算、大语言模型与强化学习</strong>，希望构建高效、低内存的学习方法，以及面向真实约束的智能决策系统。目前在北京大学和中国科学院自动化研究所开展科研实习，研究涵盖时序信用分配、长上下文建模、协同边缘缓存与神经组合优化。
 announcement:
-  en: '<strong>Ph.D. · Year 0:</strong> Peking University, College of Future Technology · Advisor: Prof. Lei Ma.'
-  zh: <strong>博0 · 北京大学</strong>，未来技术学院 · 导师：马雷老师。
+  en: '<strong>Incoming Ph.D. · 2027:</strong> Peking University, College of Future Technology · Advisor: Prof. Lei Ma.'
+  zh: <strong>2027年入学直博生 · 北京大学</strong>，未来技术学院 · 导师：马雷老师。
 research:
 - title:
     en: Brain-inspired learning
@@ -149,9 +149,13 @@ research:
 news:
 - date: '2026.09'
   text:
-    en: 'My doctoral home: <strong>Peking University, College of Future Technology</strong> · <strong>Ph.D. Year 0</strong> · Advisor: <a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">Prof.
+    en: '<a href="#linearard">LinearARD</a> has been accepted to <strong>NeurIPS 2026</strong> (CCF-A). I am a co-first author (third-listed).'
+    zh: '论文 <a href="#linearard">LinearARD</a> 已被 <strong>NeurIPS 2026（CCF-A）</strong>录用，本人为共同第一作者（第三顺位）。'
+- date: '2026.09'
+  text:
+    en: 'My doctoral home: <strong>Peking University, College of Future Technology</strong> · <strong>2027 Ph.D. entry</strong> · Advisor: <a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">Prof.
       Lei Ma</a>.'
-    zh: 博士阶段：<strong>北京大学未来技术学院博0</strong>，导师为<a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">马雷老师</a>。
+    zh: 博士阶段：<strong>北京大学未来技术学院2027年入学直博生</strong>，导师为<a href="https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm">马雷老师</a>。
 - date: '2026'
   text:
     en: <a href='#mc-trcm'>MC-TRCM</a>, my first-author work on incomplete mobile and wearable feature views, was accepted to <strong>ICONIP 2026</strong>.
