@@ -19,6 +19,8 @@ The navigation, right-aligned profile, news table, bibliography rows, and theme 
 
 ## Verification and deployment
 
-The main branch automatically builds and deploys via `.github/workflows/`. Before publishing changes, check both languages and both publication routes, local links and anchors, paper filtering (8 All / 5 Selected as of November 2026), images, keyboard focus, and narrow mobile screens. The page remains readable with JavaScript disabled. Verify the GitHub Pages build and deployed page after each push.
+The main branch automatically builds and deploys via `.github/workflows/`. Before publishing changes, check both languages and both publication routes, local links and anchors, paper filtering (7 All / 5 Selected as of November 2026), images, keyboard focus, and narrow mobile screens. The page remains readable with JavaScript disabled. Verify the GitHub Pages build and deployed page after each push.
 
 MC-TRCM uses the architecture diagram (Figure 2) from the final ICONIP 2026 submission package, rendered from `figures/mctrcm_architecture_new.pdf`. The original manuscript figure is preserved without alteration.
+
+The PASB preview uses the overview diagram (Figure 1), cropped from page 2 of the [arXiv v5 manuscript](https://arxiv.org/pdf/2607.10526v5#page=2).
