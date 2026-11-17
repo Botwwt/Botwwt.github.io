@@ -7,10 +7,11 @@ lang_switch_label: English
 lang_switch_url: /publications/
 publications_only: true
 ---
-<section id="publications" class="section publications-section">
-  <p class="eyebrow">研究成果</p>
-  <h1 class="publications-page-title">论文成果</h1>
-  <p class="publications-page-intro">研究涵盖类脑学习、大语言模型、多模态学习与智能决策。</p>
+<header class="post-header">
+  <h1 class="post-title">论文成果</h1>
+  <p class="desc">研究涵盖类脑学习、大语言模型、多模态学习与智能决策。</p>
+</header>
+<section id="publications" class="publications-section">
   {% include academic-publications.html %}
-  <a class="text-link" href="/zh/">← 返回主页</a>
+  <a class="back-link" href="{{ '/zh/' | relative_url }}">← 返回主页</a>
 </section>

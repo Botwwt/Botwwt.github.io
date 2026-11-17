@@ -8,6 +8,8 @@ labels:
   en:
     home: Wentao Wang — homepage
     navigation: Main navigation
+    menu: Toggle navigation
+    theme: Dark mode
     profile: Profile and contact information
     portrait: Wentao Wang at Merlion Park in Singapore
     skip: Skip to content
@@ -34,6 +36,7 @@ labels:
     links: Academic profiles
     email: Email
     cv: Curriculum Vitae · 中文 PDF
+    cv_short: CV
     motto: Stay curious. Keep exploring.
     eyebrow: LEARNING · REASONING · DISCOVERY
     greeting: Hi, I'm
@@ -62,6 +65,8 @@ labels:
   zh:
     home: 王文韬 — 个人主页
     navigation: 主导航
+    menu: 展开或收起导航
+    theme: 深色模式
     profile: 个人信息与联系方式
     portrait: 王文韬在新加坡鱼尾狮公园
     skip: 跳转至正文
@@ -88,6 +93,7 @@ labels:
     links: 学术主页链接
     email: 邮箱
     cv: 个人简历 · 中文 PDF
+    cv_short: 简历
     motto: 保持好奇，在探索中不断前行。
     eyebrow: 学习 · 推理 · 发现
     greeting: 你好，我是

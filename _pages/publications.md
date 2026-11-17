@@ -7,10 +7,11 @@ lang_switch_label: 中文
 lang_switch_url: /zh/publications/
 publications_only: true
 ---
-<section id="publications" class="section publications-section">
-  <p class="eyebrow">RESEARCH OUTPUT</p>
-  <h1 class="publications-page-title">Publications</h1>
-  <p class="publications-page-intro">Research in brain-inspired learning, language models, multimodal learning, and intelligent decision-making.</p>
+<header class="post-header">
+  <h1 class="post-title">Publications</h1>
+  <p class="desc">Research in brain-inspired learning, language models, multimodal learning, and intelligent decision-making.</p>
+</header>
+<section id="publications" class="publications-section">
   {% include academic-publications.html %}
-  <a class="text-link" href="/">← Back to homepage</a>
+  <a class="back-link" href="{{ '/' | relative_url }}">← Back to homepage</a>
 </section>

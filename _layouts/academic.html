@@ -4,15 +4,18 @@
 {% assign p = site.data.profile %}
 {% assign t = p.labels[lang] %}
 {% assign home = '/' %}{% if lang == 'zh' %}{% assign home = '/zh/' %}{% endif %}
+{% assign publications = home | append: 'publications/' %}
+{% assign other_lang = 'zh' %}{% if lang == 'zh' %}{% assign other_lang = 'en' %}{% endif %}
+{% assign asset_version = site.time | date: '%s' %}
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% if page.publications_only %}{{ t.publications }} · {% endif %}Wentao Wang | 王文韬</title>
   <meta name="description" content="{{ p.description[lang] | escape }}">
-  <meta name="theme-color" content="#8c2332">
+  <meta name="theme-color" content="#ffffff">
   <link rel="canonical" href="{{ page.url | absolute_url }}">
   <link rel="alternate" hreflang="{{ lang }}" href="{{ page.url | absolute_url }}">
-  <link rel="alternate" hreflang="{% if lang == 'zh' %}en{% else %}zh{% endif %}" href="{{ page.lang_switch_url | absolute_url }}">
+  <link rel="alternate" hreflang="{{ other_lang }}" href="{{ page.lang_switch_url | absolute_url }}">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Wentao Wang | 王文韬">
   <meta property="og:description" content="{{ p.description[lang] | escape }}">
@@ -20,52 +23,45 @@
   <meta property="og:image" content="{{ '/images/wentao-wang.jpg' | absolute_url }}">
   <meta name="twitter:card" content="summary">
   <link rel="icon" type="image/svg+xml" href="{{ '/images/ww.svg' | relative_url }}">
-  <link rel="stylesheet" href="{{ '/assets/css/academic.css' | relative_url }}">
-  <script defer src="{{ '/assets/js/academic.js' | relative_url }}"></script>
+  <link rel="stylesheet" href="{{ '/assets/css/academic.css' | relative_url }}?v={{ asset_version }}">
+  <script defer src="{{ '/assets/js/academic.js' | relative_url }}?v={{ asset_version }}"></script>
 </head>
-<body>
+<body class="fixed-bottom-footer">
   <a class="skip-link" href="#main">{{ t.skip }}</a>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a class="wordmark" href="{{ home | relative_url }}" aria-label="{{ t.home }}">W<span class="wordmark-dot">.</span> Wang</a>
-      <nav class="main-nav" aria-label="{{ t.navigation }}">
-        <a href="{{ home | relative_url }}#about">{{ t.about }}</a>
+  {% comment %}Navigation and footer adapted from al-folio v0.16.3.{% endcomment %}
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a class="navbar-brand{% unless page.publications_only %} navbar-brand--home{% endunless %}" href="{{ home | relative_url }}" aria-label="{{ t.home }}">
+        {% if lang == 'zh' %}<strong>王文韬</strong>{% else %}<strong>Wentao</strong> Wang{% endif %}
+      </a>
+      <button class="navbar-toggler" type="button" aria-controls="site-navigation" aria-expanded="false" aria-label="{{ t.menu }}" hidden>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <nav class="navbar-nav" id="site-navigation" aria-label="{{ t.navigation }}">
+        <a href="{{ home | relative_url }}#about"{% unless page.publications_only %} aria-current="location"{% endunless %}>{{ t.about }}</a>
         <a href="{{ home | relative_url }}#research">{{ t.nav_research }}</a>
-        <a href="{{ home | relative_url }}#publications">{{ t.publications }}</a>
+        <a href="{{ publications | relative_url }}"{% if page.publications_only %} aria-current="page"{% endif %}>{{ t.publications }}</a>
         <a href="{{ home | relative_url }}#experience">{{ t.nav_experience }}</a>
         <a href="{{ home | relative_url }}#honors">{{ t.nav_honors }}</a>
+        <a href="{{ site.author.cv | relative_url }}" title="{{ t.cv }}">{{ t.cv_short }}</a>
       </nav>
-      <a class="language-link" href="{{ page.lang_switch_url | relative_url }}" lang="{% if lang == 'zh' %}en{% else %}zh{% endif %}">{{ page.lang_switch_label }} <span aria-hidden="true">↗</span></a>
+      <div class="navbar-actions">
+        <a class="language-link" href="{{ page.lang_switch_url | relative_url }}" lang="{{ other_lang }}" hreflang="{{ other_lang }}">{{ page.lang_switch_label }}</a>
+        <button class="theme-toggle" type="button" aria-label="{{ t.theme }}" title="{{ t.theme }}" aria-pressed="false" hidden><span aria-hidden="true">◐</span></button>
+      </div>
     </div>
   </header>
-  <div class="site-shell">
-    <aside class="profile" aria-label="{{ t.profile }}">
-      <img class="portrait" src="{{ '/images/wentao-wang.jpg' | relative_url }}" alt="{{ t.portrait }}" width="216" height="256" fetchpriority="high">
-      <p class="profile-name">Wentao Wang</p>
-      <p class="chinese-name" lang="zh">王文韬</p>
-      <p class="profile-role">{{ t.incoming }}</p>
-      <a class="profile-school" href="https://www.pku.edu.cn/">{{ t.pku }}</a>
-      <p class="profile-department">{{ t.school }}</p>
-      <p class="advisor-line">{{ t.advisor }} <a href="{{ p.advisor_url }}">{{ t.lei_ma }}</a></p>
-      <div class="profile-rule"></div>
-      <p class="current-label">{{ t.current }}</p>
-      <p class="current-school">{{ t.dlut }}</p>
-      <p class="current-major">{{ t.major }}</p>
-      <div class="social-links" aria-label="{{ t.links }}">
-        <a href="mailto:{{ site.author.email }}"><span aria-hidden="true">↗</span> {{ t.email }}</a>
-        <a href="{{ site.author.googlescholar }}"><span aria-hidden="true">↗</span> Google Scholar</a>
-        <a href="https://github.com/Botwwt"><span aria-hidden="true">↗</span> GitHub</a>
-      </div>
-      <a class="cv-link" href="{{ '/files/Wentao_Wang_CV.pdf' | relative_url }}" target="_blank" rel="noopener">{{ t.cv }} <span aria-hidden="true">↓</span></a>
-      <p class="profile-motto">{{ t.motto }}</p>
-    </aside>
-    <main id="main" class="main-content">
+  <main id="main" class="container" tabindex="-1">
+    <div class="post">
       {{ content }}
-      <footer class="site-footer">
-        <span>© 2026 Wentao Wang <span class="footer-separator">/</span> {{ t.updated }} {{ p.updated }}</span>
-        <a href="#main">{{ t.top }} ↑</a>
-      </footer>
-    </main>
-  </div>
+    </div>
+  </main>
+  <footer class="fixed-bottom">
+    <div class="container">
+      © {{ site.time | date: '%Y' }} Wentao Wang · {{ t.updated }} {{ p.updated }} · <a href="https://github.com/alshedivat/al-folio">al-folio</a>
+    </div>
+  </footer>
 </body>
 </html>
