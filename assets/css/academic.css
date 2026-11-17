@@ -550,6 +550,11 @@ summary {
   font-weight: 500;
 }
 
+.experience-mentor {
+  color: var(--global-text-color-light);
+  font-weight: 400;
+}
+
 .skills-details p {
   margin: .55rem 0 0;
 }

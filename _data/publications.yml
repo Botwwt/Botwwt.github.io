@@ -236,6 +236,68 @@ items:
       zh: 代码
   venue: NeurIPS 2026
   title_url: https://arxiv.org/abs/2604.00004
+- id: sparc
+  section: preprint
+  selected: false
+  venue: arXiv 2026
+  badge:
+    en: arXiv 2026 | Preprint
+    zh: arXiv 2026 | 预印本
+  title: Shared Phase and Retention Control for Efficient Adaptive Spectral Recurrence
+  title_url: https://arxiv.org/abs/2609.39082
+  authors:
+    en: <strong>Wentao Wang</strong>, Hengyu Zhong, Yunhan Jiang, Jialiang An, Meng Lu
+    zh: <strong>Wentao Wang</strong>, Hengyu Zhong, Yunhan Jiang, Jialiang An, Meng Lu
+  meta:
+    home:
+      en: First author | arXiv:2609.39082
+      zh: 第一作者 | arXiv:2609.39082
+    full:
+      en: First author | arXiv:2609.39082
+      zh: 第一作者 | arXiv:2609.39082
+  summary:
+    en: SPARC uses two input-dependent signals to adapt retention and phase across spectral memory modes, with support for parallel BPTT and exact structured real-time recurrent learning.
+    zh: SPARC 用两个随输入变化的标量调节谱记忆的保留与相位，支持并行 BPTT 和精确的结构化实时循环学习（RTRL）。
+  links:
+  - url: https://arxiv.org/abs/2609.39082
+    label:
+      en: arXiv
+      zh: arXiv
+  - url: https://github.com/Botwwt/sparc
+    label:
+      en: Code
+      zh: 代码
+- id: persistent-sycophancy
+  section: preprint
+  selected: false
+  venue: arXiv 2026
+  badge:
+    en: arXiv 2026 | Preprint
+    zh: arXiv 2026 | 预印本
+  title: "Agents Don't Just Agree, They Remember: Benchmarking Persistent Sycophancy in Self-Improving Personal Agents"
+  title_url: https://arxiv.org/abs/2607.10526
+  authors:
+    en: Xutao Mao, Liangjie Zhao, Leyao Wang, Rui Qian, Qiang Huang, <strong>Wentao Wang</strong>, Bo Han, Xiang Zheng, Cong Wang
+    zh: Xutao Mao, Liangjie Zhao, Leyao Wang, Rui Qian, Qiang Huang, <strong>Wentao Wang</strong>, Bo Han, Xiang Zheng, Cong Wang
+  meta:
+    home:
+      en: arXiv:2607.10526
+      zh: arXiv:2607.10526
+    full:
+      en: arXiv:2607.10526
+      zh: arXiv:2607.10526
+  summary:
+    en: Introduces PASB, a 1,600-task benchmark that measures whether personal agents store user claims and rely on them in later sessions.
+    zh: 提出包含 1,600 项任务的 PASB 基准，评估个人智能体是否将用户的说法写入长期记忆，并在后续会话中继续采信。
+  links:
+  - url: https://arxiv.org/abs/2607.10526
+    label:
+      en: arXiv
+      zh: arXiv
+  - url: https://github.com/henrymao2004/agent-sycophancy
+    label:
+      en: Code
+      zh: 代码
 - id: caadrl-pdp
   selected: false
   section: journal

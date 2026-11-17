@@ -76,7 +76,17 @@
   <h2>{{ t.experience }}</h2>
   <div class="experience-list">
     {% for item in p.experience %}
-    <article class="experience-entry"><div class="entry-heading"><h3><a href="{{ item.url }}">{{ item.name[lang] }}</a></h3><span class="entry-date">{{ item.date[lang] }}</span></div><p class="experience-role">{{ item.role[lang] }}</p><p>{{ item.text[lang] }}</p></article>
+    <article class="experience-entry">
+      <div class="entry-heading">
+        <h3><a href="{{ item.url }}">{{ item.name[lang] }}</a></h3>
+        <span class="entry-date">{{ item.date[lang] }}</span>
+      </div>
+      <p class="experience-role">
+        {{ item.role[lang] }}
+        {% if item.mentor[lang] %}<span class="experience-mentor">· {{ t.mentored_by }} {{ item.mentor[lang] }}</span>{% endif %}
+      </p>
+      {% if item.text[lang] %}<p>{{ item.text[lang] }}</p>{% endif %}
+    </article>
     {% endfor %}
   </div>
 </section>

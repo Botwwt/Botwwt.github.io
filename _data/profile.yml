@@ -1,4 +1,4 @@
-updated: '2026.09'
+updated: '2026.11'
 advisor_url: https://future.pku.edu.cn/szll/jyxln/4779cf6b628a43029c20350e7f1fdf56.htm
 description:
   en: Wentao Wang, incoming Ph.D. student (2027 entry) at Peking University, College of Future Technology, advised by Lei Ma. Brain-inspired learning, language models, and reinforcement
@@ -20,6 +20,7 @@ labels:
     research: Research Interests
     publications: Publications
     experience: Research Experience
+    mentored_by: Mentored by
     honors: Honors & Awards
     education: Education
     news: News
@@ -48,7 +49,7 @@ labels:
     selected: Selected
     filter: Filter publications
     figure: View research figure
-    publications_note: Published and accepted work, alongside manuscripts under review.
+    publications_note: Published and accepted work, preprints, and manuscripts under review.
     publication_details: Full publication details
     contributions: Research & contributions
     phd_detail: Incoming Ph.D. (2027 entry) · College of Future Technology
@@ -77,6 +78,7 @@ labels:
     research: 研究方向
     publications: 论文成果
     experience: 科研经历
+    mentored_by: 指导老师
     honors: 荣誉奖项
     education: 教育背景
     news: 近期动态
@@ -105,7 +107,7 @@ labels:
     selected: 代表作
     filter: 筛选论文
     figure: 查看研究示意图
-    publications_note: 汇集已发表、已录用成果及在审论文，分别标注当前状态。
+    publications_note: 汇集已发表、已录用成果、预印本及在审论文，并标注当前状态。
     publication_details: 查看完整论文信息
     contributions: 研究内容与个人贡献
     phd_detail: 2027年入学直博生 · 未来技术学院
@@ -185,10 +187,26 @@ experience:
   role:
     en: Research Intern
     zh: 科研实习生
+  mentor:
+    en: Guozhang Chen
+    zh: 陈国璋
   text:
     en: Study temporal credit assignment beyond BPTT through online, biologically inspired local learning rules; analyze approximation error, stability,
       and scalability in recurrent and spiking networks.
     zh: 围绕 BPTT 的时序信用分配问题开展研究，探索在线、具生物启发且低内存的局部学习规则，并验证其近似误差、稳定性与可扩展性。
+- name:
+    en: Peking University
+    zh: 北京大学
+  url: https://www.pku.edu.cn/
+  date:
+    en: Jul. 2026 – Oct. 2026
+    zh: 2026.07 – 2026.10
+  role:
+    en: Research Intern
+    zh: 科研实习生
+  mentor:
+    en: Meng Lu
+    zh: 卢萌
 - name:
     en: Institute of Automation, Chinese Academy of Sciences
     zh: 中国科学院自动化研究所
@@ -199,6 +217,9 @@ experience:
   role:
     en: Research Intern
     zh: 科研实习生
+  mentor:
+    en: Ning Yang
+    zh: 杨宁
   text:
     en: Research cooperative edge caching, long-context restoration, and decision-making LLMs for wireless communication. Build training pipelines and experiments;
       contribute to technical writing, figures, and patent materials.
@@ -213,6 +234,9 @@ experience:
   role:
     en: Research Intern
     zh: 科研实习生
+  mentor:
+    en: Wentao Zhu
+    zh: 朱文韬
   text:
     en: Reviewed representative work on world models and vision-language models, and mapped the main methods and technical directions.
     zh: 阅读世界模型与视觉语言大模型相关文献，梳理代表性方法与技术路线。
@@ -226,11 +250,18 @@ experience:
   role:
     en: Undergraduate Researcher
     zh: 本科科研
+  mentor:
+    en: Guangyu Zou
+    zh: 邹广宇
   text:
     en: Worked on neural combinatorial optimization for pickup-and-delivery problems, including model design, reinforcement learning, benchmarks, comparative
       experiments, and manuscript writing.
     zh: 围绕取送货问题神经组合优化开展本科科研，完成模型设计、强化学习训练、基准构建、对比实验与论文撰写。
 honors:
+- date: '2026'
+  text:
+    en: <strong>National Second Prize</strong> · Challenge Cup
+    zh: <strong>国家二等奖</strong> · “挑战杯”
 - date: '2026.06'
   text:
     en: <strong>Bronze Medal</strong> · Kaggle BirdCLEF+ 2026
