@@ -50,6 +50,7 @@ labels:
     filter: Filter publications
     figure: View research figure
     publications_note: Published and accepted work, preprints, and manuscripts under review.
+    authorship_note: "* Equal contribution · † Advisor listed first"
     publication_details: Full publication details
     contributions: Research & contributions
     phd_detail: Incoming Ph.D. (2027 entry) · College of Future Technology
@@ -108,6 +109,7 @@ labels:
     filter: 筛选论文
     figure: 查看研究示意图
     publications_note: 汇集已发表、已录用成果、预印本及在审论文，并标注当前状态。
+    authorship_note: "* 共同一作 · † 导师一作"
     publication_details: 查看完整论文信息
     contributions: 研究内容与个人贡献
     phd_detail: 2027年入学直博生 · 未来技术学院
@@ -131,7 +133,7 @@ bio:
     (expected graduation: June 2027), and conduct research at Peking University. I previously interned at the Institute of Automation, Chinese Academy of Sciences. My interests
     lie in <strong>brain-inspired learning, large language models, and reinforcement learning</strong>, with a focus on memory-efficient learning and intelligent
     decision-making.'
-  zh: 我关注<strong>类脑计算、大语言模型与强化学习</strong>，希望构建高效、低内存的学习方法，以及面向真实约束的智能决策系统。目前在北京大学开展科研实习，曾在中国科学院自动化研究所实习，研究涵盖时序信用分配、长上下文建模、协同边缘缓存与神经组合优化。
+  zh: 我关注<strong>类脑计算、大语言模型与强化学习</strong>，希望构建高效、低内存的学习方法，以及面向真实约束的智能决策系统。目前在北京大学开展科研实习，曾在中国科学院自动化研究所实习，研究涵盖时序信用分配、长上下文建模、状态空间模型与神经组合优化。
 announcement:
   en: '<strong>Incoming Ph.D. · 2027:</strong> Peking University, College of Future Technology · Advisor: Prof. Lei Ma.'
   zh: <strong>2027年入学直博生 · 北京大学</strong>，未来技术学院 · 导师：马雷老师。
@@ -152,8 +154,8 @@ research:
     en: Learning to make decisions
     zh: 强化学习与智能决策
   text:
-    en: Reinforcement learning for wireless resource allocation and structured combinatorial optimization.
-    zh: 利用强化学习求解无线资源分配、协同缓存与具有结构约束的组合优化问题。
+    en: Reinforcement learning for sequential decision-making and structured combinatorial optimization.
+    zh: 利用强化学习研究序列决策与具有结构约束的组合优化问题。
 news:
 - date: '2026.09'
   text:
@@ -207,6 +209,9 @@ experience:
   mentor:
     en: Meng Lu
     zh: 卢萌
+  text:
+    en: Studied state space models (SSMs), including Mamba, with a focus on efficient sequence modeling and recurrent memory.
+    zh: 研究包括 Mamba 在内的状态空间模型（SSM），关注高效序列建模与循环记忆机制。
 - name:
     en: Institute of Automation, Chinese Academy of Sciences
     zh: 中国科学院自动化研究所
@@ -221,9 +226,9 @@ experience:
     en: Ning Yang
     zh: 杨宁
   text:
-    en: Research cooperative edge caching, long-context restoration, and decision-making LLMs for wireless communication. Build training pipelines and experiments;
+    en: Research long-context restoration, memory-efficient attention distillation, and decision-making LLMs. Build training pipelines and experiments;
       contribute to technical writing, figures, and patent materials.
-    zh: 参与协同边缘缓存、长上下文恢复与无线通信大模型综述等研究，负责环境与训练流程搭建、实验组织、图表绘制、技术写作，并参与后续专利材料整理。
+    zh: 参与长上下文恢复、低内存注意力蒸馏与决策型大语言模型等研究，负责环境与训练流程搭建、实验组织、图表绘制、技术写作，并参与后续专利材料整理。
 - name:
     en: Eastern Institute of Technology, Ningbo
     zh: 东方理工大学
@@ -260,8 +265,8 @@ experience:
 honors:
 - date: '2026'
   text:
-    en: <strong>National Second Prize</strong> · Challenge Cup
-    zh: <strong>国家二等奖</strong> · “挑战杯”
+    en: <strong>National Second Prize</strong> · “Challenge Cup” China College Students’ Business Plan Competition
+    zh: <strong>国家二等奖</strong> · “挑战杯”中国大学生创业计划竞赛
 - date: '2026.06'
   text:
     en: <strong>Bronze Medal</strong> · Kaggle BirdCLEF+ 2026
@@ -291,8 +296,8 @@ honors:
     en: <strong>Honorable Mention</strong> · Mathematical Contest in Modeling (MCM)
     zh: <strong>Honorable Mention</strong> · 美国大学生数学建模竞赛
 service:
-- en: <strong>Reviewer:</strong> Journal on Wireless Communications and Networking.
-  zh: <strong>学术审稿：</strong>Journal on Wireless Communications and Networking 期刊审稿人。
+- en: <strong>Reviewer:</strong> ICLR, CVPR.
+  zh: <strong>学术审稿：</strong>ICLR、CVPR。
 - en: <strong>Community:</strong> Kaggle Competitions Expert.
   zh: <strong>竞赛平台：</strong>Kaggle 专家（Competitions Expert）。
 - en: <strong>Academic exchange:</strong> National University of Singapore summer program.

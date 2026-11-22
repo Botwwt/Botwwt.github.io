@@ -459,6 +459,17 @@ html[lang="en"] .navbar-nav a:not(:last-child) {
   overflow-wrap: break-word;
 }
 
+.author sup {
+  font-size: .75em;
+  line-height: 0;
+}
+
+.authorship-note {
+  color: var(--global-text-color-light);
+  font-size: .875rem;
+  margin-bottom: .5rem;
+}
+
 .periodical {
   color: var(--global-text-color-light);
   font-size: .9rem;

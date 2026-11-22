@@ -17,13 +17,16 @@ items:
   alt: Global credit assignment via dynamical criticality
   title: Global Credit Assignment via Dynamical Criticality
   title_url: https://openreview.net/forum?id=jI2TM7Kzlu
+  authors:
+    en: <strong>Wentao Wang</strong>, Keren Gao, Guozhang Chen
+    zh: <strong>Wentao Wang</strong>, Keren Gao, Guozhang Chen
   meta:
     home:
-      en: First author | Peking University
-      zh: 第一作者 | 北京大学
+      en: Peking University
+      zh: 北京大学
     full:
-      en: First author | Peking University | Oct. 2025 - Present
-      zh: 第一作者 | 北京大学 | 2025 年 10 月至今
+      en: Peking University | Oct. 2025 - Present
+      zh: 北京大学 | 2025 年 10 月至今
   summary:
     en: This ICML 2026 paper studies temporal credit assignment in recurrent, convolutional recurrent, and spiking systems through criticality-driven
       online local learning with constant activation memory.
@@ -68,15 +71,15 @@ items:
   title: 'Decision-Making Large Language Model for Wireless Communication: A Comprehensive Survey on Key Techniques'
   title_url: https://ieeexplore.ieee.org/document/11180008/
   authors:
-    en: Ning Yang, Mingrui Fan, <strong>Wentao Wang</strong>, Haijun Zhang
-    zh: Ning Yang, Mingrui Fan, <strong>Wentao Wang</strong>, Haijun Zhang
+    en: Ning Yang<sup>†</sup>, Mingrui Fan, <strong>Wentao Wang</strong>, Haijun Zhang
+    zh: Ning Yang<sup>†</sup>, Mingrui Fan, <strong>Wentao Wang</strong>, Haijun Zhang
   meta:
     home:
-      en: Third author (advisor is first author) | Institute of Automation, Chinese Academy of Sciences
-      zh: 第三作者（导师一作） | 中国科学院自动化研究所
+      en: Institute of Automation, Chinese Academy of Sciences
+      zh: 中国科学院自动化研究所
     full:
-      en: Third author (advisor is first author) | Institute of Automation, Chinese Academy of Sciences | Dec. 2024 - Aug. 2025
-      zh: 第三作者（导师一作） | 中国科学院自动化研究所 | 2024 年 12 月 - 2025 年 8 月
+      en: Institute of Automation, Chinese Academy of Sciences | Dec. 2024 - Aug. 2025
+      zh: 中国科学院自动化研究所 | 2024 年 12 月 - 2025 年 8 月
   summary:
     en: This survey organizes decision-making LLMs for wireless communication across data construction, architecture adaptation, reasoning control,
       multi-agent coordination, and open challenges.
@@ -117,15 +120,15 @@ items:
   title: Cooperative Edge Caching with Large Language Model in Wireless Networks
   title_url: https://arxiv.org/abs/2602.13307
   authors:
-    en: Ning Yang, <strong>Wentao Wang</strong>, Lingtao Ouyang, Haijun Zhang
-    zh: Ning Yang, <strong>Wentao Wang</strong>, Lingtao Ouyang, Haijun Zhang
+    en: Ning Yang<sup>†</sup>, <strong>Wentao Wang</strong>, Lingtao Ouyang, Haijun Zhang
+    zh: Ning Yang<sup>†</sup>, <strong>Wentao Wang</strong>, Lingtao Ouyang, Haijun Zhang
   meta:
     home:
-      en: Second author (student first; advisor is first author) | Institute of Automation, Chinese Academy of Sciences
-      zh: 第二作者（学生一作，导师一作） | 中国科学院自动化研究所
+      en: Institute of Automation, Chinese Academy of Sciences
+      zh: 中国科学院自动化研究所
     full:
-      en: Second author (student first; advisor is first author) | Institute of Automation, Chinese Academy of Sciences | May 2025 - Nov. 2025
-      zh: 第二作者（学生一作，导师一作） | 中国科学院自动化研究所 | 2025 年 5 月 - 2025 年 11 月
+      en: Institute of Automation, Chinese Academy of Sciences | May 2025 - Nov. 2025
+      zh: 中国科学院自动化研究所 | 2025 年 5 月 - 2025 年 11 月
   summary:
     en: We formulate cooperative multi-base-station edge caching as an LLM-native sequential decision problem, build an SFT+GRPO training pipeline,
       and design an opportunity-aware reward.
@@ -161,13 +164,16 @@ items:
     zh: CCF-C
   title: 'MC-TRCM: Observation-Aware Recursive Fusion for Incomplete Mobile and Wearable Mental-Health Feature Views'
   title_url: https://github.com/Botwwt/MC-TRCM
+  authors:
+    en: <strong>Wentao Wang</strong>, Lifeng Han, Zining Ren, Hengyu Zhong, Guangyu Zou
+    zh: <strong>Wentao Wang</strong>, Lifeng Han, Zining Ren, Hengyu Zhong, Guangyu Zou
   meta:
     home:
-      en: First author | Dalian University of Technology
-      zh: 第一作者 | 大连理工大学
+      en: Dalian University of Technology
+      zh: 大连理工大学
     full:
-      en: First author | Dalian University of Technology
-      zh: 第一作者 | 大连理工大学
+      en: Dalian University of Technology
+      zh: 大连理工大学
   summary:
     en: Observation-aware recursive fusion for asynchronous and incomplete mobile and wearable feature views, combining shared-private representations
       with task-conditioned multi-task prediction.
@@ -202,13 +208,16 @@ items:
   thumbnail: /images/publications/thumbnails/linearard.jpg
   alt: LinearARD for long-context RoPE restoration
   title: 'LinearARD: Linear-Memory Attention Distillation for RoPE Restoration'
+  authors:
+    en: Ning Yang<sup>*†</sup>, Hengyu Zhong<sup>*</sup>, <strong>Wentao Wang</strong><sup>*</sup>, Baoliang Tian, Yuan Zhou, Haijun Zhang, Jun Wang
+    zh: Ning Yang<sup>*†</sup>, Hengyu Zhong<sup>*</sup>, <strong>Wentao Wang</strong><sup>*</sup>, Baoliang Tian, Yuan Zhou, Haijun Zhang, Jun Wang
   meta:
     home:
-      en: Co-first author (advisor listed first) | Institute of Automation, Chinese Academy of Sciences
-      zh: 共同一作（导师一作） | 中国科学院自动化研究所
+      en: Institute of Automation, Chinese Academy of Sciences
+      zh: 中国科学院自动化研究所
     full:
-      en: Co-first author (advisor listed first) | Institute of Automation, Chinese Academy of Sciences | Sep. 2025 - Dec. 2025
-      zh: 共同一作（导师一作） | 中国科学院自动化研究所 | 2025 年 9 月 - 2025 年 12 月
+      en: Institute of Automation, Chinese Academy of Sciences | Sep. 2025 - Dec. 2025
+      zh: 中国科学院自动化研究所 | 2025 年 9 月 - 2025 年 12 月
   summary:
     en: LinearARD aligns row-wise dense self-relations between native-RoPE teachers and RoPE-scaled students, restoring long-context performance
       with an exact linear-memory distillation objective.
@@ -236,6 +245,40 @@ items:
       zh: 代码
   venue: NeurIPS 2026
   title_url: https://arxiv.org/abs/2604.00004
+- id: visalloc
+  section: preprint
+  selected: false
+  venue: arXiv 2026
+  badge:
+    en: arXiv 2026 | Preprint
+    zh: arXiv 2026 | 预印本
+  title: "VisAlloc: Allocating Visual Supervision for On-Policy Self-Distillation"
+  title_url: https://arxiv.org/abs/2611.25069
+  image: /images/publications/visalloc.png
+  thumbnail: /images/publications/thumbnails/visalloc.png
+  alt: VisAlloc compares visual supervision and token weighting for on-policy self-distillation.
+  authors:
+    en: Haoran Xu<sup>*</sup>, Tian Chen<sup>*</sup>, Yuhe Wu, Yanbo Zhao, Junchi Liao, Hongyu Wang, Jiaze Li, <strong>Wentao Wang</strong>, Yanfeng Li, Rui Qian
+    zh: Haoran Xu<sup>*</sup>, Tian Chen<sup>*</sup>, Yuhe Wu, Yanbo Zhao, Junchi Liao, Hongyu Wang, Jiaze Li, <strong>Wentao Wang</strong>, Yanfeng Li, Rui Qian
+  meta:
+    home:
+      en: arXiv:2611.25069
+      zh: arXiv:2611.25069
+    full:
+      en: arXiv:2611.25069
+      zh: arXiv:2611.25069
+  summary:
+    en: VisAlloc combines sample-level visual filtering with token-level counterfactual reweighting to improve on-policy self-distillation for visual reasoning.
+    zh: VisAlloc 将样本级视觉筛选与 token 级反事实重加权结合，用于提升多模态大语言模型视觉推理的在线策略自蒸馏。
+  links:
+  - url: https://arxiv.org/abs/2611.25069
+    label:
+      en: arXiv
+      zh: arXiv
+  - url: https://github.com/Kaelyn01/VisAlloc
+    label:
+      en: Code
+      zh: 代码
 - id: persistent-sycophancy
   section: preprint
   selected: false
@@ -249,8 +292,8 @@ items:
   thumbnail: /images/publications/thumbnails/persistent-sycophancy.png
   alt: "Figure 1. PASB benchmark overview showing how agents store claims and reuse them in later tasks."
   authors:
-    en: Xutao Mao, Liangjie Zhao, Leyao Wang, Rui Qian, Qiang Huang, <strong>Wentao Wang</strong>, Bo Han, Xiang Zheng, Cong Wang
-    zh: Xutao Mao, Liangjie Zhao, Leyao Wang, Rui Qian, Qiang Huang, <strong>Wentao Wang</strong>, Bo Han, Xiang Zheng, Cong Wang
+    en: Xutao Mao<sup>*</sup>, Liangjie Zhao<sup>*</sup>, Leyao Wang, Rui Qian, Qiang Huang, <strong>Wentao Wang</strong>, Bo Han, Xiang Zheng, Cong Wang
+    zh: Xutao Mao<sup>*</sup>, Liangjie Zhao<sup>*</sup>, Leyao Wang, Rui Qian, Qiang Huang, <strong>Wentao Wang</strong>, Bo Han, Xiang Zheng, Cong Wang
   meta:
     home:
       en: arXiv:2607.10526
@@ -295,11 +338,11 @@ items:
     zh: <strong>Wentao Wang</strong>, Lifeng Han, Guangyu Zou
   meta:
     home:
-      en: First author | Dalian University of Technology
-      zh: 第一作者 | 大连理工大学
+      en: Dalian University of Technology
+      zh: 大连理工大学
     full:
-      en: First author | Dalian University of Technology | Oct. 2024 - Mar. 2025
-      zh: 第一作者 | 大连理工大学 | 2024 年 10 月 - 2025 年 3 月
+      en: Dalian University of Technology | Oct. 2024 - Mar. 2025
+      zh: 大连理工大学 | 2024 年 10 月 - 2025 年 3 月
   summary:
     en: CAADRL combines global self-attention, intra-cluster attention, and a dynamic dual-decoder to exploit clustered structure in pickup and
       delivery problems while reducing inference latency.
