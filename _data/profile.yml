@@ -51,6 +51,8 @@ labels:
     figure: View research figure
     publications_note: Published and accepted work, preprints, and manuscripts under review.
     authorship_note: "* Equal contribution · † Advisor listed first"
+    related_talk: Related talk
+    speaker: Speaker
     publication_details: Full publication details
     contributions: Research & contributions
     phd_detail: Incoming Ph.D. (2027 entry) · College of Future Technology
@@ -110,6 +112,8 @@ labels:
     figure: 查看研究示意图
     publications_note: 汇集已发表、已录用成果、预印本及在审论文，并标注当前状态。
     authorship_note: "* 共同一作 · † 导师一作"
+    related_talk: 相关报告
+    speaker: 主讲
     publication_details: 查看完整论文信息
     contributions: 研究内容与个人贡献
     phd_detail: 2027年入学直博生 · 未来技术学院

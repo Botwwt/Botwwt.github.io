@@ -32,6 +32,18 @@
         <div class="paper-links">
           {% for link in paper.links %}<a href="{{ link.url | relative_url }}">{{ link.label[lang] }}</a>{% endfor %}
         </div>
+        {% if paper.talks %}
+        <aside class="paper-talks" aria-label="{{ t.related_talk }}">
+          <p class="talk-label">{{ t.related_talk }}</p>
+          {% for talk in paper.talks %}
+          <p class="talk-title">{{ talk.title[lang] }}</p>
+          <p class="talk-meta">{{ talk.event[lang] }} · <time datetime="{{ talk.date_iso }}">{{ talk.date[lang] }}</time> · {{ t.speaker }}: {{ talk.speaker[lang] }}</p>
+          <div class="talk-links">
+            {% for link in talk.links %}<a href="{{ link.url }}">{{ link.label[lang] }}</a>{% endfor %}
+          </div>
+          {% endfor %}
+        </aside>
+        {% endif %}
         {% if page.publications_only and paper.bullets %}
         <details class="paper-details">
           <summary>{{ t.contributions }}</summary>

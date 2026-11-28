@@ -488,6 +488,39 @@ html[lang="en"] .navbar-nav a:not(:last-child) {
   margin-top: .85rem;
 }
 
+.paper-talks {
+  margin-top: .85rem;
+  padding: .65rem .85rem;
+  border-inline-start: 2px solid var(--global-theme-color);
+  border-radius: 0 3px 3px 0;
+  background: var(--global-tint-color);
+  font-size: .875rem;
+}
+
+.paper-talks p {
+  margin: 0;
+}
+
+.talk-label {
+  color: var(--global-theme-color);
+  font-weight: 500;
+}
+
+.talk-title {
+  font-weight: 500;
+}
+
+.talk-meta {
+  color: var(--global-text-color-light);
+}
+
+.talk-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem 1rem;
+  margin-top: .35rem;
+}
+
 summary {
   color: var(--global-theme-color);
   cursor: pointer;

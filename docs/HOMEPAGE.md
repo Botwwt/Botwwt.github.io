@@ -19,12 +19,16 @@ The navigation, right-aligned profile, news table, bibliography rows, and theme 
 
 ## Verification and deployment
 
-The main branch automatically builds and deploys via `.github/workflows/`. Before publishing changes, check both languages and both publication routes, local links and anchors, paper filtering (8 All / 5 Selected as of November 2026), images, keyboard focus, and narrow mobile screens. The page remains readable with JavaScript disabled. Verify the GitHub Pages build and deployed page after each push.
+The main branch automatically builds and deploys via `.github/workflows/`. Before publishing changes, check both languages and both publication routes, local links and anchors, paper filtering (9 All / 5 Selected as of November 2026), images, keyboard focus, and narrow mobile screens. The page remains readable with JavaScript disabled. Verify the GitHub Pages build and deployed page after each push.
+
+Optional `talks` in a publication record appear beneath that paper on both homepages and publication pages. The Global Credit Assignment record includes Guozhang Chen's June 13, 2026 BAAI Conference talk, with the [official agenda](https://2026.baai.ac.cn/schedule), [conference recap](https://hub.baai.ac.cn/view/55652), and [replay](https://event.baai.ac.cn/live/1033).
 
 MC-TRCM uses the architecture diagram (Figure 2) from the final ICONIP 2026 submission package, rendered from `figures/mctrcm_architecture_new.pdf`. The original manuscript figure is preserved without alteration.
 
 The PASB preview uses the overview diagram (Figure 1), cropped from page 2 of the [arXiv v5 manuscript](https://arxiv.org/pdf/2607.10526v5#page=2).
 
 The VisAlloc preview uses the comparison diagram (Figure 1), cropped from page 2 of the [arXiv v1 manuscript](https://arxiv.org/pdf/2611.25069v1#page=2).
+
+The YOTO preview uses the failure-head examples (Figure 2), cropped from page 6 of the [arXiv v1 manuscript](https://arxiv.org/pdf/2611.28100v1#page=6). This paper has no equal-contribution or advisor-first annotation in its author list.
 
 The Dalian University of Technology emblem is a transparent PNG from [the university logo resource page](https://www.urongda.com/logos/4121010141).

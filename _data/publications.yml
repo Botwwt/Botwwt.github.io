@@ -50,6 +50,33 @@ items:
     label:
       en: COLA Code
       zh: COLA 代码
+  talks:
+  - title:
+      en: Criticality-driven Online Local Alignment
+      zh: 临界驱动型在线局部比对
+    event:
+      en: BAAI Conference 2026 · AI + Neuroscience
+      zh: 2026 北京智源大会 · AI + Neuroscience 论坛
+    date_iso: '2026-06-13'
+    date:
+      en: June 13, 2026
+      zh: 2026 年 6 月 13 日
+    speaker:
+      en: Guozhang Chen
+      zh: 陈国璋
+    links:
+    - url: https://2026.baai.ac.cn/schedule
+      label:
+        en: Official agenda
+        zh: 官方日程
+    - url: https://hub.baai.ac.cn/view/55652
+      label:
+        en: Conference recap
+        zh: 会议回顾
+    - url: https://event.baai.ac.cn/live/1033
+      label:
+        en: Replay
+        zh: 报告回放
   venue: ICML 2026
 - id: wireless-llm-survey
   section: journal
@@ -245,6 +272,36 @@ items:
       zh: 代码
   venue: NeurIPS 2026
   title_url: https://arxiv.org/abs/2604.00004
+- id: yoto
+  section: preprint
+  selected: false
+  venue: arXiv 2026
+  badge:
+    en: arXiv 2026 | Preprint
+    zh: arXiv 2026 | 预印本
+  title: 'You Only Think Once: Rescuing Hybrid Vision-Language Models Lost in Thought'
+  title_url: https://arxiv.org/abs/2611.28100
+  image: /images/publications/yoto.png
+  thumbnail: /images/publications/thumbnails/yoto.png
+  alt: 'YOTO Figure 2: the failure head stops a looping thought and retains a successful thought on two MathVision problems.'
+  authors:
+    en: Tianyi Tan, <strong>Wentao Wang</strong>, Xiaohan Li, Zining Ren, Siyuan Li, Xutao Mao, Rui Qian, Luoxi Zhang, Shiwen Ni
+    zh: Tianyi Tan, <strong>Wentao Wang</strong>, Xiaohan Li, Zining Ren, Siyuan Li, Xutao Mao, Rui Qian, Luoxi Zhang, Shiwen Ni
+  meta:
+    home:
+      en: arXiv:2611.28100
+      zh: arXiv:2611.28100
+    full:
+      en: arXiv:2611.28100
+      zh: arXiv:2611.28100
+  summary:
+    en: YOTO combines probe-weighted direct-answer voting with at most one failure-monitored reasoning attempt to improve visual reasoning in hybrid vision-language models, keeping the model weights frozen.
+    zh: YOTO 将探针加权的直接回答投票与至多一次、带失败监测的推理结合，在冻结模型权重的条件下提升混合视觉语言模型的视觉推理效果。
+  links:
+  - url: https://arxiv.org/abs/2611.28100
+    label:
+      en: arXiv
+      zh: arXiv
 - id: visalloc
   section: preprint
   selected: false
