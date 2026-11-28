@@ -46,7 +46,9 @@ labels:
     gpa: GPA
     average: Weighted average
     all: All
-    selected: Selected
+    selected: Featured
+    papers: papers
+    scholar: Google Scholar
     filter: Filter publications
     figure: View research figure
     publications_note: Published and accepted work, preprints, and manuscripts under review.
@@ -114,7 +116,9 @@ labels:
     gpa: 学分绩
     average: 加权平均分
     all: 全部
-    selected: 代表作
+    selected: 重要论文
+    papers: 篇论文
+    scholar: 谷歌学术
     filter: 筛选论文
     figure: 查看研究示意图
     publications_note: 汇集已发表、已录用成果、预印本及在审论文，并标注当前状态。

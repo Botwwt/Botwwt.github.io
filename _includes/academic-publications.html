@@ -12,10 +12,11 @@
 {% comment %}Bibliography rows adapted from al-folio v0.16.3, using the existing publication data.{% endcomment %}
 <div class="publications">
   {% for group in site.data.publications.groups %}
+  {% assign group_count = 0 %}{% for paper in site.data.publications.items %}{% if group.roles contains paper.authorship_role %}{% assign group_count = group_count | plus: 1 %}{% endif %}{% endfor %}
   <section class="publication-group publication-group--{{ group.id }}" aria-labelledby="publications-{{ group.id }}">
     <header class="publication-group-heading">
       <h3 id="publications-{{ group.id }}">{{ group.title[lang] }}</h3>
-      <p>{{ group.note[lang] }}</p>
+      <span class="publication-count"><span data-group-count>{{ group_count }}</span><span class="sr-only"> {{ t.papers }}</span></span>
     </header>
   <ol class="bibliography">
     {% for paper in site.data.publications.items %}
@@ -27,17 +28,17 @@
         <span class="badge">{{ paper.venue }}</span>
         {% if teaser %}
         <a href="{{ paper.image | default: teaser | relative_url }}" target="_blank" rel="noopener" aria-label="{{ t.figure }}: {{ paper.title | escape }}">
-          <img class="preview" src="{{ teaser | relative_url }}" alt="{{ paper.alt | escape }}" width="158" height="106" loading="lazy">
+          <img class="preview" src="{{ teaser | relative_url }}" alt="{{ paper.alt | escape }}" width="180" height="120" loading="lazy">
         </a>
         {% endif %}
       </div>
       <div class="paper-body">
         <h4 class="title">{% if paper.title_url %}<a href="{{ paper.title_url | relative_url }}">{{ paper.title }}</a>{% else %}{{ paper.title }}{% endif %}</h4>
         {% if paper.authors %}<p class="author">{{ paper.authors[lang] }}</p>{% endif %}
-        {% if t.authorship_roles[paper.authorship_role] %}<p class="paper-authorship"><span class="paper-role paper-role--{{ paper.authorship_role }}">{{ t.authorship_roles[paper.authorship_role] }}</span></p>{% endif %}
         <p class="periodical"><em>{{ paper.meta[variant][lang] }}</em> <span class="paper-status">· {{ status }}</span></p>
-        {% if paper.impact_factor or paper.recognition %}
+        {% if t.authorship_roles[paper.authorship_role] or paper.impact_factor or paper.recognition %}
         <p class="paper-metrics">
+          {% if t.authorship_roles[paper.authorship_role] %}<span class="paper-role paper-role--{{ paper.authorship_role }}">{{ t.authorship_roles[paper.authorship_role] }}</span>{% endif %}
           {% if paper.impact_factor %}<a href="{{ paper.impact_factor_source }}" title="{{ t.journal_impact_factor }}">{{ paper.impact_factor[lang] }} ({{ paper.impact_factor_year }})</a>{% endif %}
           {% if paper.recognition %}<span class="paper-distinction">{{ paper.recognition[lang] }}</span>{% endif %}
         </p>

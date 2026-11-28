@@ -1,21 +1,15 @@
 home_limit: 6
 groups:
-- id: first-author
-  roles: [first, cofirst]
+- id: important
+  roles: [first, cofirst, second, advisor_first]
   title:
-    en: First-author publications
-    zh: 第一作者论文
-  note:
-    en: Including equal-contribution first authorship.
-    zh: 包含共同第一作者论文。
+    en: Selected publications
+    zh: 重要论文
 - id: collaborations
-  roles: [second, advisor_first, coauthor]
+  roles: [coauthor]
   title:
     en: Collaborative publications
     zh: 合作论文
-  note:
-    en: Second-author and advisor-first papers appear first.
-    zh: 第二作者及导师一作论文优先展示。
 quartile_note:
   en: CAS quartiles follow the 2025 CAS upgraded list (major category); JCR quartiles follow the 2025 JCR labels. Selected conference venues also
     show CCF ranks. Impact factors are the publisher-reported 2025 values, verified in November 2026.
@@ -101,6 +95,161 @@ items:
         en: Replay
         zh: 报告回放
   venue: ICML 2026
+- id: mc-trcm
+  authorship_role: first
+  section: conference
+  selected: true
+  venue: ICONIP 2026
+  badge:
+    en: ICONIP 2026 | Accepted
+    zh: ICONIP 2026 | 已录用
+  ccf:
+    en: CCF-C
+    zh: CCF-C
+  title: 'MC-TRCM: Observation-Aware Recursive Fusion for Incomplete Mobile and Wearable Mental-Health Feature Views'
+  title_url: https://github.com/Botwwt/MC-TRCM
+  authors:
+    en: <strong>Wentao Wang</strong>, Lifeng Han, Zining Ren, Hengyu Zhong, Guangyu Zou
+    zh: <strong>Wentao Wang</strong>, Lifeng Han, Zining Ren, Hengyu Zhong, Guangyu Zou
+  meta:
+    home:
+      en: Dalian University of Technology
+      zh: 大连理工大学
+    full:
+      en: Dalian University of Technology
+      zh: 大连理工大学
+  summary:
+    en: Observation-aware recursive fusion for asynchronous and incomplete mobile and wearable feature views, combining shared-private representations
+      with task-conditioned multi-task prediction.
+    zh: 面向异步、缺失的移动与可穿戴心理健康特征视图，通过独立编码、缺失信息建模、共享–私有潜变量及任务条件递归融合，实现多任务预测。
+  bullets:
+    en:
+    - Encodes each feature source independently and explicitly models missingness.
+    - Combines shared-private latent representations, task-conditioned fusion, and recursive prediction.
+    - Achieves leading or competitive results on six tasks across DepreST-CAT and PSYCHE-D.
+    zh:
+    - 对各特征源独立编码，并显式融入缺失信息。
+    - 结合共享–私有潜变量、任务条件融合与递归预测，实现多任务建模。
+    - 在 DepreST-CAT 和 PSYCHE-D 的六项任务上取得领先或有竞争力的结果。
+  links:
+  - url: https://github.com/Botwwt/MC-TRCM
+    label:
+      en: Code
+      zh: 代码
+  image: /images/publications/mc-trcm.png
+  thumbnail: /images/publications/thumbnails/mc-trcm.png
+  alt: 'MC-TRCM architecture from Figure 2: source tokens, FiLM-conditioned Transformer fusion, and recursive prediction'
+- id: linearard
+  authorship_role: cofirst
+  selected: true
+  section: conference
+  badge:
+    en: NeurIPS 2026 | Accepted
+    zh: NeurIPS 2026 | 已录用
+  ccf:
+    en: CCF-A
+    zh: CCF-A
+  image: /images/publications/linearard.png
+  thumbnail: /images/publications/thumbnails/linearard.jpg
+  alt: LinearARD for long-context RoPE restoration
+  title: 'LinearARD: Linear-Memory Attention Distillation for RoPE Restoration'
+  authors:
+    en: Ning Yang<sup>*†</sup>, Hengyu Zhong<sup>*</sup>, <strong>Wentao Wang</strong><sup>*</sup>, Baoliang Tian, Yuan Zhou, Haijun Zhang, Jun Wang
+    zh: Ning Yang<sup>*†</sup>, Hengyu Zhong<sup>*</sup>, <strong>Wentao Wang</strong><sup>*</sup>, Baoliang Tian, Yuan Zhou, Haijun Zhang, Jun Wang
+  meta:
+    home:
+      en: Institute of Automation, Chinese Academy of Sciences
+      zh: 中国科学院自动化研究所
+    full:
+      en: Institute of Automation, Chinese Academy of Sciences | Sep. 2025 - Dec. 2025
+      zh: 中国科学院自动化研究所 | 2025 年 9 月 - 2025 年 12 月
+  summary:
+    en: LinearARD aligns row-wise dense self-relations between native-RoPE teachers and RoPE-scaled students, restoring long-context performance
+      with an exact linear-memory distillation objective.
+    zh: LinearARD 通过对齐原生 RoPE 教师与缩放 RoPE 学生的行级稠密自关系，实现长上下文恢复蒸馏，并推导精确的线性内存 KL 散度核。
+  bullets:
+    en:
+    - Proposes a restoration-distillation framework that aligns row-wise dense self-relations between a native-RoPE teacher and a RoPE-scaled
+      student.
+    - Derives an exact linear-memory KL kernel, avoiding explicit construction of full relation matrices on long sequences.
+    - On LLaMA2-7B scaled from 4K to 32K, the method recovers 98.3% of short-context performance using only 4.25M training tokens.
+    - Responsible for writing the full manuscript.
+    zh:
+    - 提出一种面向长上下文 LLM 的恢复蒸馏框架，对齐原生 RoPE 教师模型与缩放 RoPE 学生模型之间的行级自关系分布。
+    - 推导精确的线性内存 KL 核，避免显式构造完整关系矩阵。
+    - 在 LLaMA2-7B 从 4K 扩展到 32K 的设定下，仅用 4.25M 训练 token 即恢复 98.3% 的短上下文性能。
+    - 本人负责全文撰写。
+  links:
+  - url: https://arxiv.org/abs/2604.00004
+    label:
+      en: arXiv
+      zh: arXiv
+  - url: https://github.com/gracefulning/LinearARD
+    label:
+      en: Code
+      zh: 代码
+  venue: NeurIPS 2026
+  title_url: https://arxiv.org/abs/2604.00004
+- id: caadrl-pdp
+  authorship_role: first
+  selected: true
+  section: journal
+  badge:
+    en: Applied Intelligence | Major Revision
+    zh: Applied Intelligence | 大修
+  sci:
+    en: CAS Q3
+    zh: 中科院 3 区
+  jcr:
+    en: JCR Q2
+    zh: JCR Q2
+  impact_factor:
+    en: IF 3.5
+    zh: IF 3.5
+  impact_factor_year: 2025
+  impact_factor_source: https://link.springer.com/journal/10489
+  image: /images/publications/caadrl-pdp.png
+  thumbnail: /images/publications/thumbnails/caadrl-pdp.jpg
+  alt: Cluster-aware attention model for pickup and delivery problems
+  title: Cluster-Aware Attention-Based Deep Reinforcement Learning for Pickup and Delivery Problems
+  title_url: https://arxiv.org/abs/2603.10053
+  authors:
+    en: <strong>Wentao Wang</strong>, Lifeng Han, Guangyu Zou
+    zh: <strong>Wentao Wang</strong>, Lifeng Han, Guangyu Zou
+  meta:
+    home:
+      en: Dalian University of Technology
+      zh: 大连理工大学
+    full:
+      en: Dalian University of Technology | Oct. 2024 - Mar. 2025
+      zh: 大连理工大学 | 2024 年 10 月 - 2025 年 3 月
+  summary:
+    en: CAADRL combines global self-attention, intra-cluster attention, and a dynamic dual-decoder to exploit clustered structure in pickup and
+      delivery problems while reducing inference latency.
+    zh: 提出 CAADRL 框架，将全局自注意力、簇内注意力与动态双解码器结合，显式利用取送货问题中的聚类结构，并显著降低推理时延。
+  bullets:
+    en:
+    - Proposes CAADRL, a cluster-aware deep reinforcement learning framework for pickup and delivery problems with clustered structure.
+    - Integrates global self-attention, intra-cluster attention, and a dynamic dual-decoder with a learnable gate.
+    - Achieves leading performance on clustered benchmarks while reducing inference latency relative to neural collaborative-search baselines.
+    zh:
+    - 提出 CAADRL 框架，用于建模带簇结构的取送货路径优化问题。
+    - 将全局自注意力、簇内注意力与带门控的动态双解码器结合，实现宏观簇间决策与微观簇内决策协同。
+    - 在簇状基准上取得领先结果，同时显著降低相对神经协同搜索方法的推理开销。
+  links:
+  - url: https://arxiv.org/abs/2603.10053
+    label:
+      en: arXiv
+      zh: arXiv
+  - url: /files/papers/caadrl-pdp.pdf
+    label:
+      en: Paper
+      zh: 论文
+  - url: https://github.com/Botwwt/CluPDTSP
+    label:
+      en: Code
+      zh: 代码
+  venue: Applied Intelligence
 - id: wireless-llm-survey
   authorship_role: advisor_first
   section: journal
@@ -211,105 +360,10 @@ items:
       en: Code
       zh: 代码
   venue: IEEE TMC
-- id: mc-trcm
-  authorship_role: first
-  section: conference
-  selected: true
-  venue: ICONIP 2026
-  badge:
-    en: ICONIP 2026 | Accepted
-    zh: ICONIP 2026 | 已录用
-  ccf:
-    en: CCF-C
-    zh: CCF-C
-  title: 'MC-TRCM: Observation-Aware Recursive Fusion for Incomplete Mobile and Wearable Mental-Health Feature Views'
-  title_url: https://github.com/Botwwt/MC-TRCM
-  authors:
-    en: <strong>Wentao Wang</strong>, Lifeng Han, Zining Ren, Hengyu Zhong, Guangyu Zou
-    zh: <strong>Wentao Wang</strong>, Lifeng Han, Zining Ren, Hengyu Zhong, Guangyu Zou
-  meta:
-    home:
-      en: Dalian University of Technology
-      zh: 大连理工大学
-    full:
-      en: Dalian University of Technology
-      zh: 大连理工大学
-  summary:
-    en: Observation-aware recursive fusion for asynchronous and incomplete mobile and wearable feature views, combining shared-private representations
-      with task-conditioned multi-task prediction.
-    zh: 面向异步、缺失的移动与可穿戴心理健康特征视图，通过独立编码、缺失信息建模、共享–私有潜变量及任务条件递归融合，实现多任务预测。
-  bullets:
-    en:
-    - Encodes each feature source independently and explicitly models missingness.
-    - Combines shared-private latent representations, task-conditioned fusion, and recursive prediction.
-    - Achieves leading or competitive results on six tasks across DepreST-CAT and PSYCHE-D.
-    zh:
-    - 对各特征源独立编码，并显式融入缺失信息。
-    - 结合共享–私有潜变量、任务条件融合与递归预测，实现多任务建模。
-    - 在 DepreST-CAT 和 PSYCHE-D 的六项任务上取得领先或有竞争力的结果。
-  links:
-  - url: https://github.com/Botwwt/MC-TRCM
-    label:
-      en: Code
-      zh: 代码
-  image: /images/publications/mc-trcm.png
-  thumbnail: /images/publications/thumbnails/mc-trcm.png
-  alt: 'MC-TRCM architecture from Figure 2: source tokens, FiLM-conditioned Transformer fusion, and recursive prediction'
-- id: linearard
-  authorship_role: cofirst
-  selected: true
-  section: conference
-  badge:
-    en: NeurIPS 2026 | Accepted
-    zh: NeurIPS 2026 | 已录用
-  ccf:
-    en: CCF-A
-    zh: CCF-A
-  image: /images/publications/linearard.png
-  thumbnail: /images/publications/thumbnails/linearard.jpg
-  alt: LinearARD for long-context RoPE restoration
-  title: 'LinearARD: Linear-Memory Attention Distillation for RoPE Restoration'
-  authors:
-    en: Ning Yang<sup>*†</sup>, Hengyu Zhong<sup>*</sup>, <strong>Wentao Wang</strong><sup>*</sup>, Baoliang Tian, Yuan Zhou, Haijun Zhang, Jun Wang
-    zh: Ning Yang<sup>*†</sup>, Hengyu Zhong<sup>*</sup>, <strong>Wentao Wang</strong><sup>*</sup>, Baoliang Tian, Yuan Zhou, Haijun Zhang, Jun Wang
-  meta:
-    home:
-      en: Institute of Automation, Chinese Academy of Sciences
-      zh: 中国科学院自动化研究所
-    full:
-      en: Institute of Automation, Chinese Academy of Sciences | Sep. 2025 - Dec. 2025
-      zh: 中国科学院自动化研究所 | 2025 年 9 月 - 2025 年 12 月
-  summary:
-    en: LinearARD aligns row-wise dense self-relations between native-RoPE teachers and RoPE-scaled students, restoring long-context performance
-      with an exact linear-memory distillation objective.
-    zh: LinearARD 通过对齐原生 RoPE 教师与缩放 RoPE 学生的行级稠密自关系，实现长上下文恢复蒸馏，并推导精确的线性内存 KL 散度核。
-  bullets:
-    en:
-    - Proposes a restoration-distillation framework that aligns row-wise dense self-relations between a native-RoPE teacher and a RoPE-scaled
-      student.
-    - Derives an exact linear-memory KL kernel, avoiding explicit construction of full relation matrices on long sequences.
-    - On LLaMA2-7B scaled from 4K to 32K, the method recovers 98.3% of short-context performance using only 4.25M training tokens.
-    - Responsible for writing the full manuscript.
-    zh:
-    - 提出一种面向长上下文 LLM 的恢复蒸馏框架，对齐原生 RoPE 教师模型与缩放 RoPE 学生模型之间的行级自关系分布。
-    - 推导精确的线性内存 KL 核，避免显式构造完整关系矩阵。
-    - 在 LLaMA2-7B 从 4K 扩展到 32K 的设定下，仅用 4.25M 训练 token 即恢复 98.3% 的短上下文性能。
-    - 本人负责全文撰写。
-  links:
-  - url: https://arxiv.org/abs/2604.00004
-    label:
-      en: arXiv
-      zh: arXiv
-  - url: https://github.com/gracefulning/LinearARD
-    label:
-      en: Code
-      zh: 代码
-  venue: NeurIPS 2026
-  title_url: https://arxiv.org/abs/2604.00004
 - id: yoto
   authorship_role: second
   section: preprint
-  selected: false
+  selected: true
   venue: arXiv 2026
   badge:
     en: arXiv 2026 | Preprint
@@ -407,63 +461,3 @@ items:
     label:
       en: Code
       zh: 代码
-- id: caadrl-pdp
-  authorship_role: first
-  selected: false
-  section: journal
-  badge:
-    en: Applied Intelligence | Major Revision
-    zh: Applied Intelligence | 大修
-  sci:
-    en: CAS Q3
-    zh: 中科院 3 区
-  jcr:
-    en: JCR Q2
-    zh: JCR Q2
-  impact_factor:
-    en: IF 3.5
-    zh: IF 3.5
-  impact_factor_year: 2025
-  impact_factor_source: https://link.springer.com/journal/10489
-  image: /images/publications/caadrl-pdp.png
-  thumbnail: /images/publications/thumbnails/caadrl-pdp.jpg
-  alt: Cluster-aware attention model for pickup and delivery problems
-  title: Cluster-Aware Attention-Based Deep Reinforcement Learning for Pickup and Delivery Problems
-  title_url: https://arxiv.org/abs/2603.10053
-  authors:
-    en: <strong>Wentao Wang</strong>, Lifeng Han, Guangyu Zou
-    zh: <strong>Wentao Wang</strong>, Lifeng Han, Guangyu Zou
-  meta:
-    home:
-      en: Dalian University of Technology
-      zh: 大连理工大学
-    full:
-      en: Dalian University of Technology | Oct. 2024 - Mar. 2025
-      zh: 大连理工大学 | 2024 年 10 月 - 2025 年 3 月
-  summary:
-    en: CAADRL combines global self-attention, intra-cluster attention, and a dynamic dual-decoder to exploit clustered structure in pickup and
-      delivery problems while reducing inference latency.
-    zh: 提出 CAADRL 框架，将全局自注意力、簇内注意力与动态双解码器结合，显式利用取送货问题中的聚类结构，并显著降低推理时延。
-  bullets:
-    en:
-    - Proposes CAADRL, a cluster-aware deep reinforcement learning framework for pickup and delivery problems with clustered structure.
-    - Integrates global self-attention, intra-cluster attention, and a dynamic dual-decoder with a learnable gate.
-    - Achieves leading performance on clustered benchmarks while reducing inference latency relative to neural collaborative-search baselines.
-    zh:
-    - 提出 CAADRL 框架，用于建模带簇结构的取送货路径优化问题。
-    - 将全局自注意力、簇内注意力与带门控的动态双解码器结合，实现宏观簇间决策与微观簇内决策协同。
-    - 在簇状基准上取得领先结果，同时显著降低相对神经协同搜索方法的推理开销。
-  links:
-  - url: https://arxiv.org/abs/2603.10053
-    label:
-      en: arXiv
-      zh: arXiv
-  - url: /files/papers/caadrl-pdp.pdf
-    label:
-      en: Paper
-      zh: 论文
-  - url: https://github.com/Botwwt/CluPDTSP
-    label:
-      en: Code
-      zh: 代码
-  venue: Applied Intelligence

@@ -66,7 +66,9 @@ document.querySelectorAll('.publication-filter').forEach((filter) => {
       if (!paper.hidden) visible += 1;
     });
     groups.forEach((group) => {
-      group.hidden = ![...group.querySelectorAll('.paper')].some((paper) => !paper.hidden);
+      const visiblePapers = [...group.querySelectorAll('.paper')].filter((paper) => !paper.hidden).length;
+      group.hidden = visiblePapers === 0;
+      group.querySelector('[data-group-count]').textContent = visiblePapers;
     });
     status.textContent = document.documentElement.lang === 'zh'
       ? `显示 ${visible} 篇论文` : `${visible} publications shown`;

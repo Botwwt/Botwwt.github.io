@@ -13,7 +13,7 @@ The academic pages use an al-folio layout on Jekyll and deploy to GitHub Pages. 
 
 The profile uses **2027年入学直博生 / incoming Ph.D. student (2027 entry)** at Peking University, as requested by the owner, and keeps the undergraduate graduation date as **June 2027 (expected)**. GPA and weighted average come from the latest CV, and major rank is **7/99**. LinearARD is **accepted to NeurIPS 2026 (CCF-A)**. Every publication displays its full author list with **Wentao Wang** in bold. Superscript `*` indicates equal contribution, and `†` identifies an advisor listed as first author.
 
-Publications are grouped by the explicit `authorship_role` in each record. `first` and `cofirst` appear in the first-author group, with a role label and the full figure-led layout. The collaboration group uses a compact layout with smaller figures on the right. Place `second` and `advisor_first` records before other `coauthor` papers within that group. Equal-contribution marks belonging only to other authors do not make Wentao a co-first author. The All view currently contains **4 first-author papers (including 1 co-first-author paper)** and **5 collaborative papers**. The Selected view contains 3 and 2 respectively; empty groups are hidden when filtering.
+Publications are grouped by the explicit `authorship_role` in each record. The important/selected group includes `first`, `cofirst`, `second`, and `advisor_first`; other `coauthor` papers appear in the collaboration group. Keep first- and co-first-author work before second-author and advisor-first work. Equal-contribution marks belonging only to other authors do not make Wentao a co-first author. The All view contains **7 important papers** and **2 other collaborations**. The Featured filter shows the same 7 important papers, including YOTO and CAADRL, and hides empty groups. Every paper must supply an original figure and thumbnail; all cards use the same 180 × 120 figure area on the left and the same content layout. Email, Scholar, and GitHub use matching icon links.
 
 ## Design references
 
@@ -21,7 +21,7 @@ The navigation, right-aligned profile, news table, bibliography rows, and theme 
 
 ## Verification and deployment
 
-The main branch automatically builds and deploys via `.github/workflows/`. Before publishing changes, check both languages and both publication routes, local links and anchors, paper filtering (9 All / 5 Selected as of November 2026), images, keyboard focus, and narrow mobile screens. The page remains readable with JavaScript disabled. Verify the GitHub Pages build and deployed page after each push.
+The main branch automatically builds and deploys via `.github/workflows/`. Before publishing changes, check both languages and both publication routes, local links and anchors, paper filtering (9 All / 7 Featured as of November 2026), all 9 paper images, keyboard focus, and narrow mobile screens. The page remains readable with JavaScript disabled. Verify the GitHub Pages build and deployed page after each push.
 
 Optional `talks` in a publication record appear beneath that paper on both homepages and publication pages. The Global Credit Assignment record includes Guozhang Chen's June 13, 2026 BAAI Conference talk, with the [official agenda](https://2026.baai.ac.cn/schedule), [conference recap](https://hub.baai.ac.cn/view/55652), and [replay](https://event.baai.ac.cn/live/1033).
 
