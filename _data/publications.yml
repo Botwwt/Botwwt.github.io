@@ -1,8 +1,8 @@
 home_limit: 6
 quartile_note:
   en: CAS quartiles follow the 2025 CAS upgraded list (major category); JCR quartiles follow the 2025 JCR labels. Selected conference venues also
-    show CCF ranks, and impact factors follow official venue metrics available as of March 2026.
-  zh: 期刊分区按 2025 年 3 月中科院升级版大类分区与 2025 年 JCR 分区标注；部分会议同步展示 CCF 等级，影响因子采用截至 2026 年 3 月可核验的官方期刊指标。
+    show CCF ranks. Impact factors are the publisher-reported 2025 values, verified in November 2026.
+  zh: 期刊分区按 2025 年 3 月中科院升级版大类分区与 2025 年 JCR 分区标注；部分会议同步展示 CCF 等级，影响因子采用出版方公布的 2025 年数值，于 2026 年 11 月核验。
 items:
 - id: global-credit-criticality
   section: conference
@@ -64,6 +64,11 @@ items:
     speaker:
       en: Guozhang Chen
       zh: 陈国璋
+    image: /images/talks/baai-2026-guozhang-chen.webp
+    image_alt:
+      en: Guozhang Chen presenting at the 2026 BAAI Conference, photographed in the official conference recap.
+      zh: 智源大会官方回顾中的陈国璋老师报告现场照片。
+    video_url: https://event.baai.ac.cn/live/1033
     links:
     - url: https://2026.baai.ac.cn/schedule
       label:
@@ -90,8 +95,13 @@ items:
     en: JCR Q1
     zh: JCR Q1
   impact_factor:
-    en: IF 46.7
-    zh: IF 46.7
+    en: IF 50.6
+    zh: IF 50.6
+  impact_factor_year: 2025
+  impact_factor_source: https://open.ieee.org/wp-content/uploads/IEEE-Title-List-September-2026-CAPES.pdf#page=1
+  recognition:
+    en: ESI Highly Cited Paper · Top 1%
+    zh: ESI 高被引论文 · Top 1%
   image: /images/publications/wireless-llm-survey.png
   thumbnail: /images/publications/thumbnails/wireless-llm-survey.jpg
   alt: Survey of decision-making large language models for wireless communication
@@ -139,8 +149,10 @@ items:
     en: JCR Q1
     zh: JCR Q1
   impact_factor:
-    en: IF 9.2
-    zh: IF 9.2
+    en: IF 8.8
+    zh: IF 8.8
+  impact_factor_year: 2025
+  impact_factor_source: https://www.computer.org/csdl/journal/tm/
   image: /images/publications/coop-llm-cache.jpg
   thumbnail: /images/publications/thumbnails/coop-llm-cache.jpg
   alt: Cooperative edge caching with large language models
@@ -295,8 +307,8 @@ items:
       en: arXiv:2611.28100
       zh: arXiv:2611.28100
   summary:
-    en: YOTO combines probe-weighted direct-answer voting with at most one failure-monitored reasoning attempt to improve visual reasoning in hybrid vision-language models, keeping the model weights frozen.
-    zh: YOTO 将探针加权的直接回答投票与至多一次、带失败监测的推理结合，在冻结模型权重的条件下提升混合视觉语言模型的视觉推理效果。
+    en: YOTO combines probe-weighted direct answers with one failure-monitored thought, improving visual reasoning without updating model weights.
+    zh: YOTO 结合探针加权的直接回答与至多一次受监测推理，在冻结模型权重的条件下提升混合视觉语言模型的视觉推理效果。
   links:
   - url: https://arxiv.org/abs/2611.28100
     label:
@@ -383,8 +395,10 @@ items:
     en: JCR Q2
     zh: JCR Q2
   impact_factor:
-    en: IF 3.4
-    zh: IF 3.4
+    en: IF 3.5
+    zh: IF 3.5
+  impact_factor_year: 2025
+  impact_factor_source: https://link.springer.com/journal/10489
   image: /images/publications/caadrl-pdp.png
   thumbnail: /images/publications/thumbnails/caadrl-pdp.jpg
   alt: Cluster-aware attention model for pickup and delivery problems

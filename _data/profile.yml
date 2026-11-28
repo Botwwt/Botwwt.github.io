@@ -53,6 +53,8 @@ labels:
     authorship_note: "* Equal contribution · † Advisor listed first"
     related_talk: Related talk
     speaker: Speaker
+    watch_talk: Watch the official forum replay
+    journal_impact_factor: Journal Impact Factor
     publication_details: Full publication details
     contributions: Research & contributions
     phd_detail: Incoming Ph.D. (2027 entry) · College of Future Technology
@@ -114,6 +116,8 @@ labels:
     authorship_note: "* 共同一作 · † 导师一作"
     related_talk: 相关报告
     speaker: 主讲
+    watch_talk: 观看官方论坛回放
+    journal_impact_factor: 期刊影响因子
     publication_details: 查看完整论文信息
     contributions: 研究内容与个人贡献
     phd_detail: 2027年入学直博生 · 未来技术学院

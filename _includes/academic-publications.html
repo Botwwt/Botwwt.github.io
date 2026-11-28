@@ -28,18 +28,35 @@
         <h3 class="title">{% if paper.title_url %}<a href="{{ paper.title_url | relative_url }}">{{ paper.title }}</a>{% else %}{{ paper.title }}{% endif %}</h3>
         {% if paper.authors %}<p class="author">{{ paper.authors[lang] }}</p>{% endif %}
         <p class="periodical"><em>{{ paper.meta[variant][lang] }}</em> <span class="paper-status">· {{ status }}</span></p>
+        {% if paper.impact_factor or paper.recognition %}
+        <p class="paper-metrics">
+          {% if paper.impact_factor %}<a href="{{ paper.impact_factor_source }}" title="{{ t.journal_impact_factor }}">{{ paper.impact_factor[lang] }} ({{ paper.impact_factor_year }})</a>{% endif %}
+          {% if paper.recognition %}<span class="paper-distinction">{{ paper.recognition[lang] }}</span>{% endif %}
+        </p>
+        {% endif %}
         <p class="paper-summary">{{ paper.summary[lang] }}</p>
         <div class="paper-links">
           {% for link in paper.links %}<a href="{{ link.url | relative_url }}">{{ link.label[lang] }}</a>{% endfor %}
         </div>
         {% if paper.talks %}
         <aside class="paper-talks" aria-label="{{ t.related_talk }}">
-          <p class="talk-label">{{ t.related_talk }}</p>
           {% for talk in paper.talks %}
-          <p class="talk-title">{{ talk.title[lang] }}</p>
-          <p class="talk-meta">{{ talk.event[lang] }} · <time datetime="{{ talk.date_iso }}">{{ talk.date[lang] }}</time> · {{ t.speaker }}: {{ talk.speaker[lang] }}</p>
-          <div class="talk-links">
-            {% for link in talk.links %}<a href="{{ link.url }}">{{ link.label[lang] }}</a>{% endfor %}
+          <div class="talk-entry">
+            {% if talk.image %}
+            <a class="talk-preview" href="{{ talk.video_url }}" aria-label="{{ t.watch_talk }}: {{ talk.title[lang] | escape }}">
+              <img src="{{ talk.image | relative_url }}" alt="{{ talk.image_alt[lang] | escape }}" width="1080" height="720" loading="lazy">
+              <span class="talk-play" aria-hidden="true">▶</span>
+            </a>
+            {% endif %}
+            <div class="talk-info">
+              <p class="talk-label">{{ t.related_talk }}</p>
+              <p class="talk-title">{{ talk.title[lang] }}</p>
+              <p class="talk-meta">{{ talk.event[lang] }} · <time datetime="{{ talk.date_iso }}">{{ talk.date[lang] }}</time></p>
+              <p class="talk-meta">{{ t.speaker }}: {{ talk.speaker[lang] }}</p>
+              <div class="talk-links">
+                {% for link in talk.links %}<a href="{{ link.url }}">{{ link.label[lang] }}</a>{% endfor %}
+              </div>
+            </div>
           </div>
           {% endfor %}
         </aside>

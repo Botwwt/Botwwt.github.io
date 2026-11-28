@@ -23,6 +23,12 @@ The main branch automatically builds and deploys via `.github/workflows/`. Befor
 
 Optional `talks` in a publication record appear beneath that paper on both homepages and publication pages. The Global Credit Assignment record includes Guozhang Chen's June 13, 2026 BAAI Conference talk, with the [official agenda](https://2026.baai.ac.cn/schedule), [conference recap](https://hub.baai.ac.cn/view/55652), and [replay](https://event.baai.ac.cn/live/1033).
 
+The BAAI talk preview uses [the official recap's photograph](https://simg.baai.ac.cn/hub-detail/60e8e3654e49d551e4d330e0198a26641781842825210.webp). Clicking the image opens the official forum replay.
+
+Journal Impact Factors display their metric year and link to the publisher's source. The 2025 values, verified in November 2026, are COMST **50.6** ([IEEE title list](https://open.ieee.org/wp-content/uploads/IEEE-Title-List-September-2026-CAPES.pdf#page=1)), TMC **8.8** ([IEEE Computer Society](https://www.computer.org/csdl/journal/tm/)), and Applied Intelligence **3.5** ([Springer Nature](https://link.springer.com/journal/10489)).
+
+The ESI Highly Cited Paper (Top 1%) designation for the Decision-Making survey was confirmed by the site owner on November 28, 2026. Its public ESI record was not independently located during this update.
+
 MC-TRCM uses the architecture diagram (Figure 2) from the final ICONIP 2026 submission package, rendered from `figures/mctrcm_architecture_new.pdf`. The original manuscript figure is preserved without alteration.
 
 The PASB preview uses the overview diagram (Figure 1), cropped from page 2 of the [arXiv v5 manuscript](https://arxiv.org/pdf/2607.10526v5#page=2).
