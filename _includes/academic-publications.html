@@ -11,11 +11,18 @@
 <p class="authorship-note">{{ t.authorship_note }}</p>
 {% comment %}Bibliography rows adapted from al-folio v0.16.3, using the existing publication data.{% endcomment %}
 <div class="publications">
+  {% for group in site.data.publications.groups %}
+  <section class="publication-group publication-group--{{ group.id }}" aria-labelledby="publications-{{ group.id }}">
+    <header class="publication-group-heading">
+      <h3 id="publications-{{ group.id }}">{{ group.title[lang] }}</h3>
+      <p>{{ group.note[lang] }}</p>
+    </header>
   <ol class="bibliography">
     {% for paper in site.data.publications.items %}
+    {% if group.roles contains paper.authorship_role %}
     {% assign teaser = paper.thumbnail | default: paper.image %}
     {% assign status = paper.badge[lang] | split: ' | ' | last %}
-    <li id="{{ paper.id }}" class="paper" data-selected="{% if paper.selected == false %}false{% else %}true{% endif %}">
+    <li id="{{ paper.id }}" class="paper" data-authorship="{{ paper.authorship_role }}" data-selected="{% if paper.selected == false %}false{% else %}true{% endif %}">
       <div class="abbr">
         <span class="badge">{{ paper.venue }}</span>
         {% if teaser %}
@@ -25,8 +32,9 @@
         {% endif %}
       </div>
       <div class="paper-body">
-        <h3 class="title">{% if paper.title_url %}<a href="{{ paper.title_url | relative_url }}">{{ paper.title }}</a>{% else %}{{ paper.title }}{% endif %}</h3>
+        <h4 class="title">{% if paper.title_url %}<a href="{{ paper.title_url | relative_url }}">{{ paper.title }}</a>{% else %}{{ paper.title }}{% endif %}</h4>
         {% if paper.authors %}<p class="author">{{ paper.authors[lang] }}</p>{% endif %}
+        {% if t.authorship_roles[paper.authorship_role] %}<p class="paper-authorship"><span class="paper-role paper-role--{{ paper.authorship_role }}">{{ t.authorship_roles[paper.authorship_role] }}</span></p>{% endif %}
         <p class="periodical"><em>{{ paper.meta[variant][lang] }}</em> <span class="paper-status">· {{ status }}</span></p>
         {% if paper.impact_factor or paper.recognition %}
         <p class="paper-metrics">
@@ -69,7 +77,10 @@
         {% endif %}
       </div>
     </li>
+    {% endif %}
     {% endfor %}
   </ol>
+  </section>
+  {% endfor %}
 </div>
 <p class="filter-status sr-only" role="status" aria-live="polite"></p>

@@ -1,10 +1,28 @@
 home_limit: 6
+groups:
+- id: first-author
+  roles: [first, cofirst]
+  title:
+    en: First-author publications
+    zh: 第一作者论文
+  note:
+    en: Including equal-contribution first authorship.
+    zh: 包含共同第一作者论文。
+- id: collaborations
+  roles: [second, advisor_first, coauthor]
+  title:
+    en: Collaborative publications
+    zh: 合作论文
+  note:
+    en: Second-author and advisor-first papers appear first.
+    zh: 第二作者及导师一作论文优先展示。
 quartile_note:
   en: CAS quartiles follow the 2025 CAS upgraded list (major category); JCR quartiles follow the 2025 JCR labels. Selected conference venues also
     show CCF ranks. Impact factors are the publisher-reported 2025 values, verified in November 2026.
   zh: 期刊分区按 2025 年 3 月中科院升级版大类分区与 2025 年 JCR 分区标注；部分会议同步展示 CCF 等级，影响因子采用出版方公布的 2025 年数值，于 2026 年 11 月核验。
 items:
 - id: global-credit-criticality
+  authorship_role: first
   section: conference
   badge:
     en: ICML 2026 | Accepted
@@ -84,6 +102,7 @@ items:
         zh: 报告回放
   venue: ICML 2026
 - id: wireless-llm-survey
+  authorship_role: advisor_first
   section: journal
   badge:
     en: IEEE COMST | Published
@@ -138,6 +157,7 @@ items:
       zh: IEEE Xplore
   venue: IEEE COMST 2025
 - id: coop-llm-cache
+  authorship_role: second
   section: journal
   badge:
     en: IEEE TMC | Accepted
@@ -192,6 +212,7 @@ items:
       zh: 代码
   venue: IEEE TMC
 - id: mc-trcm
+  authorship_role: first
   section: conference
   selected: true
   venue: ICONIP 2026
@@ -235,6 +256,7 @@ items:
   thumbnail: /images/publications/thumbnails/mc-trcm.png
   alt: 'MC-TRCM architecture from Figure 2: source tokens, FiLM-conditioned Transformer fusion, and recursive prediction'
 - id: linearard
+  authorship_role: cofirst
   selected: true
   section: conference
   badge:
@@ -285,6 +307,7 @@ items:
   venue: NeurIPS 2026
   title_url: https://arxiv.org/abs/2604.00004
 - id: yoto
+  authorship_role: second
   section: preprint
   selected: false
   venue: arXiv 2026
@@ -315,6 +338,7 @@ items:
       en: arXiv
       zh: arXiv
 - id: visalloc
+  authorship_role: coauthor
   section: preprint
   selected: false
   venue: arXiv 2026
@@ -349,6 +373,7 @@ items:
       en: Code
       zh: 代码
 - id: persistent-sycophancy
+  authorship_role: coauthor
   section: preprint
   selected: false
   venue: arXiv 2026
@@ -383,6 +408,7 @@ items:
       en: Code
       zh: 代码
 - id: caadrl-pdp
+  authorship_role: first
   selected: false
   section: journal
   badge:

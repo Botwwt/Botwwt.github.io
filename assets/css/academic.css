@@ -92,7 +92,7 @@ p {
   margin: 0 0 1rem;
 }
 
-h1, h2, h3 {
+h1, h2, h3, h4 {
   margin: 0;
   font-weight: 300;
   line-height: 1.2;
@@ -400,12 +400,60 @@ html[lang="en"] .navbar-nav a:not(:last-child) {
   list-style: none;
 }
 
+.publication-group {
+  margin-top: 1.5rem;
+}
+
+.publication-group + .publication-group {
+  margin-top: 2.5rem;
+}
+
+.publication-group-heading {
+  padding-bottom: .75rem;
+  border-bottom: 1px solid var(--global-divider-color);
+}
+
+.publication-group-heading h3 {
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.publication-group-heading p {
+  margin: .3rem 0 0;
+  color: var(--global-text-color-light);
+  font-size: .875rem;
+}
+
+.publication-group--first-author .publication-group-heading {
+  border-bottom-color: var(--global-theme-color);
+}
+
 .paper {
   display: grid;
   grid-template-columns: 158px minmax(0, 1fr);
   gap: 1.25rem;
   padding-block: 1.2rem;
   border-bottom: 1px solid var(--global-divider-color);
+}
+
+.publication-group--collaborations .paper {
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 1rem;
+  padding-block: 1rem;
+}
+
+.publication-group--collaborations .abbr {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.publication-group--collaborations .paper-body {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.publication-group--collaborations .preview {
+  box-shadow: none;
 }
 
 .paper:target {
@@ -468,6 +516,26 @@ html[lang="en"] .navbar-nav a:not(:last-child) {
   color: var(--global-text-color-light);
   font-size: .875rem;
   margin-bottom: .5rem;
+}
+
+.paper-authorship {
+  margin: .4rem 0;
+}
+
+.paper-role {
+  display: inline-block;
+  padding: .1rem .45rem;
+  border: 1px solid var(--global-divider-color);
+  border-radius: 3px;
+  color: var(--global-text-color-light);
+  font-size: .875rem;
+  font-weight: 500;
+}
+
+.paper-role--first, .paper-role--cofirst {
+  border-color: transparent;
+  background: var(--global-tint-color);
+  color: var(--global-theme-color);
 }
 
 .periodical {
@@ -764,9 +832,19 @@ summary {
     gap: .65rem;
   }
 
-  .paper {
+  .paper, .publication-group--collaborations .paper {
     grid-template-columns: minmax(0, 1fr);
     gap: .75rem;
+  }
+
+  .publication-group--collaborations .abbr,
+  .publication-group--collaborations .paper-body {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .publication-group--collaborations .abbr {
+    width: 120px;
   }
 
   .abbr {

@@ -13,6 +13,8 @@ The academic pages use an al-folio layout on Jekyll and deploy to GitHub Pages. 
 
 The profile uses **2027年入学直博生 / incoming Ph.D. student (2027 entry)** at Peking University, as requested by the owner, and keeps the undergraduate graduation date as **June 2027 (expected)**. GPA and weighted average come from the latest CV, and major rank is **7/99**. LinearARD is **accepted to NeurIPS 2026 (CCF-A)**. Every publication displays its full author list with **Wentao Wang** in bold. Superscript `*` indicates equal contribution, and `†` identifies an advisor listed as first author.
 
+Publications are grouped by the explicit `authorship_role` in each record. `first` and `cofirst` appear in the first-author group, with a role label and the full figure-led layout. The collaboration group uses a compact layout with smaller figures on the right. Place `second` and `advisor_first` records before other `coauthor` papers within that group. Equal-contribution marks belonging only to other authors do not make Wentao a co-first author. The All view currently contains **4 first-author papers (including 1 co-first-author paper)** and **5 collaborative papers**. The Selected view contains 3 and 2 respectively; empty groups are hidden when filtering.
+
 ## Design references
 
 The navigation, right-aligned profile, news table, bibliography rows, and theme colors are adapted from [al-folio v0.16.3](https://github.com/alshedivat/al-folio/tree/v0.16.3) using the existing bilingual YAML data. See [the al-folio MIT license](LICENSE-al-folio.txt) and [the Roboto Open Font License](../assets/fonts/OFL-Roboto.txt).

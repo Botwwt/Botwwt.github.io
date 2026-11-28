@@ -50,6 +50,7 @@ updateTheme();
 document.querySelectorAll('.publication-filter').forEach((filter) => {
   const section = filter.closest('.publications-section');
   const papers = section.querySelectorAll('.paper');
+  const groups = section.querySelectorAll('.publication-group');
   const buttons = filter.querySelectorAll('button');
   const status = section.querySelector('.filter-status');
   filter.hidden = false;
@@ -63,6 +64,9 @@ document.querySelectorAll('.publication-filter').forEach((filter) => {
     papers.forEach((paper) => {
       paper.hidden = value !== 'all' && paper.dataset.selected !== 'true';
       if (!paper.hidden) visible += 1;
+    });
+    groups.forEach((group) => {
+      group.hidden = ![...group.querySelectorAll('.paper')].some((paper) => !paper.hidden);
     });
     status.textContent = document.documentElement.lang === 'zh'
       ? `显示 ${visible} 篇论文` : `${visible} publications shown`;

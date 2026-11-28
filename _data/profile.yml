@@ -51,6 +51,11 @@ labels:
     figure: View research figure
     publications_note: Published and accepted work, preprints, and manuscripts under review.
     authorship_note: "* Equal contribution · † Advisor listed first"
+    authorship_roles:
+      first: First author
+      cofirst: Co-first author
+      second: Second author
+      advisor_first: Advisor listed first
     related_talk: Related talk
     speaker: Speaker
     watch_talk: Watch the official forum replay
@@ -114,6 +119,11 @@ labels:
     figure: 查看研究示意图
     publications_note: 汇集已发表、已录用成果、预印本及在审论文，并标注当前状态。
     authorship_note: "* 共同一作 · † 导师一作"
+    authorship_roles:
+      first: 第一作者
+      cofirst: 共同第一作者
+      second: 第二作者
+      advisor_first: 导师一作
     related_talk: 相关报告
     speaker: 主讲
     watch_talk: 观看官方论坛回放
